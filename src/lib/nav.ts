@@ -15,6 +15,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     { to: '/ocorrencias', label: 'Ocorrências' },
     { to: '/multas', label: 'Multas' },
     { to: '/encomendas', label: 'Encomendas' },
+    { to: '/mural', label: 'Mural' },
     { to: '/planos', label: 'Planos' },
   ],
   administradora: [
@@ -27,6 +28,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     { to: '/ocorrencias', label: 'Ocorrências' },
     { to: '/multas', label: 'Multas' },
     { to: '/encomendas', label: 'Encomendas' },
+    { to: '/mural', label: 'Mural' },
     { to: '/regimento', label: 'Regimento' },
   ],
   sindico: [
@@ -39,11 +41,13 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     { to: '/ocorrencias', label: 'Ocorrências' },
     { to: '/multas', label: 'Multas' },
     { to: '/encomendas', label: 'Encomendas' },
+    { to: '/mural', label: 'Mural' },
     { to: '/regimento', label: 'Regimento' },
   ],
   portaria: [
     ...COMMON_TOP,
     { to: '/encomendas', label: 'Encomendas' },
+    { to: '/mural', label: 'Mural' },
     { to: '/ocorrencias', label: 'Ocorrências' },
   ],
   ronda: [...COMMON_TOP, { to: '/ocorrencias', label: 'Ocorrências' }],
@@ -53,6 +57,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     { to: '/ocorrencias', label: 'Ocorrências' },
     { to: '/multas', label: 'Minhas multas' },
     { to: '/encomendas', label: 'Minhas encomendas' },
+    { to: '/mural', label: 'Mural' },
   ],
 }
 

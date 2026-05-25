@@ -28,6 +28,8 @@ import Painel from './pages/Painel'
 import Encomendas from './pages/Encomendas'
 import EncomendaNova from './pages/EncomendaNova'
 import EncomendaDetalhe from './pages/EncomendaDetalhe'
+import Mural from './pages/Mural'
+import MuralNova from './pages/MuralNova'
 
 export default function App() {
   return (
@@ -273,6 +275,22 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <EncomendaDetalhe />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/mural"
+              element={
+                <ProtectedRoute>
+                  <Mural />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/mural/novo"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <MuralNova />
                 </ProtectedRoute>
               }
             />
