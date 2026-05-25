@@ -176,6 +176,142 @@ try {
     `viu ${condosAnon.rows.length}`,
   )
   await client.query('rollback')
+
+  // ============================================================
+  // 3) Refinamento pessoas (0003) — morador edita só o próprio
+  // ============================================================
+  console.log('\n[teste] simulando MORADOR no condo A (cobertura migration 0003)...')
+
+  // Cria mais 1 user fake (morador) e linka como pessoa em condo A
+  const moradorUserId = randomUUID()
+  const moradorPessoaId = randomUUID()
+  const moradorEmail = `teste-isolacao-morador-${Date.now()}@onway.local`
+  await client.query('begin')
+  await client.query(
+    `insert into auth.users
+       (id, instance_id, aud, role, email, encrypted_password,
+        email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
+     values
+       ($1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+        $2, '', now(), now(), now(), '{}'::jsonb, '{}'::jsonb)`,
+    [moradorUserId, moradorEmail],
+  )
+  await client.query(
+    `insert into public.perfis (id, condominio_id, role, nome_exibicao)
+     values ($1, $2, 'morador', 'Morador X')`,
+    [moradorUserId, condoA_id],
+  )
+  await client.query(
+    `insert into public.pessoas (id, condominio_id, nome, user_id)
+     values ($1, $2, 'Pessoa do Morador X', $3)`,
+    [moradorPessoaId, condoA_id, moradorUserId],
+  )
+  // Pega o id da pessoa "Morador A1" (criada no setup) — esse é DE OUTRA pessoa
+  const outraPessoa = await client.query(
+    `select id from public.pessoas where condominio_id=$1 and user_id is null limit 1`,
+    [condoA_id],
+  )
+  const outraPessoaId = outraPessoa.rows[0].id
+  await client.query('commit')
+
+  // Agora simula o morador
+  await client.query('begin')
+  await client.query(`set local role authenticated`)
+  await client.query(`select set_config('request.jwt.claims', $1, true)`, [jwtClaims(moradorUserId)])
+
+  // SELECT: morador só vê o próprio cadastro
+  const pessoasMorador = await client.query('select id, nome from public.pessoas')
+  assert(
+    'morador vê apenas a própria pessoa (1 row)',
+    pessoasMorador.rows.length === 1 && pessoasMorador.rows[0].id === moradorPessoaId,
+    `${pessoasMorador.rows.length} pessoa(s): ${pessoasMorador.rows.map((r) => r.nome).join(', ')}`,
+  )
+
+  // UPDATE no próprio: deve passar
+  try {
+    const r = await client.query(
+      `update public.pessoas set nome=$1 where id=$2 returning id`,
+      ['Morador X (editado)', moradorPessoaId],
+    )
+    assert('morador PODE atualizar a própria pessoa', r.rowCount === 1, `${r.rowCount} row(s) afetadas`)
+  } catch (e) {
+    assert('morador PODE atualizar a própria pessoa', false, `bloqueou: ${e.message.split('\n')[0]}`)
+  }
+
+  // UPDATE em outra pessoa: NÃO pode (RLS deve filtrar — 0 rows afetadas)
+  const updOutra = await client.query(
+    `update public.pessoas set nome=$1 where id=$2 returning id`,
+    ['INVASOR', outraPessoaId],
+  )
+  assert(
+    'morador NÃO pode atualizar pessoa alheia',
+    updOutra.rowCount === 0,
+    `${updOutra.rowCount} row(s) afetadas (esperado 0)`,
+  )
+
+  // INSERT de nova pessoa: NÃO pode (0003 restringe)
+  try {
+    await client.query(
+      `insert into public.pessoas (condominio_id, nome) values ($1, 'Nova Invasor')`,
+      [condoA_id],
+    )
+    assert('morador NÃO pode inserir nova pessoa', false, 'INSERT passou (não deveria)')
+  } catch (e) {
+    assert(
+      'morador NÃO pode inserir nova pessoa',
+      e.message.includes('violates row-level security') || e.message.includes('new row violates'),
+      `bloqueado: "${e.message.split('\n')[0]}"`,
+    )
+  }
+  await client.query('rollback')
+
+  // ============================================================
+  // 4) Ocorrências (0004) — isolamento básico
+  // ============================================================
+  console.log('\n[teste] simulando síndico A inserindo ocorrência (cobertura 0004)...')
+  await client.query('begin')
+  await client.query(`set local role authenticated`)
+  await client.query(`select set_config('request.jwt.claims', $1, true)`, [jwtClaims(userA_id)])
+
+  // INSERT ocorrência válida
+  try {
+    await client.query(
+      `insert into public.ocorrencias (condominio_id, descricao, reportado_por)
+       values ($1, 'Lixo na garagem', $2)`,
+      [condoA_id, userA_id],
+    )
+    assert('síndico A PODE inserir ocorrência no próprio condo', true)
+  } catch (e) {
+    assert('síndico A PODE inserir ocorrência no próprio condo', false, e.message.split('\n')[0])
+  }
+
+  // SELECT antes do INSERT inválido (pra não pegar transação abortada)
+  const ocorrA = await client.query('select condominio_id from public.ocorrencias')
+  assert(
+    'síndico A só vê ocorrências do próprio condo',
+    ocorrA.rows.length > 0 && ocorrA.rows.every((r) => r.condominio_id === condoA_id),
+    `${ocorrA.rows.length} ocorrência(s), todas do condo A: ${ocorrA.rows.every((r) => r.condominio_id === condoA_id)}`,
+  )
+
+  // Ocorrência em condo alheio: bloqueada (usa SAVEPOINT pra não abortar a tx)
+  await client.query('savepoint sp_invalid_ocorr')
+  try {
+    await client.query(
+      `insert into public.ocorrencias (condominio_id, descricao, reportado_por)
+       values ($1, 'Tentativa de invasão', $2)`,
+      [condoB_id, userA_id],
+    )
+    assert('síndico A NÃO pode inserir ocorrência em condo B', false, 'INSERT passou')
+    await client.query('release savepoint sp_invalid_ocorr')
+  } catch (e) {
+    await client.query('rollback to savepoint sp_invalid_ocorr')
+    assert(
+      'síndico A NÃO pode inserir ocorrência em condo B',
+      e.message.includes('violates row-level security') || e.message.includes('new row violates'),
+      `bloqueado: "${e.message.split('\n')[0]}"`,
+    )
+  }
+  await client.query('rollback')
 } catch (e) {
   console.error('\n[erro fatal]', e.message)
   try { await client.query('rollback') } catch {}
