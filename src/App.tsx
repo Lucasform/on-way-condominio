@@ -30,6 +30,8 @@ import EncomendaNova from './pages/EncomendaNova'
 import EncomendaDetalhe from './pages/EncomendaDetalhe'
 import Mural from './pages/Mural'
 import MuralNova from './pages/MuralNova'
+import Calendario from './pages/Calendario'
+import CalendarioForm from './pages/CalendarioForm'
 
 export default function App() {
   return (
@@ -291,6 +293,30 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
                   <MuralNova />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/calendario"
+              element={
+                <ProtectedRoute>
+                  <Calendario />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/calendario/novo"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <CalendarioForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/calendario/:id"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <CalendarioForm />
                 </ProtectedRoute>
               }
             />
