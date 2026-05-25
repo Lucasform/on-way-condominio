@@ -11,6 +11,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
   admin_onway: [
     ...COMMON_TOP,
     { to: '/condominios', label: 'Condomínios' },
+    { to: '/ocorrencias', label: 'Ocorrências' },
     { to: '/planos', label: 'Planos' },
   ],
   administradora: [
@@ -19,6 +20,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     { to: '/pessoas', label: 'Pessoas' },
     { to: '/veiculos', label: 'Veículos' },
     { to: '/pets', label: 'Pets' },
+    { to: '/ocorrencias', label: 'Ocorrências' },
   ],
   sindico: [
     ...COMMON_TOP,
@@ -26,6 +28,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     { to: '/pessoas', label: 'Pessoas' },
     { to: '/veiculos', label: 'Veículos' },
     { to: '/pets', label: 'Pets' },
+    { to: '/ocorrencias', label: 'Ocorrências' },
   ],
   portaria: [
     ...COMMON_TOP,
@@ -36,6 +39,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
   morador: [
     ...COMMON_TOP,
     { to: '/meu-perfil', label: 'Meu perfil' },
+    { to: '/ocorrencias', label: 'Ocorrências' },
     { to: '/minhas-multas', label: 'Multas' },
   ],
 }

@@ -15,6 +15,8 @@ import Veiculos from './pages/Veiculos'
 import VeiculoForm from './pages/VeiculoForm'
 import Pets from './pages/Pets'
 import PetForm from './pages/PetForm'
+import Ocorrencias from './pages/Ocorrencias'
+import OcorrenciaNova from './pages/OcorrenciaNova'
 
 export default function App() {
   return (
@@ -148,6 +150,22 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
                   <PetForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ocorrencias"
+              element={
+                <ProtectedRoute>
+                  <Ocorrencias />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ocorrencias/novo"
+              element={
+                <ProtectedRoute>
+                  <OcorrenciaNova />
                 </ProtectedRoute>
               }
             />
