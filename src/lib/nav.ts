@@ -1,0 +1,56 @@
+import type { Role } from '../types/database'
+
+export interface MenuItem {
+  to: string
+  label: string
+}
+
+const COMMON_TOP: MenuItem[] = [{ to: '/', label: 'Início' }]
+
+const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
+  admin_onway: [
+    ...COMMON_TOP,
+    { to: '/condominios', label: 'Condomínios' },
+    { to: '/planos', label: 'Planos' },
+  ],
+  administradora: [
+    ...COMMON_TOP,
+    { to: '/unidades', label: 'Unidades' },
+    { to: '/pessoas', label: 'Pessoas' },
+    { to: '/veiculos', label: 'Veículos' },
+    { to: '/pets', label: 'Pets' },
+  ],
+  sindico: [
+    ...COMMON_TOP,
+    { to: '/unidades', label: 'Unidades' },
+    { to: '/pessoas', label: 'Pessoas' },
+    { to: '/veiculos', label: 'Veículos' },
+    { to: '/pets', label: 'Pets' },
+  ],
+  portaria: [
+    ...COMMON_TOP,
+    { to: '/encomendas', label: 'Encomendas' },
+    { to: '/ocorrencias', label: 'Ocorrências' },
+  ],
+  ronda: [...COMMON_TOP, { to: '/ocorrencias', label: 'Ocorrências' }],
+  morador: [
+    ...COMMON_TOP,
+    { to: '/meu-perfil', label: 'Meu perfil' },
+    { to: '/minhas-multas', label: 'Multas' },
+  ],
+}
+
+export function menuFor(role: Role): MenuItem[] {
+  return MENU_BY_ROLE[role] ?? COMMON_TOP
+}
+
+export function roleLabel(role: Role): string {
+  return {
+    admin_onway: 'Administrador OnWay',
+    administradora: 'Administradora',
+    sindico: 'Síndico',
+    portaria: 'Portaria',
+    ronda: 'Ronda',
+    morador: 'Morador',
+  }[role]
+}
