@@ -7,6 +7,10 @@ import Login from './pages/Login'
 import MeuPerfil from './pages/MeuPerfil'
 import Condominios from './pages/Condominios'
 import CondominioForm from './pages/CondominioForm'
+import Unidades from './pages/Unidades'
+import UnidadeForm from './pages/UnidadeForm'
+import Pessoas from './pages/Pessoas'
+import PessoaForm from './pages/PessoaForm'
 
 export default function App() {
   return (
@@ -44,6 +48,54 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin_onway']}>
                   <CondominioForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/unidades"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <Unidades />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/unidades/novo"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <UnidadeForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/unidades/:id"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <UnidadeForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pessoas"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <Pessoas />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pessoas/novo"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <PessoaForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pessoas/:id"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <PessoaForm />
                 </ProtectedRoute>
               }
             />

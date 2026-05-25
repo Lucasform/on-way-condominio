@@ -1,0 +1,167 @@
+import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { listPessoas, setPessoaAtivo } from '../lib/pessoas'
+import { listCondominios } from '../lib/condominios'
+import { listUnidades } from '../lib/unidades'
+import type { Pessoa } from '../types/pessoa'
+import type { Condominio } from '../types/condominio'
+import type { Unidade } from '../types/unidade'
+import { useAuth } from '../components/AuthProvider'
+import PageHeader from '../components/ui/PageHeader'
+import Button from '../components/ui/Button'
+import { Select } from '../components/ui/Input'
+import DataTable, { type Column } from '../components/ui/DataTable'
+
+export default function Pessoas() {
+  const { perfil } = useAuth()
+  const navigate = useNavigate()
+  const isAdmin = perfil?.role === 'admin_onway'
+
+  const [condos, setCondos] = useState<Condominio[]>([])
+  const [unidades, setUnidades] = useState<Unidade[]>([])
+  const [scopeId, setScopeId] = useState<string | null>(null)
+  const [rows, setRows] = useState<Pessoa[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showInactive, setShowInactive] = useState(false)
+
+  useEffect(() => {
+    listCondominios()
+      .then((cs) => {
+        setCondos(cs)
+        if (isAdmin && cs.length && !scopeId) setScopeId(cs[0].id)
+      })
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin])
+
+  // Carrega unidades pra renderizar nomes
+  useEffect(() => {
+    listUnidades()
+      .then(setUnidades)
+      .catch(() => {})
+  }, [])
+
+  async function reload() {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await listPessoas({
+        condominio_id: isAdmin && scopeId ? scopeId : undefined,
+        ativo: showInactive ? undefined : true,
+      })
+      setRows(data)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao carregar.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (isAdmin && !scopeId) return
+    reload()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scopeId, showInactive])
+
+  async function handleToggleAtivo(row: Pessoa) {
+    const novoEstado = !row.ativo
+    if (!window.confirm(`${novoEstado ? 'Reativar' : 'Desativar'} "${row.nome}"?`)) return
+    try {
+      await setPessoaAtivo(row.id, novoEstado)
+      await reload()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro.')
+    }
+  }
+
+  const unidadeLabel = (uid: string | null) => {
+    if (!uid) return '—'
+    const u = unidades.find((x) => x.id === uid)
+    if (!u) return '—'
+    return u.bloco ? `${u.bloco}-${u.numero}` : u.numero
+  }
+
+  const columns: Column<Pessoa>[] = [
+    { key: 'nome', header: 'Nome', render: (r) => <span className="font-medium text-slate-100">{r.nome}</span> },
+    { key: 'unidade', header: 'Unidade', render: (r) => unidadeLabel(r.unidade_id) },
+    { key: 'vinculo', header: 'Vínculo', render: (r) => <span className="capitalize text-slate-300">{r.tipo_vinculo}</span> },
+    { key: 'email', header: 'E-mail', render: (r) => r.email ?? '—' },
+    { key: 'telefone', header: 'Telefone', render: (r) => r.telefone ? formatPhone(r.telefone) : '—' },
+    {
+      key: 'ativo',
+      header: 'Status',
+      render: (r) =>
+        r.ativo ? (
+          <span className="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">Ativo</span>
+        ) : (
+          <span className="px-2 py-0.5 rounded text-xs bg-slate-700/40 text-slate-400">Inativo</span>
+        ),
+    },
+  ]
+
+  return (
+    <div className="px-8 py-10 max-w-6xl">
+      <PageHeader
+        title="Pessoas"
+        subtitle="Moradores, dependentes, inquilinos e funcionários."
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setShowInactive((v) => !v)}>
+              {showInactive ? 'Ocultar inativos' : 'Mostrar inativos'}
+            </Button>
+            <Link to="/pessoas/novo">
+              <Button>+ Nova pessoa</Button>
+            </Link>
+          </>
+        }
+      />
+
+      {isAdmin && condos.length > 0 && (
+        <div className="mb-4 max-w-xs">
+          <label className="block text-xs font-medium text-slate-400 mb-1">Filtrar por condomínio</label>
+          <Select value={scopeId ?? ''} onChange={(e) => setScopeId(e.target.value)}>
+            {condos.map((c) => (
+              <option key={c.id} value={c.id}>{c.nome}</option>
+            ))}
+          </Select>
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
+          {error}
+        </div>
+      )}
+
+      <DataTable
+        columns={columns}
+        rows={rows}
+        rowKey={(r) => r.id}
+        loading={loading}
+        onRowClick={(r) => navigate(`/pessoas/${r.id}`)}
+        emptyMessage="Nenhuma pessoa cadastrada."
+        actions={(r) => (
+          <div className="flex gap-1 justify-end">
+            <Link to={`/pessoas/${r.id}`}>
+              <Button variant="ghost">Editar</Button>
+            </Link>
+            <Button variant={r.ativo ? 'danger' : 'secondary'} onClick={() => handleToggleAtivo(r)}>
+              {r.ativo ? 'Desativar' : 'Reativar'}
+            </Button>
+          </div>
+        )}
+      />
+    </div>
+  )
+}
+
+function formatPhone(digits: string): string {
+  if (digits.length === 11) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+  }
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
+  }
+  return digits
+}
