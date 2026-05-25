@@ -1,0 +1,90 @@
+import type { ReactNode } from 'react'
+
+export interface Column<T> {
+  key: string
+  header: string
+  render?: (row: T) => ReactNode
+  className?: string
+}
+
+interface Props<T> {
+  columns: Column<T>[]
+  rows: T[]
+  rowKey: (row: T) => string
+  onRowClick?: (row: T) => void
+  actions?: (row: T) => ReactNode
+  emptyMessage?: string
+  loading?: boolean
+}
+
+export default function DataTable<T>({
+  columns,
+  rows,
+  rowKey,
+  onRowClick,
+  actions,
+  emptyMessage = 'Nada encontrado.',
+  loading = false,
+}: Props<T>) {
+  if (loading) {
+    return (
+      <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-400 text-sm">
+        Carregando...
+      </div>
+    )
+  }
+
+  if (rows.length === 0) {
+    return (
+      <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
+        {emptyMessage}
+      </div>
+    )
+  }
+
+  return (
+    <div className="rounded-lg border border-slate-800 overflow-hidden">
+      <table className="w-full text-sm">
+        <thead className="bg-slate-900/60 border-b border-slate-800">
+          <tr>
+            {columns.map((c) => (
+              <th
+                key={c.key}
+                className={`text-left px-4 py-3 font-medium text-slate-300 text-xs uppercase tracking-wide ${c.className ?? ''}`}
+              >
+                {c.header}
+              </th>
+            ))}
+            {actions && <th className="w-1 px-4 py-3" />}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr
+              key={rowKey(row)}
+              className={`border-t border-slate-800/60 ${onRowClick ? 'cursor-pointer hover:bg-slate-800/40' : ''}`}
+              onClick={() => onRowClick?.(row)}
+            >
+              {columns.map((c) => (
+                <td
+                  key={c.key}
+                  className={`px-4 py-3 text-slate-200 ${c.className ?? ''}`}
+                >
+                  {c.render ? c.render(row) : (row as Record<string, ReactNode>)[c.key]}
+                </td>
+              ))}
+              {actions && (
+                <td
+                  className="px-4 py-3 text-right"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {actions(row)}
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
