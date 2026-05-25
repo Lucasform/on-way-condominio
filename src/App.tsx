@@ -19,6 +19,9 @@ import Ocorrencias from './pages/Ocorrencias'
 import OcorrenciaNova from './pages/OcorrenciaNova'
 import OcorrenciaDetalhe from './pages/OcorrenciaDetalhe'
 import MultaNova from './pages/MultaNova'
+import Multas from './pages/Multas'
+import MultaDetalhe from './pages/MultaDetalhe'
+import UnidadeHistorico from './pages/UnidadeHistorico'
 
 export default function App() {
   return (
@@ -184,6 +187,30 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
                   <MultaNova />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/multas"
+              element={
+                <ProtectedRoute>
+                  <Multas />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/multas/:id"
+              element={
+                <ProtectedRoute>
+                  <MultaDetalhe />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/unidades/:id/historico"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <UnidadeHistorico />
                 </ProtectedRoute>
               }
             />

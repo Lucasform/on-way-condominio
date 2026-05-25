@@ -83,3 +83,44 @@ export async function createMultaFromOcorrencia(
   }
   return multa
 }
+
+// ============================================================
+// Máquina de status
+// ============================================================
+// Transições permitidas a partir de cada status. Os check constraints
+// da tabela (multa_paga_tem_data, multa_aplicada_tem_data) garantem
+// que os updates preencham as datas corretas — fazemos isso aqui.
+
+export const MULTA_STATUS_TRANSITIONS: Record<StatusMulta, StatusMulta[]> = {
+  em_analise: ['aplicada', 'cancelada', 'arquivada'],
+  aplicada: ['paga', 'contestada', 'cancelada'],
+  contestada: ['aplicada', 'cancelada'],
+  paga: [], // terminal
+  cancelada: [], // terminal
+  arquivada: ['em_analise'],
+}
+
+export const MULTA_STATUS_LABEL: Record<StatusMulta, string> = {
+  em_analise: 'Em análise',
+  aplicada: 'Aplicada',
+  paga: 'Paga',
+  contestada: 'Contestada',
+  cancelada: 'Cancelada',
+  arquivada: 'Arquivada',
+}
+
+export async function changeMultaStatus(id: string, newStatus: StatusMulta): Promise<void> {
+  const patch: Record<string, unknown> = { status: newStatus }
+  const today = new Date().toISOString().slice(0, 10)
+  if (newStatus === 'aplicada') {
+    patch.data_aplicacao = today
+  }
+  if (newStatus === 'paga') {
+    patch.data_pagamento = today
+    // se ainda não tiver data_aplicacao, preenche também (não pode ser null se status='paga')
+    const cur = await getMulta(id)
+    if (cur && !cur.data_aplicacao) patch.data_aplicacao = today
+  }
+  const { error } = await supabase.from('multas').update(patch).eq('id', id)
+  if (error) throw error
+}

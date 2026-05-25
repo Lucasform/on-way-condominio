@@ -144,6 +144,9 @@ export default function Unidades() {
         emptyMessage="Nenhuma unidade cadastrada."
         actions={(r) => (
           <div className="flex gap-1 justify-end">
+            <Link to={`/unidades/${r.id}/historico`}>
+              <Button variant="ghost">Histórico</Button>
+            </Link>
             <Link to={`/unidades/${r.id}`}>
               <Button variant="ghost">Editar</Button>
             </Link>
