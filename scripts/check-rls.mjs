@@ -23,7 +23,6 @@ const r = await client.query(`
     join pg_namespace n on n.oid = c.relnamespace
    where n.nspname = 'public'
      and c.relkind = 'r'
-     and c.relname in ('condominios','unidades','pessoas','veiculos','pets','perfis')
    order by c.relname;
 `)
 console.table(r.rows)
