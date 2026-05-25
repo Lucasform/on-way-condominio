@@ -23,6 +23,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     { to: '/pets', label: 'Pets' },
     { to: '/ocorrencias', label: 'Ocorrências' },
     { to: '/multas', label: 'Multas' },
+    { to: '/regimento', label: 'Regimento' },
   ],
   sindico: [
     ...COMMON_TOP,
@@ -32,6 +33,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     { to: '/pets', label: 'Pets' },
     { to: '/ocorrencias', label: 'Ocorrências' },
     { to: '/multas', label: 'Multas' },
+    { to: '/regimento', label: 'Regimento' },
   ],
   portaria: [
     ...COMMON_TOP,

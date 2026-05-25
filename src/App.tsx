@@ -22,6 +22,8 @@ import MultaNova from './pages/MultaNova'
 import Multas from './pages/Multas'
 import MultaDetalhe from './pages/MultaDetalhe'
 import UnidadeHistorico from './pages/UnidadeHistorico'
+import Regimento from './pages/Regimento'
+import RegimentoForm from './pages/RegimentoForm'
 
 export default function App() {
   return (
@@ -211,6 +213,30 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
                   <UnidadeHistorico />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/regimento"
+              element={
+                <ProtectedRoute>
+                  <Regimento />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/regimento/novo"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <RegimentoForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/regimento/:id"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <RegimentoForm />
                 </ProtectedRoute>
               }
             />
