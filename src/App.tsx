@@ -18,6 +18,7 @@ import PetForm from './pages/PetForm'
 import Ocorrencias from './pages/Ocorrencias'
 import OcorrenciaNova from './pages/OcorrenciaNova'
 import OcorrenciaDetalhe from './pages/OcorrenciaDetalhe'
+import MultaNova from './pages/MultaNova'
 
 export default function App() {
   return (
@@ -175,6 +176,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <OcorrenciaDetalhe />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/multas/nova"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <MultaNova />
                 </ProtectedRoute>
               }
             />

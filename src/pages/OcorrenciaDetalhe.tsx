@@ -8,10 +8,12 @@ import {
 import { getUnidade } from '../lib/unidades'
 import { getPessoa } from '../lib/pessoas'
 import { getCondominio } from '../lib/condominios'
+import { getMultaByOcorrencia } from '../lib/multas'
 import type { Ocorrencia, StatusOcorrencia } from '../types/ocorrencia'
 import type { Unidade } from '../types/unidade'
 import type { Pessoa } from '../types/pessoa'
 import type { Condominio } from '../types/condominio'
+import type { Multa } from '../types/multa'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
@@ -53,6 +55,7 @@ export default function OcorrenciaDetalhe() {
   const [pessoa, setPessoa] = useState<Pessoa | null>(null)
   const [condominio, setCondominio] = useState<Condominio | null>(null)
   const [fotoUrl, setFotoUrl] = useState<string | null>(null)
+  const [multaVinculada, setMultaVinculada] = useState<Multa | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [changing, setChanging] = useState(false)
@@ -71,16 +74,18 @@ export default function OcorrenciaDetalhe() {
       setOcorrencia(o)
 
       // Carrega relacionados em paralelo
-      const [un, pe, co, fu] = await Promise.all([
+      const [un, pe, co, fu, mu] = await Promise.all([
         o.unidade_id ? getUnidade(o.unidade_id) : Promise.resolve(null),
         o.pessoa_envolvida_id ? getPessoa(o.pessoa_envolvida_id) : Promise.resolve(null),
         getCondominio(o.condominio_id),
         o.foto_url ? getOcorrenciaFotoSignedUrl(o.foto_url, 3600) : Promise.resolve(null),
+        o.status === 'virou_multa' ? getMultaByOcorrencia(o.id) : Promise.resolve(null),
       ])
       setUnidade(un)
       setPessoa(pe)
       setCondominio(co)
       setFotoUrl(fu)
+      setMultaVinculada(mu)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar.')
     } finally {
@@ -130,6 +135,7 @@ export default function OcorrenciaDetalhe() {
   }
 
   const canChangeStatus = perfil && (CAN_CHANGE_STATUS as readonly string[]).includes(perfil.role)
+  const canGenerateMulta = canChangeStatus && ['aberta', 'em_analise'].includes(ocorrencia.status)
   const transitions = ALLOWED_TRANSITIONS[ocorrencia.status]
 
   return (
@@ -205,6 +211,36 @@ export default function OcorrenciaDetalhe() {
         )}
       </div>
 
+      {canGenerateMulta && (
+        <div className="mt-6 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-5">
+          <div className="text-sm font-medium text-emerald-200 mb-1">Gerar multa</div>
+          <div className="text-xs text-slate-400 mb-3">
+            A multa será criada em status "em análise" e a ocorrência passa pra "virou multa".
+          </div>
+          <Link to={`/multas/nova?ocorrencia=${ocorrencia.id}`}>
+            <Button>Gerar multa a partir desta ocorrência →</Button>
+          </Link>
+        </div>
+      )}
+
+      {ocorrencia.status === 'virou_multa' && multaVinculada && (
+        <div className="mt-6 rounded-lg border border-red-500/30 bg-red-500/5 p-5">
+          <div className="text-sm font-medium text-red-200 mb-1">Multa gerada</div>
+          <dl className="grid grid-cols-[120px_1fr] gap-y-1 text-sm">
+            <dt className="text-slate-500">Valor</dt>
+            <dd className="text-slate-100 font-medium">R$ {multaVinculada.valor.toFixed(2).replace('.', ',')}</dd>
+            <dt className="text-slate-500">Status</dt>
+            <dd className="text-slate-200 capitalize">{multaVinculada.status.replace('_', ' ')}</dd>
+            {multaVinculada.artigo_regimento && (
+              <>
+                <dt className="text-slate-500">Artigo</dt>
+                <dd className="text-slate-200">{multaVinculada.artigo_regimento}</dd>
+              </>
+            )}
+          </dl>
+        </div>
+      )}
+
       {canChangeStatus && transitions.length > 0 && (
         <div className="mt-6 rounded-lg border border-slate-800 bg-slate-900/40 p-5">
           <div className="text-sm font-medium text-slate-300 mb-3">Mudar status para:</div>
@@ -220,13 +256,6 @@ export default function OcorrenciaDetalhe() {
               </Button>
             ))}
           </div>
-        </div>
-      )}
-
-      {canChangeStatus && transitions.length === 0 && (
-        <div className="mt-6 text-xs text-slate-500">
-          Esta ocorrência está em status terminal. {' '}
-          {ocorrencia.status === 'virou_multa' && 'A multa gerada tem fluxo próprio (Fase 2 etapa 33+).'}
         </div>
       )}
 
