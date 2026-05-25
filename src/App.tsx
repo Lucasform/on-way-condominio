@@ -25,6 +25,9 @@ import UnidadeHistorico from './pages/UnidadeHistorico'
 import Regimento from './pages/Regimento'
 import RegimentoForm from './pages/RegimentoForm'
 import Painel from './pages/Painel'
+import Encomendas from './pages/Encomendas'
+import EncomendaNova from './pages/EncomendaNova'
+import EncomendaDetalhe from './pages/EncomendaDetalhe'
 
 export default function App() {
   return (
@@ -246,6 +249,30 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
                   <Painel />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/encomendas"
+              element={
+                <ProtectedRoute>
+                  <Encomendas />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/encomendas/novo"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'portaria']}>
+                  <EncomendaNova />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/encomendas/:id"
+              element={
+                <ProtectedRoute>
+                  <EncomendaDetalhe />
                 </ProtectedRoute>
               }
             />
