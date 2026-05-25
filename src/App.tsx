@@ -24,6 +24,7 @@ import MultaDetalhe from './pages/MultaDetalhe'
 import UnidadeHistorico from './pages/UnidadeHistorico'
 import Regimento from './pages/Regimento'
 import RegimentoForm from './pages/RegimentoForm'
+import Painel from './pages/Painel'
 
 export default function App() {
   return (
@@ -237,6 +238,14 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
                   <RegimentoForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/painel"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <Painel />
                 </ProtectedRoute>
               }
             />
