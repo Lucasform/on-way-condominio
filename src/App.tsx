@@ -17,6 +17,7 @@ import Pets from './pages/Pets'
 import PetForm from './pages/PetForm'
 import Ocorrencias from './pages/Ocorrencias'
 import OcorrenciaNova from './pages/OcorrenciaNova'
+import OcorrenciaDetalhe from './pages/OcorrenciaDetalhe'
 
 export default function App() {
   return (
@@ -166,6 +167,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <OcorrenciaNova />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ocorrencias/:id"
+              element={
+                <ProtectedRoute>
+                  <OcorrenciaDetalhe />
                 </ProtectedRoute>
               }
             />
