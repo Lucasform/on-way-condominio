@@ -312,6 +312,147 @@ try {
     )
   }
   await client.query('rollback')
+
+  // ============================================================
+  // 5) Fluxo E2E Fase 2 (etapa 35): ocorrência → multa → status
+  // ============================================================
+  console.log('\n[teste] fluxo E2E ocorrência → multa → status (etapa 35)...')
+  await client.query('begin')
+  await client.query(`set local role authenticated`)
+  await client.query(`select set_config('request.jwt.claims', $1, true)`, [jwtClaims(userA_id)])
+
+  // Pega uma unidade do condo A pra usar na multa
+  const unidA = await client.query(
+    `select id from public.unidades where condominio_id=$1 limit 1`,
+    [condoA_id],
+  )
+  const unidadeAId = unidA.rows[0].id
+
+  // 5.1 — Cria ocorrência em 'aberta'
+  const ocorrIns = await client.query(
+    `insert into public.ocorrencias (condominio_id, unidade_id, descricao, reportado_por)
+     values ($1, $2, 'Som alto após 22h', $3) returning id, status`,
+    [condoA_id, unidadeAId, userA_id],
+  )
+  const ocorrId = ocorrIns.rows[0].id
+  assert(
+    'ocorrência criada em status "aberta"',
+    ocorrIns.rows[0].status === 'aberta',
+    `status=${ocorrIns.rows[0].status}`,
+  )
+
+  // 5.2 — Gera multa a partir da ocorrência
+  const multaIns = await client.query(
+    `insert into public.multas
+       (condominio_id, unidade_id, ocorrencia_id, aplicada_por,
+        valor, descricao, artigo_regimento)
+     values ($1, $2, $3, $4, 150.00, 'Som alto após 22h', 'Art. 18, §2º')
+     returning id, status, valor, data_aplicacao`,
+    [condoA_id, unidadeAId, ocorrId, userA_id],
+  )
+  const multaId = multaIns.rows[0].id
+  assert(
+    'multa criada em status "em_analise" com data_aplicacao null',
+    multaIns.rows[0].status === 'em_analise' &&
+      Number(multaIns.rows[0].valor) === 150 &&
+      multaIns.rows[0].data_aplicacao === null,
+    `status=${multaIns.rows[0].status}, valor=${multaIns.rows[0].valor}, data_aplicacao=${multaIns.rows[0].data_aplicacao}`,
+  )
+
+  // 5.3 — Atualiza ocorrência pra "virou_multa" (o app faz isso após criar a multa)
+  await client.query(
+    `update public.ocorrencias set status='virou_multa' where id=$1`,
+    [ocorrId],
+  )
+  const ocorrCheck = await client.query(`select status from public.ocorrencias where id=$1`, [ocorrId])
+  assert(
+    'ocorrência passou pra "virou_multa"',
+    ocorrCheck.rows[0].status === 'virou_multa',
+    `status=${ocorrCheck.rows[0].status}`,
+  )
+
+  // 5.4 — Aplica a multa (precisa preencher data_aplicacao pra passar no check constraint)
+  await client.query(
+    `update public.multas set status='aplicada', data_aplicacao=current_date where id=$1`,
+    [multaId],
+  )
+  const multaAplicada = await client.query(
+    `select status, data_aplicacao from public.multas where id=$1`,
+    [multaId],
+  )
+  assert(
+    'multa aplicada com data_aplicacao preenchida',
+    multaAplicada.rows[0].status === 'aplicada' && multaAplicada.rows[0].data_aplicacao !== null,
+    `status=${multaAplicada.rows[0].status}, data=${multaAplicada.rows[0].data_aplicacao}`,
+  )
+
+  // 5.5 — Tenta marcar paga SEM data_pagamento (check constraint deve barrar)
+  await client.query('savepoint sp_pay_no_date')
+  try {
+    await client.query(
+      `update public.multas set status='paga' where id=$1`,
+      [multaId],
+    )
+    assert('check constraint barra paga sem data_pagamento', false, 'UPDATE passou (não deveria)')
+    await client.query('release savepoint sp_pay_no_date')
+  } catch (e) {
+    await client.query('rollback to savepoint sp_pay_no_date')
+    assert(
+      'check constraint barra paga sem data_pagamento',
+      e.message.includes('multa_paga_tem_data') || e.message.includes('check constraint'),
+      `barrado: "${e.message.split('\n')[0]}"`,
+    )
+  }
+
+  // 5.6 — Marca paga COM data_pagamento (deve funcionar)
+  await client.query(
+    `update public.multas set status='paga', data_pagamento=current_date where id=$1`,
+    [multaId],
+  )
+  const multaPaga = await client.query(
+    `select status, data_pagamento from public.multas where id=$1`,
+    [multaId],
+  )
+  assert(
+    'multa marcada como paga com data_pagamento',
+    multaPaga.rows[0].status === 'paga' && multaPaga.rows[0].data_pagamento !== null,
+    `status=${multaPaga.rows[0].status}, data=${multaPaga.rows[0].data_pagamento}`,
+  )
+
+  // 5.7 — Síndico A vê a multa criada
+  const multasA = await client.query(`select id, status from public.multas where id=$1`, [multaId])
+  assert(
+    'síndico A vê a própria multa',
+    multasA.rows.length === 1,
+    `${multasA.rows.length} row(s)`,
+  )
+
+  await client.query('rollback')
+
+  // 5.8 — Síndico B NÃO vê a multa do condo A (isolamento)
+  // (Como rollei o anterior, a multa não persistiu. Vou criar uma persistida agora pra testar.)
+  await client.query('begin')
+  await client.query(`set local role authenticated`)
+  await client.query(`select set_config('request.jwt.claims', $1, true)`, [jwtClaims(userA_id)])
+  const persistMulta = await client.query(
+    `insert into public.multas
+       (condominio_id, unidade_id, aplicada_por, valor, descricao)
+     values ($1, $2, $3, 99.00, 'multa de teste isolamento') returning id`,
+    [condoA_id, unidadeAId, userA_id],
+  )
+  const persistMultaId = persistMulta.rows[0].id
+  await client.query('commit')
+
+  await client.query('begin')
+  await client.query(`set local role authenticated`)
+  await client.query(`select set_config('request.jwt.claims', $1, true)`, [jwtClaims(userB_id)])
+  const seeFromB = await client.query(`select id from public.multas where id=$1`, [persistMultaId])
+  assert(
+    'síndico B NÃO vê multa do condo A (RLS)',
+    seeFromB.rows.length === 0,
+    `viu ${seeFromB.rows.length} row(s)`,
+  )
+  await client.query('rollback')
 } catch (e) {
   console.error('\n[erro fatal]', e.message)
   try { await client.query('rollback') } catch {}
