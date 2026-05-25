@@ -11,6 +11,10 @@ import Unidades from './pages/Unidades'
 import UnidadeForm from './pages/UnidadeForm'
 import Pessoas from './pages/Pessoas'
 import PessoaForm from './pages/PessoaForm'
+import Veiculos from './pages/Veiculos'
+import VeiculoForm from './pages/VeiculoForm'
+import Pets from './pages/Pets'
+import PetForm from './pages/PetForm'
 
 export default function App() {
   return (
@@ -96,6 +100,54 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
                   <PessoaForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/veiculos"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <Veiculos />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/veiculos/novo"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <VeiculoForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/veiculos/:id"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <VeiculoForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pets"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <Pets />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pets/novo"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <PetForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pets/:id"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <PetForm />
                 </ProtectedRoute>
               }
             />
