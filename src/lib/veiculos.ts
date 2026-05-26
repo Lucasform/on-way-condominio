@@ -46,6 +46,11 @@ export async function setVeiculoAtivo(id: string, ativo: boolean): Promise<void>
   if (error) throw error
 }
 
+export async function deleteVeiculo(id: string): Promise<void> {
+  const { error } = await supabase.from('veiculos').delete().eq('id', id)
+  if (error) throw error
+}
+
 function normalize(input: VeiculoInput): VeiculoInput {
   return {
     condominio_id: input.condominio_id,

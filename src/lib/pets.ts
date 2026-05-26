@@ -46,6 +46,11 @@ export async function setPetAtivo(id: string, ativo: boolean): Promise<void> {
   if (error) throw error
 }
 
+export async function deletePet(id: string): Promise<void> {
+  const { error } = await supabase.from('pets').delete().eq('id', id)
+  if (error) throw error
+}
+
 function normalize(input: PetInput): PetInput {
   return {
     condominio_id: input.condominio_id,

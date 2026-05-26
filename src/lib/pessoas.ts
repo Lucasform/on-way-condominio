@@ -44,6 +44,11 @@ export async function updatePessoa(id: string, input: PessoaInput): Promise<Pess
   return data as Pessoa
 }
 
+export async function deletePessoa(id: string): Promise<void> {
+  const { error } = await supabase.from('pessoas').delete().eq('id', id)
+  if (error) throw error
+}
+
 export async function setPessoaAtivo(id: string, ativo: boolean): Promise<{ ok: boolean; auth_synced?: boolean; error?: string }> {
   const { data, error } = await supabase.functions.invoke('set-pessoa-ativo', {
     body: { pessoa_id: id, ativo },

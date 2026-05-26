@@ -136,7 +136,7 @@ export default function Pessoas() {
   return (
     <div className="px-8 py-10 max-w-6xl mx-auto">
       <PageHeader
-        title="Pessoas"
+        title={`Pessoas (${rows.length})`}
         subtitle="Moradores, dependentes, inquilinos e funcionários."
         actions={
           <>

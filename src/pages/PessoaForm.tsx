@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { createPessoa, getPessoa, updatePessoa } from '../lib/pessoas'
+import { createPessoa, deletePessoa, getPessoa, updatePessoa } from '../lib/pessoas'
 import { listCondominios } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
 import type { PessoaInput, TipoVinculo, RelacaoUnidade } from '../types/pessoa'
@@ -9,6 +9,7 @@ import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import DeleteButton from '../components/ui/DeleteButton'
 import { Field, TextInput, Select } from '../components/ui/Input'
 import { traduzErro } from '../lib/errorMessages'
 
@@ -31,13 +32,29 @@ export default function PessoaForm() {
   const { perfil } = useAuth()
   const isNew = !id || id === 'novo'
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
+  const canDelete = !isNew && (perfil?.role === 'admin_onway' || perfil?.role === 'sindico')
 
   const [form, setForm] = useState<PessoaInput>(EMPTY)
   const [condos, setCondos] = useState<Condominio[]>([])
   const [unidades, setUnidades] = useState<Unidade[]>([])
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  async function handleDelete() {
+    if (!id) return
+    if (!window.confirm(`Excluir "${form.nome || 'essa pessoa'}" DEFINITIVAMENTE? Esta ação não pode ser desfeita.`)) return
+    setDeleting(true)
+    setError(null)
+    try {
+      await deletePessoa(id)
+      navigate('/pessoas')
+    } catch (e) {
+      setError(traduzErro(e))
+      setDeleting(false)
+    }
+  }
 
   // Carrega condomínios (admin) ou usa o do perfil
   useEffect(() => {
@@ -125,9 +142,14 @@ export default function PessoaForm() {
       <PageHeader
         title={isNew ? 'Nova pessoa' : 'Editar pessoa'}
         actions={
-          <Link to="/pessoas">
-            <Button variant="ghost">← Voltar</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            {canDelete && (
+              <DeleteButton onClick={handleDelete} disabled={deleting} />
+            )}
+            <Link to="/pessoas">
+              <Button variant="ghost">← Voltar</Button>
+            </Link>
+          </div>
         }
       />
 
@@ -243,12 +265,28 @@ export default function PessoaForm() {
           </div>
         </fieldset>
 
-        <Field label="Foto (URL)">
-          <TextInput
-            value={form.foto_url ?? ''}
-            onChange={(e) => update('foto_url', e.target.value)}
-            placeholder="https://..."
-          />
+        <Field label="Foto" hint="URL pública de uma imagem (avatar do morador).">
+          <div className="flex items-center gap-4">
+            {form.foto_url ? (
+              <img
+                src={form.foto_url}
+                alt=""
+                className="w-16 h-16 rounded-full object-cover border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
+                onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3' }}
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-400 text-xs">
+                sem foto
+              </div>
+            )}
+            <div className="flex-1">
+              <TextInput
+                value={form.foto_url ?? ''}
+                onChange={(e) => update('foto_url', e.target.value)}
+                placeholder="https://..."
+              />
+            </div>
+          </div>
         </Field>
 
         {error && (

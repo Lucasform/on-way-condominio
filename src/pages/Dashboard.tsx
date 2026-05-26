@@ -259,9 +259,6 @@ export default function Dashboard() {
             </ChartCard>
           </div>
 
-          <p className="mt-6 text-xs text-slate-600">
-            Dados em tempo real. Para visão de pipeline, use o <Link to="/painel" className="text-emerald-400 hover:underline">Painel Kanban</Link>.
-          </p>
         </>
       )}
     </div>

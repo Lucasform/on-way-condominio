@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { createPet, getPet, updatePet } from '../lib/pets'
+import { createPet, deletePet, getPet, updatePet } from '../lib/pets'
 import { listCondominios } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
 import { listPessoas } from '../lib/pessoas'
@@ -11,6 +11,7 @@ import type { Pessoa } from '../types/pessoa'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import DeleteButton from '../components/ui/DeleteButton'
 import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
 
 const EMPTY: PetInput = {
@@ -32,6 +33,7 @@ export default function PetForm() {
   const { perfil } = useAuth()
   const isNew = !id || id === 'novo'
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
+  const canDelete = !isNew && (perfil?.role === 'admin_onway' || perfil?.role === 'sindico')
 
   const [form, setForm] = useState<PetInput>(EMPTY)
   const [condos, setCondos] = useState<Condominio[]>([])
@@ -39,7 +41,21 @@ export default function PetForm() {
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  async function handleDelete() {
+    if (!id) return
+    if (!window.confirm(`Excluir o pet ${form.nome || ''} DEFINITIVAMENTE?`)) return
+    setDeleting(true)
+    try {
+      await deletePet(id)
+      navigate('/pets')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao excluir.')
+      setDeleting(false)
+    }
+  }
 
   useEffect(() => {
     if (isAdmin) {
@@ -120,9 +136,12 @@ export default function PetForm() {
       <PageHeader
         title={isNew ? 'Novo pet' : 'Editar pet'}
         actions={
-          <Link to="/pets">
-            <Button variant="ghost">← Voltar</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            {canDelete && <DeleteButton onClick={handleDelete} disabled={deleting} />}
+            <Link to="/pets">
+              <Button variant="ghost">← Voltar</Button>
+            </Link>
+          </div>
         }
       />
 

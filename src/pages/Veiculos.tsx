@@ -100,7 +100,7 @@ export default function Veiculos() {
   return (
     <div className="px-8 py-10 max-w-6xl mx-auto">
       <PageHeader
-        title="Veículos"
+        title={`Veículos (${rows.length})`}
         subtitle="Carros, motos e demais veículos das unidades."
         actions={
           <>
