@@ -17,6 +17,7 @@ import type { Multa } from '../types/multa'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import AIAnalysisPanel from '../components/AIAnalysisPanel'
 
 const STATUS_LABEL: Record<StatusOcorrencia, string> = {
   aberta: 'Aberta',
@@ -211,14 +212,20 @@ export default function OcorrenciaDetalhe() {
         )}
       </div>
 
+      <AIAnalysisPanel
+        ocorrenciaId={ocorrencia.id}
+        canAnalyse={!!canChangeStatus}
+        canGenerateMulta={!!canGenerateMulta}
+      />
+
       {canGenerateMulta && (
         <div className="mt-6 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-5">
-          <div className="text-sm font-medium text-emerald-200 mb-1">Gerar multa</div>
+          <div className="text-sm font-medium text-emerald-200 mb-1">Gerar multa manual</div>
           <div className="text-xs text-slate-400 mb-3">
-            A multa será criada em status "em análise" e a ocorrência passa pra "virou multa".
+            Pula a IA e cria a multa manualmente.
           </div>
           <Link to={`/multas/nova?ocorrencia=${ocorrencia.id}`}>
-            <Button>Gerar multa a partir desta ocorrência →</Button>
+            <Button variant="secondary">Gerar multa a partir desta ocorrência →</Button>
           </Link>
         </div>
       )}

@@ -1,53 +1,46 @@
 // supabase/functions/generate-embedding/index.ts
-// Recebe { artigo_id, text } e gera o embedding via Transformers.js (gte-small, local, gratuito).
+// Gera embedding via API NATIVA Supabase.ai.Session('gte-small') — sem dependência externa.
 // Atualiza a coluna `embedding` em regimento_artigos.
 //
-// Auth: usa service_role pra ignorar RLS no UPDATE (o controle de acesso é feito
-// pela própria policy de UPDATE em regimento_artigos do usuário que chama).
-//
-// Deploy:  supabase functions deploy generate-embedding --no-verify-jwt=false
-// Test:    curl -X POST <url>/functions/v1/generate-embedding \
-//            -H "Authorization: Bearer <ANON_KEY_DO_USER>" \
-//            -H "Content-Type: application/json" \
-//            -d '{"artigo_id":"<uuid>", "text":"..."}'
+// Body: { artigo_id: uuid, text: string }
+// Auth: requer JWT válido (service_role OU user logado com permissão).
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-// @ts-expect-error: Deno-only import via esm.sh
-import { pipeline } from 'https://esm.sh/@huggingface/transformers@3.0.2'
 import { corsHeaders, handleCors, jsonResponse } from '../_shared/cors.ts'
 
-// Carrega o modelo uma vez na inicialização da function (cold start ~3-5s)
-// @ts-expect-error: top-level await ok no Deno
-const embedder = await pipeline('feature-extraction', 'Supabase/gte-small')
+// API nativa de inferência ML do Supabase Edge Runtime.
+// gte-small = 384 dimensões, ótimo para PT-BR.
+// @ts-expect-error: Supabase.ai é injetado pelo runtime, não tem types globais
+const session = new Supabase.ai.Session('gte-small')
 
 Deno.serve(async (req: Request) => {
   const cors = handleCors(req)
   if (cors) return cors
 
   try {
-    // O JWT do usuário precisa ser válido (Supabase valida antes da function rodar
-    // se a function for deployed com verificação de JWT habilitada).
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      return jsonResponse({ error: 'Authorization header obrigatório.' }, 401)
-    }
+    const auth = req.headers.get('Authorization')
+    if (!auth) return jsonResponse({ error: 'Authorization header obrigatório.' }, 401)
 
     const { artigo_id, text } = await req.json()
     if (!artigo_id || typeof text !== 'string' || !text.trim()) {
-      return jsonResponse({ error: 'artigo_id (uuid) e text (string não vazia) são obrigatórios.' }, 400)
+      return jsonResponse(
+        { error: 'artigo_id (uuid) e text (string não vazia) são obrigatórios.' },
+        400,
+      )
     }
 
-    // Gera embedding
-    const output = await embedder(text, { pooling: 'mean', normalize: true })
-    const embedding = Array.from(output.data) as number[]
+    // Gera embedding usando a sessão Supabase.ai
+    const output = await session.run(text, { mean_pool: true, normalize: true })
+    const embedding = Array.isArray(output) ? output : Array.from(output as number[])
+
     if (embedding.length !== 384) {
-      return jsonResponse({
-        error: `Embedding com dimensão inesperada: ${embedding.length} (esperado 384).`,
-      }, 500)
+      return jsonResponse(
+        { error: `Embedding com dimensão inesperada: ${embedding.length} (esperado 384).` },
+        500,
+      )
     }
 
-    // Usa service_role para o UPDATE (ignora RLS — o acesso é controlado
-    // por quem CHAMA esta function, validado via JWT acima).
+    // Salva no banco usando service_role (ignora RLS)
     const admin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
@@ -62,7 +55,7 @@ Deno.serve(async (req: Request) => {
       .eq('id', artigo_id)
 
     if (upErr) {
-      return jsonResponse({ error: `Falha ao salvar embedding: ${upErr.message}` }, 500)
+      return jsonResponse({ error: `Falha ao salvar: ${upErr.message}` }, 500)
     }
 
     return jsonResponse({

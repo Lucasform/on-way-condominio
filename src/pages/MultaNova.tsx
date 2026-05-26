@@ -5,6 +5,7 @@ import { getOcorrencia } from '../lib/ocorrencias'
 import { getUnidade } from '../lib/unidades'
 import { getPessoa } from '../lib/pessoas'
 import { createMultaFromOcorrencia } from '../lib/multas'
+import { readIASuggestion, clearIASuggestion } from '../lib/iaAnalysis'
 import type { Ocorrencia } from '../types/ocorrencia'
 import type { Unidade } from '../types/unidade'
 import type { Pessoa } from '../types/pessoa'
@@ -39,6 +40,7 @@ export default function MultaNova() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [usouIA, setUsouIA] = useState(false)
 
   useEffect(() => {
     if (!ocorrenciaId) {
@@ -57,8 +59,21 @@ export default function MultaNova() {
           return
         }
         setOcorrencia(o)
-        // Pré-preenche a descrição com a da ocorrência (editável)
-        setForm((f) => ({ ...f, descricao: o.descricao }))
+
+        // Tenta puxar sugestão da IA do sessionStorage (etapa 43)
+        const stashed = readIASuggestion(o.id)
+        if (stashed) {
+          setForm((f) => ({
+            ...f,
+            valor: String(stashed.valor),
+            artigo_regimento: stashed.artigo,
+            descricao: stashed.descricao,
+          }))
+          setUsouIA(true)
+          clearIASuggestion()
+        } else {
+          setForm((f) => ({ ...f, descricao: o.descricao }))
+        }
 
         const [un, pe] = await Promise.all([
           o.unidade_id ? getUnidade(o.unidade_id) : Promise.resolve(null),
@@ -148,6 +163,11 @@ export default function MultaNova() {
 
   return (
     <div className="px-8 py-10 max-w-2xl">
+      {usouIA && (
+        <div className="mb-4 rounded-md border border-sky-500/30 bg-sky-500/5 px-4 py-3 text-sm text-sky-100">
+          🤖 <strong>Pré-preenchido pela IA</strong> a partir da análise da ocorrência. Revise e ajuste se necessário antes de gerar.
+        </div>
+      )}
       <PageHeader
         title="Gerar multa"
         subtitle="A partir da ocorrência registrada."
