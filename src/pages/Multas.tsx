@@ -32,7 +32,7 @@ const STATUS_CLASS: Record<StatusMulta, string> = {
 export default function Multas() {
   const { perfil } = useAuth()
   const navigate = useNavigate()
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const isMorador = perfil?.role === 'morador'
 
   const [condos, setCondos] = useState<Condominio[]>([])

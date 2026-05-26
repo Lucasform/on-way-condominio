@@ -19,7 +19,7 @@ const STATUS_CLASS: Record<StatusConversa, string> = {
 export default function Chat() {
   const { user, perfil } = useAuth()
   const navigate = useNavigate()
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const isMorador = perfil?.role === 'morador'
   const isStaff = perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role)
 

@@ -13,7 +13,7 @@ import DataTable, { type Column } from '../components/ui/DataTable'
 export default function Unidades() {
   const { perfil } = useAuth()
   const navigate = useNavigate()
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
   const [condos, setCondos] = useState<Condominio[]>([])
   const [scopeId, setScopeId] = useState<string | null>(null)

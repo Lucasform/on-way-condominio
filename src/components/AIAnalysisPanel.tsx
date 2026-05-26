@@ -58,7 +58,7 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
           <div className="text-sm font-medium text-sky-200">🤖 Análise por IA</div>
           <div className="text-xs text-slate-400 mt-0.5">
             Claude Sonnet 4.6 lê a ocorrência + regimento e sugere se cabe multa.
-            Apenas sugestão — você decide.
+            Apenas sugestão. Você decide.
           </div>
         </div>
         {!result && (

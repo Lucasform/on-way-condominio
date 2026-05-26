@@ -108,7 +108,7 @@ export default function AppShell() {
         {emViewAs && (
           <div className="shrink-0 bg-amber-500/10 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between gap-3 text-xs">
             <span className="text-amber-700 dark:text-amber-300">
-              👁 Você está em modo "Ver como" — assumiu o condomínio <strong>{condoNome ?? '...'}</strong> como Administrador OnWay.
+              👁 Você está em modo "Ver como". Assumiu o condomínio <strong>{condoNome ?? '...'}</strong> como Administrador OnWay.
             </span>
             <button
               onClick={handleExitViewAs}

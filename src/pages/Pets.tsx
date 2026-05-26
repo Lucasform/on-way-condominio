@@ -15,7 +15,7 @@ import DataTable, { type Column } from '../components/ui/DataTable'
 export default function Pets() {
   const { perfil } = useAuth()
   const navigate = useNavigate()
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
   const [condos, setCondos] = useState<Condominio[]>([])
   const [unidades, setUnidades] = useState<Unidade[]>([])

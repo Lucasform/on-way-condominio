@@ -25,7 +25,7 @@ const EMPTY: WhatsappConfigInput = {
 
 export default function WhatsappConfig() {
   const { perfil } = useAuth()
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
   const [condos, setCondos] = useState<Condominio[]>([])
   const [scopeId, setScopeId] = useState<string>('')

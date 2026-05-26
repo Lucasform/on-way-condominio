@@ -29,7 +29,7 @@ export default function VeiculoForm() {
   const navigate = useNavigate()
   const { perfil } = useAuth()
   const isNew = !id || id === 'novo'
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
   const [form, setForm] = useState<VeiculoInput>(EMPTY)
   const [condos, setCondos] = useState<Condominio[]>([])

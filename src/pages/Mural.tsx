@@ -18,7 +18,7 @@ import { Select } from '../components/ui/Input'
 
 export default function Mural() {
   const { user, perfil } = useAuth()
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const canPost = perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role)
   const canModerate = canPost
 

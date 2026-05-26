@@ -22,7 +22,7 @@ const EMPTY: PublicacaoInput = {
 export default function MuralNova() {
   const navigate = useNavigate()
   const { perfil } = useAuth()
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
   const [form, setForm] = useState<PublicacaoInput>(EMPTY)
   const [condos, setCondos] = useState<Condominio[]>([])

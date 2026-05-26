@@ -29,7 +29,7 @@ const EMPTY: FormState = {
 export default function OcorrenciaNova() {
   const { user, perfil } = useAuth()
   const navigate = useNavigate()
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
   const [form, setForm] = useState<FormState>(EMPTY)
   const [condos, setCondos] = useState<Condominio[]>([])

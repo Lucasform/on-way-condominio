@@ -37,7 +37,7 @@ export default function Condominios() {
     const novoEstado = !row.ativo
     const msg = novoEstado
       ? `Reativar "${row.nome}"?`
-      : `Desativar "${row.nome}"? (soft delete — pode ser revertido)`
+      : `Desativar "${row.nome}"? (soft delete, pode ser revertido depois)`
     if (!window.confirm(msg)) return
     try {
       await setCondominioAtivo(row.id, novoEstado)

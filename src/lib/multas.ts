@@ -129,7 +129,7 @@ async function notifyMoradorByEmail(multa: Multa): Promise<void> {
   if (pessoa.user_id) {
     sendPush({
       user_ids: [pessoa.user_id],
-      titulo: `💰 Multa registrada — R$ ${Number(multa.valor).toFixed(2).replace('.', ',')}`,
+      titulo: `💰 Multa registrada: R$ ${Number(multa.valor).toFixed(2).replace('.', ',')}`,
       corpo: multa.descricao.slice(0, 120),
       link: `/multas/${multa.id}`,
     }).catch((e) => console.warn('[multa] push falhou:', e.message))

@@ -157,7 +157,7 @@ function RecoveryScreen({ message }: { message: string }) {
           Não conseguimos te conectar
         </h1>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-          Pode ser uma instabilidade momentânea. Tente recarregar — se persistir, faça login de novo.
+          Pode ser uma instabilidade momentânea. Tente recarregar. Se persistir, faça login de novo.
         </p>
         <div className="mt-6 flex gap-2 justify-center">
           <button

@@ -29,7 +29,7 @@ const EMPTY: EncomendaInput = {
 export default function EncomendaNova() {
   const navigate = useNavigate()
   const { user, perfil } = useAuth()
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
   const [form, setForm] = useState<EncomendaInput>(EMPTY)
   const [condos, setCondos] = useState<Condominio[]>([])

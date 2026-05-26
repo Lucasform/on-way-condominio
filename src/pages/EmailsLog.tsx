@@ -14,7 +14,7 @@ const STATUS_CLASS = {
 
 export default function EmailsLog() {
   const { perfil } = useAuth()
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const [condos, setCondos] = useState<Condominio[]>([])
   const [scopeId, setScopeId] = useState<string | null>(null)
   const [rows, setRows] = useState<EmailLog[]>([])

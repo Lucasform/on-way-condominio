@@ -69,7 +69,7 @@ function monthGrid(year: number, monthIdx0: number): Date[] {
 export default function Calendario() {
   const { perfil } = useAuth()
   const navigate = useNavigate()
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const canCreate = perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role)
 
   const [condos, setCondos] = useState<Condominio[]>([])

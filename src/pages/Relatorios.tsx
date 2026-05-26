@@ -24,7 +24,7 @@ const TIPO_LABEL: Record<TipoRelatorio, string> = {
 
 export default function Relatorios() {
   const { perfil } = useAuth()
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
   const [condos, setCondos] = useState<Condominio[]>([])
   const [scopeId, setScopeId] = useState<string>('')

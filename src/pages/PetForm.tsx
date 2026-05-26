@@ -31,7 +31,7 @@ export default function PetForm() {
   const navigate = useNavigate()
   const { perfil } = useAuth()
   const isNew = !id || id === 'novo'
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
   const [form, setForm] = useState<PetInput>(EMPTY)
   const [condos, setCondos] = useState<Condominio[]>([])

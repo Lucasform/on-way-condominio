@@ -21,7 +21,7 @@ const EMPTY: VotacaoInput = {
 export default function VotacaoNova() {
   const navigate = useNavigate()
   const { perfil } = useAuth()
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
   const [form, setForm] = useState<VotacaoInput>(EMPTY)
   const [condos, setCondos] = useState<Condominio[]>([])

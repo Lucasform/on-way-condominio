@@ -47,7 +47,7 @@ const TIPO_LABEL: Record<TipoEncomenda, string> = {
 export default function Encomendas() {
   const { perfil } = useAuth()
   const navigate = useNavigate()
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const isMorador = perfil?.role === 'morador'
 
   const [condos, setCondos] = useState<Condominio[]>([])

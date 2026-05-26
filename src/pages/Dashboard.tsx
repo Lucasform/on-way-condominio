@@ -30,7 +30,7 @@ const PIE_COLORS = ['#10b981', '#ef4444', '#f59e0b', '#0ea5e9', '#a855f7', '#647
 
 export default function Dashboard() {
   const { perfil } = useAuth()
-  const isAdmin = perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
   const [condos, setCondos] = useState<Condominio[]>([])
   const [scopeId, setScopeId] = useState<string | null>(null)
@@ -202,7 +202,7 @@ export default function Dashboard() {
 
           {/* Gráficos */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <ChartCard title="Ocorrências e multas — últimos 6 meses">
+            <ChartCard title="Ocorrências e multas (últimos 6 meses)">
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={stats.monthly}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
