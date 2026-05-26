@@ -42,7 +42,7 @@ export default function AppShell() {
   const emViewAs = perfil?.role === 'admin_onway' && perfil.condominio_id
 
   return (
-    <div className="min-h-screen bg-brand-50/40 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors">
       <aside className="w-60 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 flex flex-col">
         <div className="px-4 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2.5">
           {condoLogo ? (
@@ -51,12 +51,8 @@ export default function AppShell() {
             <Logo size={36} />
           )}
           <div className="min-w-0">
-            <div className="text-sm font-bold leading-tight truncate">
-              {condoNome ? (
-                <span className="text-slate-900 dark:text-slate-100">{condoNome}</span>
-              ) : (
-                <span className="text-brand-700 dark:text-brand-400">OnWay</span>
-              )}
+            <div className="text-sm font-bold leading-tight truncate text-slate-900 dark:text-slate-100">
+              {condoNome ?? 'OnWay'}
             </div>
             <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
               {condoNome ? 'via OnWay Condomínio' : 'Condomínio'}
@@ -79,7 +75,7 @@ export default function AppShell() {
                 {roleLabel(perfil.role)}
               </div>
             </div>
-            <span className="text-[10px] text-slate-400 group-hover:text-brand-700 dark:group-hover:text-brand-400 transition shrink-0">
+            <span className="text-[10px] text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition shrink-0">
               ✎
             </span>
           </Link>
@@ -103,8 +99,8 @@ export default function AppShell() {
                         className={({ isActive }) =>
                           `block px-3 py-2 rounded-md text-sm transition ${
                             isActive
-                              ? 'bg-brand-100 dark:bg-brand-700/20 text-brand-700 dark:text-brand-300 font-medium'
-                              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
+                              ? 'bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-white font-semibold'
+                              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100/70 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-white'
                           }`
                         }
                       >
@@ -123,8 +119,8 @@ export default function AppShell() {
                 className={({ isActive }) =>
                   `block px-3 py-2 rounded-md text-sm transition ${
                     isActive
-                      ? 'bg-brand-100 dark:bg-brand-700/20 text-brand-700 dark:text-brand-300 font-medium'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
+                      ? 'bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-white font-semibold'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100/70 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-white'
                   }`
                 }
               >

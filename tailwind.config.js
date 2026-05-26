@@ -5,20 +5,20 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Paleta índigo profissional — identidade visual OnWay Condomínio
-        // Padrão de mercado pra SaaS de gestão (Linear, Vercel, Notion).
+        // Paleta azul corporativo — identidade OnWay Condomínio.
+        // Tom sóbrio típico de SaaS imobiliário (Superlogica, TownSq, Apto).
         brand: {
-          50:  '#EEF2FF',
-          100: '#E0E7FF',
-          200: '#C7D2FE',
-          300: '#A5B4FC',
-          400: '#818CF8',
-          500: '#6366F1',
-          600: '#4F46E5',
-          700: '#4338CA',   // cor principal
-          800: '#3730A3',
-          900: '#312E81',
-          950: '#1E1B4B',
+          50:  '#EFF6FF',
+          100: '#DBEAFE',
+          200: '#BFDBFE',
+          300: '#93C5FD',
+          400: '#60A5FA',
+          500: '#3B82F6',
+          600: '#2563EB',
+          700: '#1D4ED8',   // cor principal
+          800: '#1E40AF',
+          900: '#1E3A8A',
+          950: '#172554',
         },
       },
     },

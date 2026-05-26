@@ -24,20 +24,35 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
   // ============================================================
   admin_onway: [
     ...COMMON_TOP,
-    { to: '/dashboard', label: 'Acompanhamento Geral' },
-    { to: '/painel', label: 'Painel de trabalho' },
-    { to: '/condominios', label: 'Condomínios' },
-    { to: '/unidades', label: 'Unidades' },
-    { to: '/ocorrencias', label: 'Ocorrências' },
-    { to: '/notificacoes', label: 'Notificações' },
-    { to: '/multas', label: 'Multas' },
-    { to: '/chamados', label: 'Chamados' },
-    { to: '/encomendas', label: 'Serviços de Portaria' },
-    { to: '/calendario', label: 'Calendário' },
-    { to: '/mural', label: 'Mural informativo' },
+    {
+      label: 'Visão geral',
+      children: [
+        { to: '/dashboard', label: 'Acompanhamento Geral' },
+        { to: '/painel', label: 'Painel de trabalho' },
+      ],
+    },
+    {
+      label: 'Gestão',
+      children: [
+        { to: '/condominios', label: 'Condomínios' },
+        { to: '/unidades', label: 'Unidades' },
+      ],
+    },
+    {
+      label: 'Operação',
+      children: [
+        { to: '/ocorrencias', label: 'Ocorrências' },
+        { to: '/notificacoes', label: 'Notificações' },
+        { to: '/multas', label: 'Multas' },
+        { to: '/chamados', label: 'Chamados' },
+        { to: '/encomendas', label: 'Serviços de Portaria' },
+      ],
+    },
     {
       label: 'Comunicação',
       children: [
+        { to: '/mural', label: 'Mural informativo' },
+        { to: '/calendario', label: 'Calendário' },
         { to: '/chat', label: 'Chat interno' },
         { to: '/emails-log', label: 'E-mail' },
         { to: '/whatsapp-config', label: 'WhatsApp' },
@@ -59,8 +74,13 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
   // ============================================================
   administradora: [
     ...COMMON_TOP,
-    { to: '/dashboard', label: 'Acompanhamento Geral' },
-    { to: '/painel', label: 'Painel de trabalho' },
+    {
+      label: 'Visão geral',
+      children: [
+        { to: '/dashboard', label: 'Acompanhamento Geral' },
+        { to: '/painel', label: 'Painel de trabalho' },
+      ],
+    },
     {
       label: 'Cadastros',
       children: [
@@ -95,6 +115,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/votacoes', label: 'Votações' },
         { to: '/relatorios', label: 'Relatórios' },
         { to: '/auditoria', label: 'Auditoria' },
+        { to: '/servicos', label: 'Serviços' },
       ],
     },
   ],
@@ -104,8 +125,13 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
   // ============================================================
   sindico: [
     ...COMMON_TOP,
-    { to: '/dashboard', label: 'Acompanhamento Geral' },
-    { to: '/painel', label: 'Painel de trabalho' },
+    {
+      label: 'Visão geral',
+      children: [
+        { to: '/dashboard', label: 'Acompanhamento Geral' },
+        { to: '/painel', label: 'Painel de trabalho' },
+      ],
+    },
     {
       label: 'Cadastros',
       children: [
@@ -140,16 +166,22 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/votacoes', label: 'Votações' },
         { to: '/relatorios', label: 'Relatórios' },
         { to: '/auditoria', label: 'Auditoria' },
+        { to: '/servicos', label: 'Serviços' },
       ],
     },
   ],
 
   // ============================================================
-  // Portaria — função principal Encomendas + registros + comunicação
+  // Portaria
   // ============================================================
   portaria: [
     ...COMMON_TOP,
-    { to: '/encomendas', label: 'Serviços de Portaria' },
+    {
+      label: 'Atendimento',
+      children: [
+        { to: '/encomendas', label: 'Serviços de Portaria' },
+      ],
+    },
     {
       label: 'Registros',
       children: [
@@ -168,20 +200,30 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
   ],
 
   // ============================================================
-  // Ronda — 3 itens, mantido flat (agrupar adiciona ruído)
+  // Ronda — só 3 itens, mantido flat
   // ============================================================
   ronda: [
     ...COMMON_TOP,
-    { to: '/ocorrencias', label: 'Ocorrências' },
-    { to: '/chamados', label: 'Chamados' },
+    {
+      label: 'Registros',
+      children: [
+        { to: '/ocorrencias', label: 'Ocorrências' },
+        { to: '/chamados', label: 'Chamados' },
+      ],
+    },
   ],
 
   // ============================================================
-  // Morador — visão pessoal + condomínio
+  // Morador
   // ============================================================
   morador: [
     ...COMMON_TOP,
-    { to: '/meu-perfil', label: 'Meu perfil' },
+    {
+      label: 'Minha conta',
+      children: [
+        { to: '/meu-perfil', label: 'Meu perfil' },
+      ],
+    },
     {
       label: 'Minhas pendências',
       children: [
