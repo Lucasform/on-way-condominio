@@ -5,6 +5,7 @@ import {
   getRegimentoArtigo,
   updateRegimentoArtigo,
 } from '../lib/regimento'
+import { regenerateEmbedding } from '../lib/iaAnalysis'
 import { listCondominios } from '../lib/condominios'
 import type { RegimentoArtigoInput } from '../types/regimento'
 import type { Condominio } from '../types/condominio'
@@ -84,8 +85,20 @@ export default function RegimentoForm() {
     setSaving(true)
     setError(null)
     try {
-      if (isNew) await createRegimentoArtigo(form)
-      else await updateRegimentoArtigo(id!, form)
+      const textoPraEmbedding = `${form.titulo.trim()}\n\n${form.conteudo.trim()}`
+      let artigoId: string
+      if (isNew) {
+        const novo = await createRegimentoArtigo(form)
+        artigoId = novo.id
+      } else {
+        await updateRegimentoArtigo(id!, form)
+        artigoId = id!
+      }
+      // Gera embedding em background — não bloqueia o redirect.
+      // Se falhar, o artigo ainda fica salvo; embedding pode ser regenerado depois.
+      regenerateEmbedding(artigoId, textoPraEmbedding).catch((err) => {
+        console.warn('[regimento] falha ao gerar embedding:', err)
+      })
       navigate('/regimento')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao salvar.')
@@ -164,12 +177,6 @@ export default function RegimentoForm() {
             {error}
           </div>
         )}
-
-        <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-200">
-          <strong>Embedding:</strong> ao salvar, o artigo ainda não terá embedding vetorial.
-          A geração será automática quando a Edge Function de embeddings for implantada
-          (Fase 3, etapa 38 final).
-        </div>
 
         <div className="flex gap-3 pt-3">
           <Button type="submit" disabled={saving}>
