@@ -170,18 +170,23 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
     }
   }
 
-  function baixarTemplate() {
-    const csv = 'nome,email,cpf,telefone,data_nascimento,bloco,numero,tipo_vinculo,relacao_unidade\n' +
-      'João Silva,joao@email.com,12345678901,11999990000,1985-04-12,A,101,titular,proprietario\n' +
-      'Maria Souza,maria@email.com,,11988880000,1990-08-22,A,101,conjuge,proprietario\n' +
-      'Pedro Lima,pedro@email.com,,,,B,201,inquilino,inquilino\n'
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'modelo-import-pessoas.csv'
-    a.click()
-    URL.revokeObjectURL(url)
+  async function baixarTemplate() {
+    const XLSX = await import('xlsx')
+    const headers = ['nome', 'email', 'cpf', 'telefone', 'data_nascimento', 'bloco', 'numero', 'tipo_vinculo', 'relacao_unidade']
+    const exemplos = [
+      ['João Silva',  'joao@email.com',  '12345678901', '11999990000', '1985-04-12', 'A', '101', 'titular',    'proprietario'],
+      ['Maria Souza', 'maria@email.com', '',            '11988880000', '1990-08-22', 'A', '101', 'conjuge',    'proprietario'],
+      ['Pedro Lima',  'pedro@email.com', '',            '',            '',           'B', '201', 'inquilino',  'inquilino'],
+    ]
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...exemplos])
+    // Largura das colunas pra ficar legível
+    ws['!cols'] = [
+      { wch: 22 }, { wch: 22 }, { wch: 14 }, { wch: 14 },
+      { wch: 14 }, { wch: 8 },  { wch: 8 },  { wch: 14 }, { wch: 16 },
+    ]
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Moradores')
+    XLSX.writeFile(wb, 'modelo-import-moradores.xlsx')
   }
 
   const totais = results
