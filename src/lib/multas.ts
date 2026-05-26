@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import type { Multa, MultaInput, StatusMulta } from '../types/multa'
 import { sendEmail } from './email'
+import { sendPush } from './push'
 
 export async function listMultas(opts: {
   condominio_id?: string
@@ -93,10 +94,10 @@ async function notifyMoradorByEmail(multa: Multa): Promise<void> {
   if (!multa.pessoa_id) return
   const { data: pessoa } = await supabase
     .from('pessoas')
-    .select('nome, email')
+    .select('nome, email, user_id')
     .eq('id', multa.pessoa_id)
     .maybeSingle()
-  if (!pessoa?.email) return
+  if (!pessoa) return
 
   const { data: condo } = await supabase
     .from('condominios')
@@ -104,19 +105,34 @@ async function notifyMoradorByEmail(multa: Multa): Promise<void> {
     .eq('id', multa.condominio_id)
     .maybeSingle()
 
-  await sendEmail({
-    to: pessoa.email,
-    template: 'multa-aplicada',
-    condominio_id: multa.condominio_id,
-    vars: {
-      morador_nome: pessoa.nome ?? undefined,
-      condominio_nome: condo?.nome ?? undefined,
-      valor: Number(multa.valor),
-      descricao: multa.descricao,
-      artigo: multa.artigo_regimento ?? undefined,
-      link: `${window.location.origin}/multas/${multa.id}`,
-    },
-  })
+  const link = `${window.location.origin}/multas/${multa.id}`
+
+  // E-mail (se tem)
+  if (pessoa.email) {
+    await sendEmail({
+      to: pessoa.email,
+      template: 'multa-aplicada',
+      condominio_id: multa.condominio_id,
+      vars: {
+        morador_nome: pessoa.nome ?? undefined,
+        condominio_nome: condo?.nome ?? undefined,
+        valor: Number(multa.valor),
+        descricao: multa.descricao,
+        artigo: multa.artigo_regimento ?? undefined,
+        link,
+      },
+    }).catch((e) => console.warn('[multa] email falhou:', e.message))
+  }
+
+  // Push (se user logado tem subscription)
+  if (pessoa.user_id) {
+    sendPush({
+      user_ids: [pessoa.user_id],
+      titulo: `💰 Multa registrada — R$ ${Number(multa.valor).toFixed(2).replace('.', ',')}`,
+      corpo: multa.descricao.slice(0, 120),
+      link: `/multas/${multa.id}`,
+    }).catch((e) => console.warn('[multa] push falhou:', e.message))
+  }
 }
 
 // ============================================================

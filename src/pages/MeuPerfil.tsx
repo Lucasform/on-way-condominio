@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthProvider'
+import PushToggle from '../components/PushToggle'
 
 interface Pessoa {
   id: string
@@ -205,6 +206,11 @@ export default function MeuPerfil() {
           </div>
         </div>
       )}
+
+      {/* Push notifications (etapa 78) */}
+      <div className="mt-8">
+        <PushToggle />
+      </div>
     </div>
   )
 }

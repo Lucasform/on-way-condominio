@@ -5,6 +5,7 @@ import type {
   AssuntoConversa,
   StatusConversa,
 } from '../types/chat'
+import { sendPush } from './push'
 
 export const ASSUNTO_LABEL: Record<AssuntoConversa, string> = {
   multa: '💰 Sobre uma multa',
@@ -106,6 +107,28 @@ export async function enviarMensagem(input: {
       console.warn('[chat-bot] falha:', e.message),
     )
   }
+
+  // Se foi staff escrevendo, dispara push pro morador (etapa 78)
+  if (input.autor_tipo === 'staff') {
+    notifyMoradorChatPush(input.conversa_id, input.conteudo).catch((e) =>
+      console.warn('[chat] push falhou:', e.message),
+    )
+  }
+}
+
+async function notifyMoradorChatPush(conversa_id: string, conteudo: string): Promise<void> {
+  const { data: conv } = await supabase
+    .from('conversas')
+    .select('morador_user_id')
+    .eq('id', conversa_id)
+    .maybeSingle()
+  if (!conv?.morador_user_id) return
+  await sendPush({
+    user_ids: [conv.morador_user_id],
+    titulo: '💬 Resposta da administração',
+    corpo: conteudo.slice(0, 140),
+    link: `/chat/${conversa_id}`,
+  })
 }
 
 async function triggerBot(conversa_id: string): Promise<void> {

@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import type { Encomenda, EncomendaInput, StatusEncomenda } from '../types/encomenda'
 import { sendEmail } from './email'
+import { sendPush } from './push'
 
 export async function listEncomendas(opts: {
   condominio_id?: string
@@ -55,16 +56,14 @@ export async function createEncomenda(input: EncomendaInput, recebido_por: strin
 }
 
 async function notifyMoradorEncomenda(encomenda: Encomenda): Promise<void> {
-  // Pega e-mails dos moradores da unidade (que tenham user_id E e-mail)
   const { data: pessoas } = await supabase
     .from('pessoas')
-    .select('nome, email')
+    .select('nome, email, user_id')
     .eq('unidade_id', encomenda.unidade_id)
-    .not('email', 'is', null)
     .eq('ativo', true)
 
-  const destinatarios = (pessoas ?? []).filter((p) => p.email)
-  if (destinatarios.length === 0) return
+  const moradores = pessoas ?? []
+  if (moradores.length === 0) return
 
   const { data: condo } = await supabase
     .from('condominios')
@@ -72,17 +71,33 @@ async function notifyMoradorEncomenda(encomenda: Encomenda): Promise<void> {
     .eq('id', encomenda.condominio_id)
     .maybeSingle()
 
-  await sendEmail({
-    to: destinatarios.map((p) => p.email!),
-    template: 'encomenda-chegou',
-    condominio_id: encomenda.condominio_id,
-    vars: {
-      condominio_nome: condo?.nome ?? undefined,
-      encomenda_tipo: encomenda.tipo,
-      descricao: encomenda.descricao ?? undefined,
-      link: `${window.location.origin}/encomendas/${encomenda.id}`,
-    },
-  })
+  // E-mail
+  const emails = moradores.map((p) => p.email).filter((e): e is string => !!e)
+  if (emails.length > 0) {
+    sendEmail({
+      to: emails,
+      template: 'encomenda-chegou',
+      condominio_id: encomenda.condominio_id,
+      vars: {
+        condominio_nome: condo?.nome ?? undefined,
+        encomenda_tipo: encomenda.tipo,
+        descricao: encomenda.descricao ?? undefined,
+        link: `${window.location.origin}/encomendas/${encomenda.id}`,
+      },
+    }).catch((e) => console.warn('[encomenda] email falhou:', e.message))
+  }
+
+  // Push
+  const userIds = moradores.map((p) => p.user_id).filter((u): u is string => !!u)
+  if (userIds.length > 0) {
+    const titulo = encomenda.tipo === 'comida' ? '🍔 Sua comida chegou' : '📦 Encomenda na portaria'
+    sendPush({
+      user_ids: userIds,
+      titulo,
+      corpo: encomenda.descricao ?? 'Retire na portaria.',
+      link: `/encomendas/${encomenda.id}`,
+    }).catch((e) => console.warn('[encomenda] push falhou:', e.message))
+  }
 }
 
 export async function darBaixaEncomenda(
