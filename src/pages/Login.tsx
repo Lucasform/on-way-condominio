@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   signInWithPassword,
   signInWithMagicLink,
@@ -11,6 +11,23 @@ import AuthShell from '../components/AuthShell'
 import { supabase } from '../lib/supabase'
 
 type Modo = 'senha' | 'email'
+type Tipo = 'admin' | 'morador' | null
+
+function parseTipo(raw: string | null): Tipo {
+  if (raw === 'admin' || raw === 'morador') return raw
+  return null
+}
+
+const COPY_POR_TIPO: Record<NonNullable<Tipo>, { title: string; subtitle: string }> = {
+  admin: {
+    title: 'Entrar como Administração',
+    subtitle: 'Síndico, administradora, portaria ou ronda.',
+  },
+  morador: {
+    title: 'Entrar como Morador',
+    subtitle: 'Acesse sua unidade, multas, encomendas e mural.',
+  },
+}
 
 const inputCls =
   'w-full px-3 py-2 rounded-md bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 ' +
@@ -22,6 +39,9 @@ const primaryBtn =
 export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
+  const tipo = parseTipo(searchParams.get('tipo'))
+  const copy = tipo ? COPY_POR_TIPO[tipo] : { title: 'Entrar', subtitle: 'Acesse com sua conta do condomínio.' }
   const { user, loading } = useAuth()
   const [modo, setModo] = useState<Modo>('senha')
   const [email, setEmail] = useState('')
@@ -108,20 +128,27 @@ export default function Login() {
 
   return (
     <AuthShell
-      title="Entrar"
-      subtitle="Acesse com sua conta do condomínio."
+      title={copy.title}
+      subtitle={copy.subtitle}
       footer={
-        <>
+        <div className="space-y-3">
+          {tipo === 'morador' && (
+            <div className="text-center">
+              <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Primeiro acesso?</div>
+              <Link
+                to="/signup"
+                className="inline-block px-4 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-semibold transition"
+              >
+                Criar conta com código de convite →
+              </Link>
+            </div>
+          )}
           <div className="text-center">
-            <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Morador, primeiro acesso?</div>
-            <Link
-              to="/signup"
-              className="inline-block px-4 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-semibold transition"
-            >
-              Criar conta com código de convite →
+            <Link to="/entrar" className="text-xs text-slate-500 hover:text-brand-700 dark:hover:text-brand-400">
+              ← Trocar tipo de acesso
             </Link>
           </div>
-        </>
+        </div>
       }
     >
       {/* Toggle senha / entrar por e-mail */}

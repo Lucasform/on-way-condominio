@@ -3,9 +3,10 @@ import { Link, useParams } from 'react-router-dom'
 import {
   getOcorrencia,
   getOcorrenciaFotoSignedUrl,
+  updateOcorrencia,
   updateOcorrenciaStatus,
 } from '../lib/ocorrencias'
-import { getUnidade } from '../lib/unidades'
+import { getUnidade, listUnidades } from '../lib/unidades'
 import { getPessoa } from '../lib/pessoas'
 import { getCondominio } from '../lib/condominios'
 import { getMultaByOcorrencia } from '../lib/multas'
@@ -61,6 +62,18 @@ export default function OcorrenciaDetalhe() {
   const [error, setError] = useState<string | null>(null)
   const [changing, setChanging] = useState(false)
 
+  // Edição inline de Unidade/Local
+  const [editingDados, setEditingDados] = useState(false)
+  const [unidadesList, setUnidadesList] = useState<Unidade[]>([])
+  const [editUnidadeId, setEditUnidadeId] = useState<string>('')
+  const [editLocal, setEditLocal] = useState<string>('')
+  const [savingDados, setSavingDados] = useState(false)
+
+  // Comentário da gestão
+  const [editingComentario, setEditingComentario] = useState(false)
+  const [comentarioDraft, setComentarioDraft] = useState('')
+  const [savingComentario, setSavingComentario] = useState(false)
+
   async function load() {
     if (!id) return
     setLoading(true)
@@ -98,6 +111,58 @@ export default function OcorrenciaDetalhe() {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  function startEditDados() {
+    if (!ocorrencia) return
+    setEditUnidadeId(ocorrencia.unidade_id ?? '')
+    setEditLocal(ocorrencia.local ?? '')
+    setEditingDados(true)
+    // carrega lista de unidades sob demanda
+    if (unidadesList.length === 0) {
+      listUnidades({ condominio_id: ocorrencia.condominio_id, ativo: true })
+        .then(setUnidadesList)
+        .catch((e) => console.warn('[ocorrencia] listUnidades falhou:', e?.message))
+    }
+  }
+
+  async function saveDados() {
+    if (!ocorrencia) return
+    setSavingDados(true)
+    try {
+      await updateOcorrencia(ocorrencia.id, {
+        unidade_id: editUnidadeId || null,
+        local: editLocal,
+      })
+      setEditingDados(false)
+      await load()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao salvar.')
+    } finally {
+      setSavingDados(false)
+    }
+  }
+
+  function startEditComentario() {
+    if (!ocorrencia) return
+    setComentarioDraft(ocorrencia.comentario_gestao ?? '')
+    setEditingComentario(true)
+  }
+
+  async function saveComentario() {
+    if (!ocorrencia) return
+    setSavingComentario(true)
+    try {
+      const updated = await updateOcorrencia(ocorrencia.id, {
+        comentario_gestao: comentarioDraft,
+      })
+      setOcorrencia(updated)
+      setEditingComentario(false)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao salvar comentário.')
+    } finally {
+      setSavingComentario(false)
+    }
+  }
 
   async function handleChangeStatus(newStatus: StatusOcorrencia) {
     if (!ocorrencia) return
@@ -165,29 +230,75 @@ export default function OcorrenciaDetalhe() {
           </span>
         </div>
 
-        <dl className="grid grid-cols-[140px_1fr] gap-y-2 gap-x-4 text-sm mb-6">
-          <dt className="text-slate-500">Condomínio</dt>
-          <dd className="text-slate-200">{condominio?.nome ?? '—'}</dd>
+        {!editingDados ? (
+          <>
+            <dl className="grid grid-cols-[140px_1fr] gap-y-2 gap-x-4 text-sm mb-3">
+              <dt className="text-slate-500">Condomínio</dt>
+              <dd className="text-slate-200">{condominio?.nome ?? '—'}</dd>
 
-          <dt className="text-slate-500">Unidade</dt>
-          <dd className="text-slate-200">
-            {unidade ? (unidade.bloco ? `${unidade.bloco}-${unidade.numero}` : unidade.numero) : 'Área comum'}
-          </dd>
+              <dt className="text-slate-500">Unidade</dt>
+              <dd className="text-slate-200">
+                {unidade ? (unidade.bloco ? `${unidade.bloco}-${unidade.numero}` : unidade.numero) : 'Área comum'}
+              </dd>
 
-          {ocorrencia.local && (
-            <>
               <dt className="text-slate-500">Local</dt>
-              <dd className="text-slate-200">{ocorrencia.local}</dd>
-            </>
-          )}
+              <dd className="text-slate-200">{ocorrencia.local || <span className="text-slate-500 italic">—</span>}</dd>
 
-          {pessoa && (
-            <>
-              <dt className="text-slate-500">Pessoa envolvida</dt>
-              <dd className="text-slate-200">{pessoa.nome}</dd>
-            </>
-          )}
-        </dl>
+              {pessoa && (
+                <>
+                  <dt className="text-slate-500">Pessoa envolvida</dt>
+                  <dd className="text-slate-200">{pessoa.nome}</dd>
+                </>
+              )}
+            </dl>
+            {canChangeStatus && (
+              <div className="mb-6">
+                <button
+                  type="button"
+                  onClick={startEditDados}
+                  className="text-xs text-sky-400 hover:underline"
+                >
+                  ✎ Editar unidade / local
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="mb-6 rounded-md border border-sky-500/30 bg-sky-500/5 p-4 space-y-3">
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Unidade</label>
+              <select
+                value={editUnidadeId}
+                onChange={(e) => setEditUnidadeId(e.target.value)}
+                className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:border-sky-500 focus:outline-none"
+              >
+                <option value="">— Área comum / sem unidade —</option>
+                {unidadesList.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.bloco ? `${u.bloco}-${u.numero}` : u.numero}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Local</label>
+              <input
+                value={editLocal}
+                onChange={(e) => setEditLocal(e.target.value)}
+                placeholder="Ex.: Garagem, Hall, Piscina..."
+                className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:border-sky-500 focus:outline-none"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={saveDados} disabled={savingDados}>
+                {savingDados ? 'Salvando...' : 'Salvar'}
+              </Button>
+              <Button variant="ghost" onClick={() => setEditingDados(false)} disabled={savingDados}>
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="border-t border-slate-800 pt-5">
           <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
@@ -210,6 +321,52 @@ export default function OcorrenciaDetalhe() {
             </a>
           </div>
         )}
+
+        <div className="mt-6 pt-5 border-t border-slate-800">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+              Comentário da gestão
+            </div>
+            {canChangeStatus && !editingComentario && (
+              <button
+                type="button"
+                onClick={startEditComentario}
+                className="text-xs text-sky-400 hover:underline"
+              >
+                {ocorrencia.comentario_gestao ? '✎ Editar' : '+ Adicionar'}
+              </button>
+            )}
+          </div>
+          {!editingComentario ? (
+            ocorrencia.comentario_gestao ? (
+              <p className="text-sm text-slate-200 whitespace-pre-wrap">
+                {ocorrencia.comentario_gestao}
+              </p>
+            ) : (
+              <p className="text-sm text-slate-500 italic">
+                Sem comentários. A IA usa este campo como contexto adicional ao analisar.
+              </p>
+            )
+          ) : (
+            <div className="space-y-2">
+              <textarea
+                value={comentarioDraft}
+                onChange={(e) => setComentarioDraft(e.target.value)}
+                rows={4}
+                placeholder="Ex.: morador reincidente, último aviso foi em jan/26, considerar agravante..."
+                className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:border-sky-500 focus:outline-none"
+              />
+              <div className="flex gap-2">
+                <Button onClick={saveComentario} disabled={savingComentario}>
+                  {savingComentario ? 'Salvando...' : 'Salvar'}
+                </Button>
+                <Button variant="ghost" onClick={() => setEditingComentario(false)} disabled={savingComentario}>
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <AIAnalysisPanel
@@ -297,9 +454,6 @@ export default function OcorrenciaDetalhe() {
         </div>
       )}
 
-      <div className="mt-8 text-xs text-slate-600">
-        ID: <span className="font-mono">{ocorrencia.id}</span>
-      </div>
     </div>
   )
 }

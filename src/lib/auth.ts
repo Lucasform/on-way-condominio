@@ -102,7 +102,24 @@ export async function updatePassword(novaSenha: string) {
 // Sair
 // ============================================================
 
+// Sinaliza pro AuthProvider que o SIGNED_OUT que vai chegar é intencional —
+// pula a janela de graça e desloga na hora.
+const LOGOUT_INTENT_KEY = 'onway:logout-intent'
+
+export function markLogoutIntent() {
+  try { sessionStorage.setItem(LOGOUT_INTENT_KEY, '1') } catch { /* ignore */ }
+}
+
+export function consumeLogoutIntent(): boolean {
+  try {
+    const v = sessionStorage.getItem(LOGOUT_INTENT_KEY)
+    if (v) sessionStorage.removeItem(LOGOUT_INTENT_KEY)
+    return v === '1'
+  } catch { return false }
+}
+
 export async function signOut() {
+  markLogoutIntent()
   const { error } = await supabase.auth.signOut()
   if (error) throw error
 }

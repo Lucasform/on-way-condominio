@@ -39,6 +39,9 @@ Deno.serve(async (req: Request) => {
     if (!ocorrencia_id) {
       return jsonResponse({ error: 'ocorrencia_id obrigatório.' }, 400)
     }
+    const comentario_extra: string | null = typeof body?.comentario_extra === 'string'
+      ? body.comentario_extra.trim() || null
+      : null
 
     const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')
     if (!anthropicKey) {
@@ -54,10 +57,12 @@ Deno.serve(async (req: Request) => {
       { global: { headers: { Authorization: auth } } },
     )
 
-    // 1) Busca ocorrência
+    // 1) Busca ocorrência (+ unidade pra contexto da IA)
     const { data: ocorrencia, error: oErr } = await userClient
       .from('ocorrencias')
-      .select('id, condominio_id, descricao, local, unidade_id')
+      .select(
+        'id, condominio_id, descricao, local, unidade_id, comentario_gestao, unidades:unidade_id(bloco, numero)',
+      )
       .eq('id', ocorrencia_id)
       .single()
     if (oErr || !ocorrencia) {
@@ -66,8 +71,13 @@ Deno.serve(async (req: Request) => {
       }, 404)
     }
 
-    // 2) Gera embedding da descrição
-    const queryText = `${ocorrencia.local ?? ''}\n${ocorrencia.descricao}`.trim()
+    // 2) Gera embedding da descrição (+ contexto da gestão se houver)
+    const queryText = [
+      ocorrencia.local ?? '',
+      ocorrencia.descricao,
+      ocorrencia.comentario_gestao ?? '',
+      comentario_extra ?? '',
+    ].filter(Boolean).join('\n').trim()
     const embOut = await session.run(queryText, { mean_pool: true, normalize: true })
     const queryEmbedding = Array.isArray(embOut) ? embOut : Array.from(embOut as number[])
 
@@ -104,10 +114,16 @@ REGRAS:
 
 Responda EXCLUSIVAMENTE em JSON válido, sem markdown.`
 
+    const unidadeRel = (ocorrencia as { unidades?: { bloco: string | null; numero: string } | null }).unidades
+    const unidadeStr = unidadeRel
+      ? (unidadeRel.bloco ? `${unidadeRel.bloco}-${unidadeRel.numero}` : unidadeRel.numero)
+      : 'Área comum / não vinculada'
+
     const userPrompt = `OCORRÊNCIA
+Unidade: ${unidadeStr}
 Local: ${ocorrencia.local ?? '(não especificado)'}
 Descrição: ${ocorrencia.descricao}
-
+${ocorrencia.comentario_gestao ? `\nCOMENTÁRIO DA GESTÃO (contexto persistente):\n${ocorrencia.comentario_gestao}\n` : ''}${comentario_extra ? `\nINSTRUÇÃO ADICIONAL DESTA ANÁLISE:\n${comentario_extra}\n` : ''}
 ARTIGOS RELEVANTES${artigosList.length === 0 ? ' (nenhum encontrado)' : ''}:
 ${
       artigosList.length === 0

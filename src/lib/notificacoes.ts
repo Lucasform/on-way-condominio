@@ -78,6 +78,12 @@ export async function changeNotificacaoStatus(id: string, status: StatusNotifica
   return data as Notificacao
 }
 
+// Exclusão definitiva — RLS já restringe a admin_onway.
+export async function deleteNotificacao(id: string): Promise<void> {
+  const { error } = await supabase.from('notificacoes').delete().eq('id', id)
+  if (error) throw error
+}
+
 export async function updateNotificacao(id: string, patch: Partial<NotificacaoInput>): Promise<Notificacao> {
   const upd: Record<string, unknown> = {}
   if (patch.assunto !== undefined) upd.assunto = patch.assunto.trim()

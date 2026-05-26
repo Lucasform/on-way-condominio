@@ -68,30 +68,31 @@ export default function AdminHome() {
   const emViewAs = !!perfil?.condominio_id
 
   return (
-    <div className="px-8 py-10 max-w-6xl">
-      <div className="flex items-baseline justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-brand-700 dark:text-brand-400">
-            Administrador OnWay
-          </h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            {emViewAs
-              ? `Você está vendo o condomínio "${condos.find((c) => c.condominio_id === perfil?.condominio_id)?.nome ?? '...'}". Volte pra visão global ou troque.`
-              : `Logado como ${user?.email}. Escolha um condomínio pra entrar ou veja métricas globais.`}
-          </p>
+    <div className="px-8 py-10 max-w-6xl mx-auto">
+      <div className="relative mb-8 text-center">
+        <h1 className="text-3xl font-bold text-brand-700 dark:text-brand-400">
+          Administrador OnWay
+        </h1>
+        <div className="mt-1 text-[11px] text-slate-500 dark:text-slate-500">
+          Logado como {user?.email}
         </div>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+          {emViewAs
+            ? `Você está vendo o condomínio "${condos.find((c) => c.condominio_id === perfil?.condominio_id)?.nome ?? '...'}". Volte pra visão global ou troque.`
+            : 'Escolha um condomínio pra entrar ou veja métricas globais.'}
+        </p>
         {emViewAs && (
           <button
             onClick={sairViewAs}
             disabled={trocando !== null}
-            className="px-4 py-2 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-700"
+            className="absolute right-0 top-0 px-4 py-2 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-700"
           >
             ← Voltar pra visão global
           </button>
         )}
       </div>
 
-      <div className="flex flex-wrap gap-3 mb-8">
+      <div className="flex flex-wrap justify-center gap-3 mb-8">
         <Link
           to="/condominios"
           className="px-4 py-2 rounded-md bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700"
@@ -105,14 +106,14 @@ export default function AdminHome() {
           📊 Dashboard global
         </Link>
         <Link
-          to="/auditoria"
+          to="/painel"
           className="px-4 py-2 rounded-md bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700"
         >
-          📋 Auditoria
+          🛠 Painel de serviços
         </Link>
       </div>
 
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-3">
+      <h2 className="text-center text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-3">
         Condomínios ({condos.length})
       </h2>
 

@@ -28,8 +28,8 @@ export default function EsqueciSenha() {
       title="Recuperar senha"
       subtitle="Vamos enviar um link no seu e-mail pra definir uma nova senha."
       footer={
-        <Link to="/login" className="text-brand-700 dark:text-brand-400 font-medium hover:underline">
-          ← Voltar pro login
+        <Link to="/entrar" className="text-brand-700 dark:text-brand-400 font-medium hover:underline">
+          ← Voltar pra tela inicial
         </Link>
       }
     >

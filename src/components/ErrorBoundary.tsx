@@ -135,7 +135,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 if ('caches' in window) caches.keys().then((ks) => ks.forEach((k) => caches.delete(k)))
                 if ('serviceWorker' in navigator) navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister()))
               } finally {
-                window.location.replace('/login')
+                window.location.replace('/entrar')
               }
             }}
             style={{

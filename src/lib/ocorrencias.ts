@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Ocorrencia, OcorrenciaInput, StatusOcorrencia } from '../types/ocorrencia'
+import type { Ocorrencia, OcorrenciaInput, OcorrenciaPatch, StatusOcorrencia } from '../types/ocorrencia'
 
 const BUCKET = 'ocorrencia-fotos'
 
@@ -49,6 +49,23 @@ export async function createOcorrencia(input: OcorrenciaInput, reportado_por: st
 export async function updateOcorrenciaStatus(id: string, status: StatusOcorrencia): Promise<void> {
   const { error } = await supabase.from('ocorrencias').update({ status }).eq('id', id)
   if (error) throw error
+}
+
+export async function updateOcorrencia(id: string, patch: OcorrenciaPatch): Promise<Ocorrencia> {
+  const upd: Record<string, unknown> = {}
+  if (patch.unidade_id !== undefined) upd.unidade_id = patch.unidade_id || null
+  if (patch.local !== undefined) upd.local = patch.local?.trim() || null
+  if (patch.comentario_gestao !== undefined) {
+    upd.comentario_gestao = patch.comentario_gestao?.trim() || null
+  }
+  const { data, error } = await supabase
+    .from('ocorrencias')
+    .update(upd)
+    .eq('id', id)
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as Ocorrencia
 }
 
 // ============================================================

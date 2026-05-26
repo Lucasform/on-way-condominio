@@ -20,6 +20,8 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<IAResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [comentario, setComentario] = useState('')
+  const [showComment, setShowComment] = useState(false)
 
   if (!canAnalyse) return null
 
@@ -28,8 +30,10 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
     setError(null)
     setResult(null)
     try {
-      const r = await analisarOcorrenciaIA(ocorrenciaId)
+      const r = await analisarOcorrenciaIA(ocorrenciaId, comentario.trim() || undefined)
       setResult(r)
+      setComentario('')
+      setShowComment(false)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro na análise.')
     } finally {
@@ -60,17 +64,53 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
             Análise com base no regimento e sugestão. Apenas sugestão, decisão administrativa.
           </div>
         </div>
-        {!result && (
-          <Button onClick={handleAnalyze} disabled={loading}>
-            {loading ? 'Analisando...' : 'Analisar'}
-          </Button>
-        )}
-        {result && (
-          <Button variant="ghost" onClick={handleAnalyze} disabled={loading}>
-            {loading ? '...' : '🔄 Reanalisar'}
-          </Button>
-        )}
+        <div className="flex gap-2 items-start">
+          {!result && !showComment && (
+            <Button variant="ghost" onClick={() => setShowComment(true)} disabled={loading}>
+              + Comentário
+            </Button>
+          )}
+          {!result && (
+            <Button onClick={handleAnalyze} disabled={loading}>
+              {loading ? 'Analisando...' : 'Analisar'}
+            </Button>
+          )}
+          {result && !showComment && (
+            <Button variant="ghost" onClick={() => setShowComment(true)} disabled={loading}>
+              {loading ? '...' : '🔄 Reanalisar'}
+            </Button>
+          )}
+        </div>
       </div>
+
+      {showComment && (
+        <div className="mb-3">
+          <label className="block text-xs text-slate-400 mb-1">
+            {result
+              ? 'Comentário pra reanálise (opcional). Diga o que mudou ou o que a IA deve considerar.'
+              : 'Comentário adicional (ex.: considere reincidência, valor = 1% do salário mínimo).'}
+          </label>
+          <textarea
+            value={comentario}
+            onChange={(e) => setComentario(e.target.value)}
+            rows={3}
+            placeholder="Instruções extras pra esta análise..."
+            className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:border-sky-500 focus:outline-none"
+          />
+          <div className="mt-2 flex gap-2">
+            <Button onClick={handleAnalyze} disabled={loading}>
+              {loading ? 'Analisando...' : (result ? '🔄 Reanalisar agora' : 'Analisar')}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => { setShowComment(false); setComentario('') }}
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
@@ -80,7 +120,7 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
 
       {loading && !result && (
         <div className="text-sm text-slate-400 italic">
-          Aguardando análise... (pode levar 5–15s na primeira vez)
+          Aguardando análise... Aguarde um momento
         </div>
       )}
 
@@ -166,10 +206,6 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
             </div>
           )}
 
-          {/* Metadados */}
-          <div className="text-[10px] text-slate-600">
-            {result.modelo} · {result.tokens.input} tokens entrada · {result.tokens.output} tokens saída
-          </div>
         </div>
       )}
     </div>

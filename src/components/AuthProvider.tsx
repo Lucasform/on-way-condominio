@@ -1,7 +1,7 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import { fetchCurrentPerfil } from '../lib/auth'
+import { consumeLogoutIntent, fetchCurrentPerfil } from '../lib/auth'
 import type { Perfil } from '../types/database'
 
 interface AuthContextValue {
@@ -14,8 +14,20 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
-const AUTH_LOAD_TIMEOUT_MS = 8000
+// getSession é local (lê localStorage do supabase-js) — deveria ser instantâneo.
+// fetchCurrentPerfil vai pro Postgres — pode demorar; rodamos em background quando há cache.
+const SESSION_LOAD_TIMEOUT_MS = 4000
+const PERFIL_FETCH_TIMEOUT_MS = 8000
+// Janela pra confirmar SIGNED_OUT que vem do supabase-js. Se for transitório
+// (refresh fail seguido de SIGNED_IN), evitamos derrubar o app pra /login.
+const SIGNOUT_CONFIRM_DELAY_MS = 1500
 const PERFIL_CACHE_KEY = 'onway:perfil_cache'
+
+interface PerfilCacheEntry {
+  user_id: string
+  perfil: Perfil
+  ts: number
+}
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -31,7 +43,7 @@ function readCache(userId: string): Perfil | null {
   try {
     const raw = localStorage.getItem(PERFIL_CACHE_KEY)
     if (!raw) return null
-    const obj = JSON.parse(raw) as { user_id: string; perfil: Perfil }
+    const obj = JSON.parse(raw) as PerfilCacheEntry
     if (obj.user_id !== userId) return null
     return obj.perfil
   } catch { return null }
@@ -40,7 +52,8 @@ function readCache(userId: string): Perfil | null {
 function writeCache(userId: string, perfil: Perfil | null) {
   try {
     if (!perfil) { localStorage.removeItem(PERFIL_CACHE_KEY); return }
-    localStorage.setItem(PERFIL_CACHE_KEY, JSON.stringify({ user_id: userId, perfil }))
+    const entry: PerfilCacheEntry = { user_id: userId, perfil, ts: Date.now() }
+    localStorage.setItem(PERFIL_CACHE_KEY, JSON.stringify(entry))
   } catch { /* ignore */ }
 }
 
@@ -50,6 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [hardError, setHardError] = useState<string | null>(null)
 
+  // Confirmação adiada de SIGNED_OUT: se for refresh transitório, ignoramos.
+  const pendingSignOutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   async function loadPerfil(userId: string | null, useCache = true) {
     if (!userId) { setPerfil(null); writeCache('', null); return }
     // Cache hit: renderiza imediato; refresh em background
@@ -58,55 +74,111 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (cached) setPerfil(cached)
     }
     try {
-      const p = await withTimeout(fetchCurrentPerfil(userId), AUTH_LOAD_TIMEOUT_MS, 'fetchCurrentPerfil')
+      const p = await withTimeout(fetchCurrentPerfil(userId), PERFIL_FETCH_TIMEOUT_MS, 'fetchCurrentPerfil')
       setPerfil(p)
       writeCache(userId, p)
     } catch (e) {
-      console.error('[AuthProvider] loadPerfil falhou:', e)
+      console.warn('[AuthProvider] loadPerfil falhou (mantendo cache):', e)
       // Mantém cache se houver — não derruba a sessão
+    }
+  }
+
+  function cancelPendingSignOut() {
+    if (pendingSignOutRef.current) {
+      clearTimeout(pendingSignOutRef.current)
+      pendingSignOutRef.current = null
     }
   }
 
   useEffect(() => {
     let mounted = true
-    let watchdog: ReturnType<typeof setTimeout> | null = null
-
-    watchdog = setTimeout(() => {
-      if (!mounted) return
-      console.warn('[AuthProvider] Watchdog disparou')
-      setHardError('Tempo esgotado carregando sessão.')
-      setLoading(false)
-    }, AUTH_LOAD_TIMEOUT_MS + 2000)
 
     ;(async () => {
       try {
-        const { data } = await withTimeout(supabase.auth.getSession(), AUTH_LOAD_TIMEOUT_MS, 'getSession')
+        // 1) Tenta ler sessão local (instantâneo na maioria dos casos)
+        const { data } = await withTimeout(
+          supabase.auth.getSession(),
+          SESSION_LOAD_TIMEOUT_MS,
+          'getSession',
+        )
         if (!mounted) return
-        setSession(data.session)
-        await loadPerfil(data.session?.user.id ?? null)
-      } catch (e) {
-        console.error('[AuthProvider] getSession falhou:', e)
-        if (mounted) setHardError(e instanceof Error ? e.message : 'Erro de sessão.')
-      } finally {
-        if (mounted) {
-          if (watchdog) clearTimeout(watchdog)
-          setLoading(false)
+
+        const sess = data.session
+        setSession(sess)
+
+        // 2) Se tem session, hidrata perfil do cache imediatamente (se houver)
+        //    e dispara revalidação em background — sem bloquear o render
+        const uid = sess?.user.id ?? null
+        if (uid) {
+          const cached = readCache(uid)
+          if (cached) setPerfil(cached)
+          // background revalidate — não bloqueia loading
+          void loadPerfil(uid, !cached)
+        } else {
+          setPerfil(null)
         }
+      } catch (e) {
+        console.warn('[AuthProvider] getSession lento/falhou:', e)
+        // Tenta hidratar do cache mesmo sem session pra evitar tela branca,
+        // mas só se houver sb-* token no localStorage (sinal de que tem sessão salva).
+        const possivelmenteLogado = Object.keys(localStorage).some((k) => k.startsWith('sb-') && k.includes('auth-token'))
+        if (mounted && !possivelmenteLogado) {
+          // Sem nada local — segue pro login, sem hard error
+          setSession(null)
+          setPerfil(null)
+        } else if (mounted) {
+          // Tem token salvo mas getSession travou — mantemos perfil cacheado se houver
+          // e seguimos. supabase-js continuará tentando refresh por baixo.
+          console.warn('[AuthProvider] Seguindo com cache; supabase-js cuidará do refresh.')
+        }
+      } finally {
+        if (mounted) setLoading(false)
       }
     })()
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, sess) => {
       if (!mounted) return
-      setSession(sess)
-      // Só re-busca perfil em eventos significativos. TOKEN_REFRESHED não muda perfil.
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
-        await loadPerfil(sess?.user.id ?? null, event !== 'SIGNED_OUT')
+
+      // SIGNED_OUT pode ser transitório (refresh fail entre TOKEN_REFRESHED com sucesso).
+      // Damos uma janela curta pra confirmar antes de derrubar o app.
+      // Exceção: se o usuário clicou em "Sair" (markLogoutIntent), sai imediato.
+      if (event === 'SIGNED_OUT') {
+        cancelPendingSignOut()
+        if (consumeLogoutIntent()) {
+          setSession(null)
+          setPerfil(null)
+          writeCache('', null)
+          return
+        }
+        pendingSignOutRef.current = setTimeout(async () => {
+          const { data } = await supabase.auth.getSession()
+          if (!mounted) return
+          if (data.session) {
+            // Voltou — era transitório. Mantém estado atual.
+            console.info('[AuthProvider] SIGNED_OUT transitório ignorado')
+            setSession(data.session)
+            return
+          }
+          setSession(null)
+          setPerfil(null)
+          writeCache('', null)
+        }, SIGNOUT_CONFIRM_DELAY_MS)
+        return
       }
+
+      // Qualquer outro evento cancela uma confirmação pendente de signout
+      cancelPendingSignOut()
+      setSession(sess)
+
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+        void loadPerfil(sess?.user.id ?? null, event !== 'SIGNED_IN')
+      }
+      // TOKEN_REFRESHED não muda perfil
     })
 
     return () => {
       mounted = false
-      if (watchdog) clearTimeout(watchdog)
+      cancelPendingSignOut()
       sub.subscription.unsubscribe()
     }
   }, [])
@@ -145,7 +217,7 @@ function RecoveryScreen({ message }: { message: string }) {
         await Promise.all(regs.map((r) => r.unregister()))
       }
     } finally {
-      window.location.replace('/login')
+      window.location.replace('/entrar')
     }
   }
 
@@ -157,7 +229,7 @@ function RecoveryScreen({ message }: { message: string }) {
           Não conseguimos te conectar
         </h1>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-          Pode ser uma instabilidade momentânea. Tente recarregar. Se persistir, faça login de novo.
+          Pode ser uma instabilidade momentânea. Faça login novamente.
         </p>
         <div className="mt-6 flex gap-2 justify-center">
           <button
@@ -170,7 +242,7 @@ function RecoveryScreen({ message }: { message: string }) {
             onClick={limparTudo}
             className="px-5 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-medium"
           >
-            Fazer login de novo
+            Fazer login novamente
           </button>
         </div>
       </div>

@@ -10,6 +10,8 @@ import Home from './pages/Home'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import AuthCallback from './pages/AuthCallback'
+import EscolhaPerfil from './pages/EscolhaPerfil'
+import PrestadorEmBreve from './pages/PrestadorEmBreve'
 
 // Lazy: tudo o mais
 const EsqueciSenha = lazy(() => import('./pages/EsqueciSenha'))
@@ -60,6 +62,7 @@ const Chat = lazy(() => import('./pages/Chat'))
 const ChatConversa = lazy(() => import('./pages/ChatConversa'))
 const WhatsappConfig = lazy(() => import('./pages/WhatsappConfig'))
 const AuditLog = lazy(() => import('./pages/AuditLog'))
+const Servicos = lazy(() => import('./pages/Servicos'))
 
 export default function App() {
   return (
@@ -67,6 +70,8 @@ export default function App() {
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
         <Routes>
+          <Route path="/entrar" element={<EscolhaPerfil />} />
+          <Route path="/prestador" element={<PrestadorEmBreve />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/esqueci-senha" element={<EsqueciSenha />} />
@@ -438,6 +443,14 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
                   <AuditLog />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/servicos"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <Servicos />
                 </ProtectedRoute>
               }
             />

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   getNotificacao,
   changeNotificacaoStatus,
+  deleteNotificacao,
   NOTIFICACAO_STATUS_TRANSITIONS,
   NOTIFICACAO_STATUS_LABEL,
 } from '../lib/notificacoes'
@@ -30,6 +31,7 @@ const CAN_CHANGE = ['admin_onway', 'administradora', 'sindico'] as const
 
 export default function NotificacaoDetalhe() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { perfil } = useAuth()
 
   const [notificacao, setNotificacao] = useState<Notificacao | null>(null)
@@ -65,6 +67,22 @@ export default function NotificacaoDetalhe() {
 
   useEffect(() => { load() /* eslint-disable-next-line */ }, [id])
 
+  async function handleDelete() {
+    if (!notificacao) return
+    const ok = window.confirm(
+      'Excluir esta notificação DEFINITIVAMENTE? Esta ação não pode ser desfeita.',
+    )
+    if (!ok) return
+    setChanging(true)
+    try {
+      await deleteNotificacao(notificacao.id)
+      navigate('/notificacoes')
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao excluir.')
+      setChanging(false)
+    }
+  }
+
   async function handleChange(novo: StatusNotificacao) {
     if (!notificacao) return
     if (!window.confirm(`Mudar status para "${NOTIFICACAO_STATUS_LABEL[novo]}"?`)) return
@@ -89,6 +107,7 @@ export default function NotificacaoDetalhe() {
   }
 
   const canChange = perfil && (CAN_CHANGE as readonly string[]).includes(perfil.role)
+  const canDelete = perfil?.role === 'admin_onway' || perfil?.role === 'sindico'
   const transitions = NOTIFICACAO_STATUS_TRANSITIONS[notificacao.status]
 
   return (
@@ -183,6 +202,17 @@ export default function NotificacaoDetalhe() {
               </Button>
             ))}
           </div>
+        </div>
+      )}
+
+      {canDelete && (
+        <div className="mt-8 rounded-lg border border-red-500/30 bg-red-500/5 p-4 flex items-center justify-between gap-3">
+          <div className="text-xs text-red-300">
+            <strong>Zona admin master.</strong> Excluir remove a notificação do banco permanentemente.
+          </div>
+          <Button variant="secondary" onClick={handleDelete} disabled={changing}>
+            🗑 Excluir notificação
+          </Button>
         </div>
       )}
     </div>

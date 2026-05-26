@@ -60,10 +60,10 @@ export default function AuthCallback() {
           {error}
         </p>
         <button
-          onClick={() => navigate('/login')}
+          onClick={() => navigate('/entrar')}
           className="mt-4 w-full py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm"
         >
-          Voltar pro login
+          Voltar pra tela inicial
         </button>
       </AuthShell>
     )

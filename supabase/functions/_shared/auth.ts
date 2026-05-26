@@ -62,9 +62,9 @@ export function canManagePessoas(role: Role): boolean {
 
 // Roles que cada perfil pode CRIAR ao convidar alguém.
 const CAN_CREATE: Record<Role, Role[]> = {
-  admin_onway:    ['administradora', 'sindico', 'portaria', 'ronda', 'morador'],
-  administradora: ['sindico', 'portaria', 'ronda', 'morador'],
-  sindico:        ['portaria', 'ronda', 'morador'],
+  admin_onway:    ['sindico', 'administradora', 'portaria', 'ronda', 'morador'],
+  sindico:        ['administradora', 'portaria', 'ronda', 'morador'],
+  administradora: ['portaria', 'ronda', 'morador'],
   portaria:       [],
   ronda:          [],
   morador:        [],

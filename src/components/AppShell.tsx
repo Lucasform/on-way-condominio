@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
 import { signOut } from '../lib/auth'
-import { menuFor, roleLabel } from '../lib/nav'
+import { menuFor, roleLabel, isGroup } from '../lib/nav'
 import { supabase } from '../lib/supabase'
 import NotificationBell from './NotificationBell'
 import ThemeToggle from './ThemeToggle'
@@ -31,7 +31,7 @@ export default function AppShell() {
 
   async function handleSignOut() {
     await signOut()
-    navigate('/login', { replace: true })
+    navigate('/entrar', { replace: true })
   }
 
   async function handleExitViewAs() {
@@ -65,42 +65,93 @@ export default function AppShell() {
         </div>
 
         {perfil && (
-          <div className="px-5 py-2 border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-500">
-            {roleLabel(perfil.role)}
-          </div>
+          <Link
+            to="/meu-perfil"
+            title="Editar meu perfil"
+            className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition group"
+          >
+            <ProfileAvatar perfil={perfil} email={user?.email ?? null} />
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-medium text-slate-900 dark:text-slate-100 truncate">
+                {perfil.nome_exibicao ?? user?.email ?? 'Sem nome'}
+              </div>
+              <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-500 truncate">
+                {roleLabel(perfil.role)}
+              </div>
+            </div>
+            <span className="text-[10px] text-slate-400 group-hover:text-brand-700 dark:group-hover:text-brand-400 transition shrink-0">
+              ✎
+            </span>
+          </Link>
         )}
 
         <CondominioSwitcher />
 
         <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
-          {items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              className={({ isActive }) =>
-                `block px-3 py-2 rounded-md text-sm transition ${
-                  isActive
-                    ? 'bg-brand-100 dark:bg-brand-700/20 text-brand-700 dark:text-brand-300 font-medium'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
-                }`
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
+          {items.map((item, idx) => {
+            if (isGroup(item)) {
+              return (
+                <div key={`g-${idx}-${item.label}`} className="pt-3 pb-1">
+                  <div className="px-3 pb-1 text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">
+                    {item.label}
+                  </div>
+                  <div className="space-y-1">
+                    {item.children.map((child) => (
+                      <NavLink
+                        key={child.to}
+                        to={child.to}
+                        className={({ isActive }) =>
+                          `block px-3 py-2 rounded-md text-sm transition ${
+                            isActive
+                              ? 'bg-brand-100 dark:bg-brand-700/20 text-brand-700 dark:text-brand-300 font-medium'
+                              : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
+                          }`
+                        }
+                      >
+                        {child.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                </div>
+              )
+            }
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/'}
+                className={({ isActive }) =>
+                  `block px-3 py-2 rounded-md text-sm transition ${
+                    isActive
+                      ? 'bg-brand-100 dark:bg-brand-700/20 text-brand-700 dark:text-brand-300 font-medium'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
+                  }`
+                }
+              >
+                {item.label}
+              </NavLink>
+            )
+          })}
         </nav>
 
         <div className="border-t border-slate-200 dark:border-slate-800 p-3 space-y-2">
           <div className="text-xs text-slate-500 truncate" title={user?.email ?? ''}>
             {user?.email}
           </div>
-          <button
-            onClick={handleSignOut}
-            className="w-full text-left text-sm text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-300 transition"
-          >
-            Sair
-          </button>
+          <div className="flex gap-2">
+            <Link
+              to="/meu-perfil"
+              className="flex-1 px-2 py-1.5 rounded text-xs text-center text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/60 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition"
+            >
+              Perfil
+            </Link>
+            <button
+              onClick={handleSignOut}
+              className="flex-1 px-2 py-1.5 rounded text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/60 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-300 font-medium transition"
+            >
+              Sair
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -126,6 +177,30 @@ export default function AppShell() {
           <Outlet />
         </main>
       </div>
+    </div>
+  )
+}
+
+function ProfileAvatar({
+  perfil,
+  email,
+}: {
+  perfil: { avatar_url: string | null; nome_exibicao: string | null }
+  email: string | null
+}) {
+  const ini = (perfil.nome_exibicao ?? email ?? '?').slice(0, 1).toUpperCase()
+  if (perfil.avatar_url) {
+    return (
+      <img
+        src={perfil.avatar_url}
+        alt=""
+        className="w-8 h-8 rounded-full object-cover bg-brand-50 dark:bg-brand-700/20 shrink-0"
+      />
+    )
+  }
+  return (
+    <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-700/30 text-brand-700 dark:text-brand-300 text-xs font-bold flex items-center justify-center shrink-0">
+      {ini}
     </div>
   )
 }

@@ -1,8 +1,19 @@
 import type { Role } from '../types/database'
 
-export interface MenuItem {
+export interface MenuLeaf {
   to: string
   label: string
+}
+
+export interface MenuGroup {
+  label: string
+  children: MenuLeaf[]
+}
+
+export type MenuItem = MenuLeaf | MenuGroup
+
+export function isGroup(item: MenuItem): item is MenuGroup {
+  return 'children' in item
 }
 
 const COMMON_TOP: MenuItem[] = [{ to: '/', label: 'Início' }]
@@ -10,22 +21,33 @@ const COMMON_TOP: MenuItem[] = [{ to: '/', label: 'Início' }]
 const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
   admin_onway: [
     ...COMMON_TOP,
-    { to: '/dashboard', label: 'Dashboard' },
-    { to: '/painel', label: 'Painel' },
+    { to: '/dashboard', label: 'Acompanhamento Geral' },
+    { to: '/painel', label: 'Painel de trabalho' },
     { to: '/condominios', label: 'Condomínios' },
     { to: '/ocorrencias', label: 'Ocorrências' },
     { to: '/notificacoes', label: 'Notificações' },
     { to: '/multas', label: 'Multas' },
     { to: '/chamados', label: 'Chamados' },
-    { to: '/encomendas', label: 'Encomendas' },
-    { to: '/mural', label: 'Mural' },
+    { to: '/encomendas', label: 'Serviços de Portaria' },
     { to: '/calendario', label: 'Calendário' },
-    { to: '/chat', label: 'Chat' },
-    { to: '/votacoes', label: 'Votações' },
-    { to: '/relatorios', label: 'Relatórios' },
-    { to: '/emails-log', label: 'E-mails' },
-    { to: '/whatsapp-config', label: 'WhatsApp' },
-    { to: '/auditoria', label: 'Auditoria' },
+    { to: '/mural', label: 'Mural informativo' },
+    {
+      label: 'Comunicação',
+      children: [
+        { to: '/chat', label: 'Chat interno' },
+        { to: '/emails-log', label: 'E-mail' },
+        { to: '/whatsapp-config', label: 'WhatsApp' },
+      ],
+    },
+    {
+      label: 'Administração',
+      children: [
+        { to: '/votacoes', label: 'Votações' },
+        { to: '/relatorios', label: 'Relatórios' },
+        { to: '/auditoria', label: 'Auditorias' },
+        { to: '/servicos', label: 'Serviços' },
+      ],
+    },
   ],
   administradora: [
     ...COMMON_TOP,

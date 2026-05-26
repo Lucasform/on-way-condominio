@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   getMulta,
   changeMultaStatus,
+  deleteMulta,
   MULTA_STATUS_TRANSITIONS,
   MULTA_STATUS_LABEL,
 } from '../lib/multas'
@@ -32,6 +33,7 @@ const CAN_CHANGE = ['admin_onway', 'administradora', 'sindico'] as const
 
 export default function MultaDetalhe() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { perfil } = useAuth()
 
   const [multa, setMulta] = useState<Multa | null>(null)
@@ -74,6 +76,22 @@ export default function MultaDetalhe() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
+  async function handleDelete() {
+    if (!multa) return
+    const ok = window.confirm(
+      'Excluir esta multa DEFINITIVAMENTE? Esta ação não pode ser desfeita.',
+    )
+    if (!ok) return
+    setChanging(true)
+    try {
+      await deleteMulta(multa.id)
+      navigate('/multas')
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao excluir.')
+      setChanging(false)
+    }
+  }
+
   async function handleChange(newStatus: StatusMulta) {
     if (!multa) return
     if (!window.confirm(`Mudar status para "${MULTA_STATUS_LABEL[newStatus]}"?`)) return
@@ -105,6 +123,7 @@ export default function MultaDetalhe() {
   }
 
   const canChange = perfil && (CAN_CHANGE as readonly string[]).includes(perfil.role)
+  const canDelete = perfil?.role === 'admin_onway' || perfil?.role === 'sindico'
   const transitions = MULTA_STATUS_TRANSITIONS[multa.status]
 
   return (
@@ -239,9 +258,17 @@ export default function MultaDetalhe() {
         pessoaUserId={pessoa?.user_id ?? null}
       />
 
-      <div className="mt-8 text-xs text-slate-600">
-        ID: <span className="font-mono">{multa.id}</span>
-      </div>
+      {canDelete && (
+        <div className="mt-8 rounded-lg border border-red-500/30 bg-red-500/5 p-4 flex items-center justify-between gap-3">
+          <div className="text-xs text-red-300">
+            <strong>Zona admin master.</strong> Excluir remove a multa do banco
+            permanentemente (e contestações associadas, se houver).
+          </div>
+          <Button variant="secondary" onClick={handleDelete} disabled={changing}>
+            🗑 Excluir multa
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

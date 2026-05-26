@@ -25,11 +25,15 @@ export interface IAResult {
 
 /**
  * Chama a Edge Function `analyze-ocorrencia` (Claude Sonnet 4.6 + RAG).
- * Pode levar ~5-15s.
+ * `comentario_extra` é uma instrução pontual pra esta análise (não persistido).
+ * O `comentario_gestao` salvo na ocorrência é lido pela própria Edge Function.
  */
-export async function analisarOcorrenciaIA(ocorrenciaId: string): Promise<IAResult> {
+export async function analisarOcorrenciaIA(
+  ocorrenciaId: string,
+  comentario_extra?: string,
+): Promise<IAResult> {
   const { data, error } = await supabase.functions.invoke('analyze-ocorrencia', {
-    body: { ocorrencia_id: ocorrenciaId },
+    body: { ocorrencia_id: ocorrenciaId, comentario_extra: comentario_extra ?? null },
   })
   if (error) throw error
   if (!data || !data.analysis) {

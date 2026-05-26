@@ -176,6 +176,12 @@ export const MULTA_STATUS_LABEL: Record<StatusMulta, string> = {
   arquivada: 'Arquivada',
 }
 
+// Exclusão definitiva — RLS já restringe a admin_onway.
+export async function deleteMulta(id: string): Promise<void> {
+  const { error } = await supabase.from('multas').delete().eq('id', id)
+  if (error) throw error
+}
+
 export async function changeMultaStatus(id: string, newStatus: StatusMulta): Promise<void> {
   const patch: Record<string, unknown> = { status: newStatus }
   const today = new Date().toISOString().slice(0, 10)
