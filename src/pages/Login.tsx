@@ -8,7 +8,14 @@ import {
 import { useAuth } from '../components/AuthProvider'
 import AuthShell from '../components/AuthShell'
 
-type Modo = 'senha' | 'magic'
+type Modo = 'senha' | 'email'
+
+const inputCls =
+  'w-full px-3 py-2 rounded-md bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 ' +
+  'text-slate-900 dark:text-slate-100 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700 text-sm'
+
+const primaryBtn =
+  'w-full py-2 rounded-md bg-brand-700 hover:bg-brand-800 active:bg-brand-900 text-white font-semibold text-sm transition disabled:opacity-50'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -23,7 +30,7 @@ export default function Login() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-400">
+      <div className="min-h-screen flex items-center justify-center bg-brand-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">
         Carregando...
       </div>
     )
@@ -57,7 +64,6 @@ export default function Login() {
     setError(null)
     try {
       await signInWithGoogle()
-      // O navegador é redirecionado pra Google.
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro com Google')
     }
@@ -70,58 +76,62 @@ export default function Login() {
       footer={
         <>
           Não tem conta?{' '}
-          <Link to="/signup" className="text-emerald-400 hover:underline">
+          <Link to="/signup" className="text-brand-700 dark:text-brand-400 font-medium hover:underline">
             Criar agora
           </Link>
         </>
       }
     >
-      {/* Toggle senha / magic link */}
-      <div className="flex bg-slate-800/60 rounded-md p-1 mb-5">
+      {/* Toggle senha / entrar por e-mail */}
+      <div className="flex bg-slate-100 dark:bg-slate-800/60 rounded-md p-1 mb-5">
         <button
           type="button"
           onClick={() => { setModo('senha'); setError(null); setMagicSent(false) }}
-          className={`flex-1 text-sm py-1.5 rounded transition ${
-            modo === 'senha' ? 'bg-slate-700 text-white' : 'text-slate-400'
+          className={`flex-1 text-sm py-1.5 rounded transition font-medium ${
+            modo === 'senha'
+              ? 'bg-white dark:bg-slate-700 text-brand-700 dark:text-white shadow-sm'
+              : 'text-slate-500 dark:text-slate-400'
           }`}
         >
-          Senha
+          🔒 Senha
         </button>
         <button
           type="button"
-          onClick={() => { setModo('magic'); setError(null) }}
-          className={`flex-1 text-sm py-1.5 rounded transition ${
-            modo === 'magic' ? 'bg-slate-700 text-white' : 'text-slate-400'
+          onClick={() => { setModo('email'); setError(null) }}
+          className={`flex-1 text-sm py-1.5 rounded transition font-medium ${
+            modo === 'email'
+              ? 'bg-white dark:bg-slate-700 text-brand-700 dark:text-white shadow-sm'
+              : 'text-slate-500 dark:text-slate-400'
           }`}
         >
-          Link mágico
+          ✉ Entrar por e-mail
         </button>
       </div>
 
       {magicSent ? (
-        <div className="text-sm text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-md px-4 py-3">
+        <div className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/30 rounded-md px-4 py-3">
           ✓ Link de acesso enviado pra <strong>{email}</strong>. Cheque sua caixa de entrada e clique no link.
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block">
-            <span className="block text-sm font-medium text-slate-300 mb-1">E-mail</span>
+            <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mail</span>
             <input
               type="email"
               required
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm"
+              className={inputCls}
             />
           </label>
 
           {modo === 'senha' && (
             <label className="block">
-              <span className="flex items-center justify-between text-sm font-medium text-slate-300 mb-1">
+              <span className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Senha
-                <Link to="/esqueci-senha" className="text-xs text-slate-500 hover:text-emerald-400">
-                  Esqueci
+                <Link to="/esqueci-senha" className="text-xs text-slate-500 hover:text-brand-700 dark:hover:text-brand-400">
+                  Esqueci a senha
                 </Link>
               </span>
               <input
@@ -130,48 +140,44 @@ export default function Login() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm"
+                className={inputCls}
               />
             </label>
           )}
 
-          {modo === 'magic' && (
-            <p className="text-xs text-slate-500">
-              Sem senha. Você vai receber um e-mail com link de acesso direto.
+          {modo === 'email' && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Sem senha. Vamos enviar um link de acesso direto pro seu e-mail.
             </p>
           )}
 
           {error && (
-            <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
+            <div className="text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-md px-3 py-2">
               {error}
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm transition disabled:opacity-50"
-          >
+          <button type="submit" disabled={submitting} className={primaryBtn}>
             {submitting
-              ? 'Entrando...'
+              ? 'Aguarde...'
               : modo === 'senha'
               ? 'Entrar'
-              : 'Enviar link mágico'}
+              : 'Enviar link de acesso'}
           </button>
         </form>
       )}
 
       {/* Divisor + Google */}
-      <div className="my-5 flex items-center gap-3 text-xs text-slate-600">
-        <div className="flex-1 h-px bg-slate-800" />
+      <div className="my-5 flex items-center gap-3 text-xs text-slate-400 dark:text-slate-600">
+        <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
         ou
-        <div className="flex-1 h-px bg-slate-800" />
+        <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
       </div>
 
       <button
         type="button"
         onClick={handleGoogle}
-        className="w-full py-2 rounded-md bg-white hover:bg-slate-100 text-slate-900 font-medium text-sm transition flex items-center justify-center gap-2"
+        className="w-full py-2 rounded-md bg-white border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-100 text-slate-900 font-medium text-sm transition flex items-center justify-center gap-2"
       >
         <svg width="18" height="18" viewBox="0 0 24 24">
           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />

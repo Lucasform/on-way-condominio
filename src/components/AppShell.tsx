@@ -3,6 +3,8 @@ import { useAuth } from './AuthProvider'
 import { signOut } from '../lib/auth'
 import { menuFor, roleLabel } from '../lib/nav'
 import NotificationBell from './NotificationBell'
+import ThemeToggle from './ThemeToggle'
+import Logo from './Logo'
 
 export default function AppShell() {
   const { perfil, user } = useAuth()
@@ -15,16 +17,25 @@ export default function AppShell() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
-      <aside className="w-60 shrink-0 border-r border-slate-800 bg-slate-900/40 flex flex-col">
-        <div className="px-5 py-5 border-b border-slate-800">
-          <div className="text-lg font-semibold bg-gradient-to-r from-emerald-400 to-sky-500 bg-clip-text text-transparent">
-            OnWay Condomínio
+    <div className="min-h-screen bg-brand-50/40 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors">
+      <aside className="w-60 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 flex flex-col">
+        <div className="px-4 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2.5">
+          <Logo size={36} />
+          <div className="min-w-0">
+            <div className="text-sm font-bold leading-tight">
+              <span className="text-brand-700 dark:text-brand-400">OnWay</span>
+            </div>
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+              Condomínio
+            </div>
           </div>
-          {perfil && (
-            <div className="mt-1 text-xs text-slate-400">{roleLabel(perfil.role)}</div>
-          )}
         </div>
+
+        {perfil && (
+          <div className="px-5 py-2 border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-500">
+            {roleLabel(perfil.role)}
+          </div>
+        )}
 
         <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
           {items.map((item) => (
@@ -35,8 +46,8 @@ export default function AppShell() {
               className={({ isActive }) =>
                 `block px-3 py-2 rounded-md text-sm transition ${
                   isActive
-                    ? 'bg-emerald-500/10 text-emerald-300'
-                    : 'text-slate-300 hover:bg-slate-800/60 hover:text-white'
+                    ? 'bg-brand-100 dark:bg-brand-700/20 text-brand-700 dark:text-brand-300 font-medium'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white'
                 }`
               }
             >
@@ -45,13 +56,13 @@ export default function AppShell() {
           ))}
         </nav>
 
-        <div className="border-t border-slate-800 p-3 space-y-2">
+        <div className="border-t border-slate-200 dark:border-slate-800 p-3 space-y-2">
           <div className="text-xs text-slate-500 truncate" title={user?.email ?? ''}>
             {user?.email}
           </div>
           <button
             onClick={handleSignOut}
-            className="w-full text-left text-sm text-slate-400 hover:text-red-300 transition"
+            className="w-full text-left text-sm text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-300 transition"
           >
             Sair
           </button>
@@ -59,10 +70,11 @@ export default function AppShell() {
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-12 shrink-0 border-b border-slate-800 bg-slate-900/30 flex items-center justify-end px-4 gap-2">
+        <header className="h-12 shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 flex items-center justify-end px-4 gap-1">
+          <ThemeToggle compact />
           <NotificationBell />
         </header>
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto bg-brand-50/40 dark:bg-slate-950">
           <Outlet />
         </main>
       </div>

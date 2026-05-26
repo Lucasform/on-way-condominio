@@ -4,6 +4,13 @@ import { updatePassword } from '../lib/auth'
 import { useAuth } from '../components/AuthProvider'
 import AuthShell from '../components/AuthShell'
 
+const inputCls =
+  'w-full px-3 py-2 rounded-md bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 ' +
+  'text-slate-900 dark:text-slate-100 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700 text-sm'
+
+const primaryBtn =
+  'w-full py-2 rounded-md bg-brand-700 hover:bg-brand-800 active:bg-brand-900 text-white font-semibold text-sm transition disabled:opacity-50'
+
 export default function AtualizarSenha() {
   const navigate = useNavigate()
   const { user, loading } = useAuth()
@@ -30,15 +37,14 @@ export default function AtualizarSenha() {
   }
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-400">Carregando...</div>
+    return <div className="min-h-screen flex items-center justify-center bg-brand-50 dark:bg-slate-950 text-slate-500">Carregando...</div>
   }
-  // Se não tem session, o link expirou ou veio direto
   if (!user) {
     return (
       <AuthShell title="Link inválido">
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-slate-600 dark:text-slate-400">
           O link de recuperação expirou ou já foi usado.{' '}
-          <Link to="/esqueci-senha" className="text-emerald-400 hover:underline">
+          <Link to="/esqueci-senha" className="text-brand-700 dark:text-brand-400 font-medium hover:underline">
             Solicitar um novo
           </Link>.
         </p>
@@ -50,7 +56,7 @@ export default function AtualizarSenha() {
     <AuthShell title="Definir nova senha" subtitle="Escolha uma senha forte. Depois você está dentro.">
       <form onSubmit={handleSubmit} className="space-y-4">
         <label className="block">
-          <span className="block text-sm font-medium text-slate-300 mb-1">Nova senha</span>
+          <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nova senha</span>
           <input
             type="password"
             required
@@ -58,32 +64,28 @@ export default function AtualizarSenha() {
             autoComplete="new-password"
             value={novaSenha}
             onChange={(e) => setNovaSenha(e.target.value)}
-            className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:outline-none text-sm"
+            className={inputCls}
           />
         </label>
 
         <label className="block">
-          <span className="block text-sm font-medium text-slate-300 mb-1">Confirmar</span>
+          <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Confirmar</span>
           <input
             type="password"
             required
             value={confirmar}
             onChange={(e) => setConfirmar(e.target.value)}
-            className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:outline-none text-sm"
+            className={inputCls}
           />
         </label>
 
         {error && (
-          <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
+          <div className="text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-md px-3 py-2">
             {error}
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm transition disabled:opacity-50"
-        >
+        <button type="submit" disabled={submitting} className={primaryBtn}>
           {submitting ? 'Salvando...' : 'Salvar e entrar'}
         </button>
       </form>

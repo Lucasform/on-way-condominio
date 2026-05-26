@@ -4,6 +4,13 @@ import { signUp, signInWithGoogle } from '../lib/auth'
 import { useAuth } from '../components/AuthProvider'
 import AuthShell from '../components/AuthShell'
 
+const inputCls =
+  'w-full px-3 py-2 rounded-md bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 ' +
+  'text-slate-900 dark:text-slate-100 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700 text-sm'
+
+const primaryBtn =
+  'w-full py-2 rounded-md bg-brand-700 hover:bg-brand-800 active:bg-brand-900 text-white font-semibold text-sm transition disabled:opacity-50'
+
 export default function Signup() {
   const { user, loading } = useAuth()
   const [nome, setNome] = useState('')
@@ -14,7 +21,7 @@ export default function Signup() {
   const [sent, setSent] = useState(false)
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-400">Carregando...</div>
+    return <div className="min-h-screen flex items-center justify-center bg-brand-50 dark:bg-slate-950 text-slate-500">Carregando...</div>
   }
   if (user && !sent) return <Navigate to="/" replace />
 
@@ -43,7 +50,7 @@ export default function Signup() {
       footer={
         <>
           Já tem conta?{' '}
-          <Link to="/login" className="text-emerald-400 hover:underline">
+          <Link to="/login" className="text-brand-700 dark:text-brand-400 font-medium hover:underline">
             Entrar
           </Link>
         </>
@@ -51,17 +58,13 @@ export default function Signup() {
     >
       {sent ? (
         <div className="space-y-3">
-          <div className="text-sm text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-md px-4 py-3">
-            ✓ Conta criada! Enviamos um e-mail de confirmação pra <strong>{email}</strong>.
-            Clica no link pra ativar.
+          <div className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/30 rounded-md px-4 py-3">
+            ✓ Conta criada! Enviamos um e-mail de confirmação pra <strong>{email}</strong>. Clica no link pra ativar.
           </div>
-          <p className="text-xs text-slate-500">
-            Não esqueça de pedir pra administradora associar seu perfil ao condomínio depois.
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Lembre-se de pedir pra administradora associar seu perfil ao condomínio depois.
           </p>
-          <Link
-            to="/login"
-            className="block text-center mt-3 text-sm text-emerald-400 hover:underline"
-          >
+          <Link to="/login" className="block text-center mt-3 text-sm text-brand-700 dark:text-brand-400 hover:underline">
             Ir pra tela de login
           </Link>
         </div>
@@ -69,67 +72,42 @@ export default function Signup() {
         <>
           <form onSubmit={handleSubmit} className="space-y-4">
             <label className="block">
-              <span className="block text-sm font-medium text-slate-300 mb-1">Nome</span>
-              <input
-                type="text"
-                required
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm"
-              />
+              <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome</span>
+              <input type="text" required value={nome} onChange={(e) => setNome(e.target.value)} className={inputCls} />
             </label>
 
             <label className="block">
-              <span className="block text-sm font-medium text-slate-300 mb-1">E-mail</span>
-              <input
-                type="email"
-                required
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm"
-              />
+              <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mail</span>
+              <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
             </label>
 
             <label className="block">
-              <span className="block text-sm font-medium text-slate-300 mb-1">Senha</span>
-              <input
-                type="password"
-                required
-                minLength={6}
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm"
-              />
+              <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Senha</span>
+              <input type="password" required minLength={6} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} />
               <span className="text-xs text-slate-500 mt-1 block">Mín 6 caracteres.</span>
             </label>
 
             {error && (
-              <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
+              <div className="text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-md px-3 py-2">
                 {error}
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm transition disabled:opacity-50"
-            >
+            <button type="submit" disabled={submitting} className={primaryBtn}>
               {submitting ? 'Criando...' : 'Criar conta'}
             </button>
           </form>
 
-          <div className="my-5 flex items-center gap-3 text-xs text-slate-600">
-            <div className="flex-1 h-px bg-slate-800" />
+          <div className="my-5 flex items-center gap-3 text-xs text-slate-400 dark:text-slate-600">
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
             ou
-            <div className="flex-1 h-px bg-slate-800" />
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
           </div>
 
           <button
             type="button"
             onClick={() => signInWithGoogle().catch((e) => setError(e.message))}
-            className="w-full py-2 rounded-md bg-white hover:bg-slate-100 text-slate-900 font-medium text-sm transition flex items-center justify-center gap-2"
+            className="w-full py-2 rounded-md bg-white border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-100 text-slate-900 font-medium text-sm transition flex items-center justify-center gap-2"
           >
             <svg width="18" height="18" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
