@@ -43,6 +43,7 @@ import Relatorios from './pages/Relatorios'
 import EmailsLog from './pages/EmailsLog'
 import Chat from './pages/Chat'
 import ChatConversa from './pages/ChatConversa'
+import WhatsappConfig from './pages/WhatsappConfig'
 
 export default function App() {
   return (
@@ -385,6 +386,14 @@ export default function App() {
             />
             <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
             <Route path="/chat/:id" element={<ProtectedRoute><ChatConversa /></ProtectedRoute>} />
+            <Route
+              path="/whatsapp-config"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <WhatsappConfig />
+                </ProtectedRoute>
+              }
+            />
           </Route>
         </Routes>
       </BrowserRouter>

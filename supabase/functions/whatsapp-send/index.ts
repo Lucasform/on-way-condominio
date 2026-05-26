@@ -1,0 +1,129 @@
+// supabase/functions/whatsapp-send/index.ts
+// Envia mensagem WhatsApp via provider configurado (Z-API ou Evolution API).
+// Body: { condominio_id: uuid, telefone: string (formato 5511999999999), texto: string, conversa_id?: uuid }
+// Auth: JWT válido.
+//
+// Comportamento: se condomínio NÃO tem whatsapp_config.ativo, retorna 200 com skipped=true.
+// Isso permite código cliente chamar sem se preocupar se o canal está configurado.
+
+import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { corsHeaders, handleCors, jsonResponse } from '../_shared/cors.ts'
+
+interface Body {
+  condominio_id: string
+  telefone: string
+  texto: string
+  conversa_id?: string
+}
+
+function normalizePhone(p: string): string {
+  // Remove tudo que não é dígito; garante DDI 55 se faltar
+  const digits = p.replace(/\D/g, '')
+  if (digits.length === 11 || digits.length === 10) return `55${digits}`
+  return digits
+}
+
+Deno.serve(async (req: Request) => {
+  const cors = handleCors(req)
+  if (cors) return cors
+
+  try {
+    const auth = req.headers.get('Authorization')
+    if (!auth) return jsonResponse({ error: 'Authorization obrigatório.' }, 401)
+
+    const body = (await req.json()) as Body
+    if (!body.condominio_id || !body.telefone || !body.texto) {
+      return jsonResponse({ error: 'condominio_id, telefone e texto obrigatórios.' }, 400)
+    }
+
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    )
+
+    // Busca config
+    const { data: cfg, error: cfgErr } = await admin
+      .from('whatsapp_config')
+      .select('*')
+      .eq('condominio_id', body.condominio_id)
+      .maybeSingle()
+
+    if (cfgErr) return jsonResponse({ error: cfgErr.message }, 500)
+    if (!cfg || !cfg.ativo) {
+      return jsonResponse({
+        skipped: true,
+        reason: 'WhatsApp não configurado/ativo neste condomínio.',
+      })
+    }
+    if (!cfg.api_url || !cfg.instance_id || !cfg.api_token) {
+      return jsonResponse({
+        skipped: true,
+        reason: 'Credenciais WhatsApp incompletas.',
+      })
+    }
+
+    const telefone = normalizePhone(body.telefone)
+
+    let url: string
+    let init: RequestInit
+
+    if (cfg.provider === 'z-api') {
+      // Z-API: POST https://api.z-api.io/instances/{id}/token/{token}/send-text
+      url = `${cfg.api_url.replace(/\/$/, '')}/instances/${cfg.instance_id}/token/${cfg.api_token}/send-text`
+      init = {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          // Z-API exige Client-Token em conta Pro (header opcional pra free)
+        },
+        body: JSON.stringify({ phone: telefone, message: body.texto }),
+      }
+    } else if (cfg.provider === 'evolution') {
+      // Evolution: POST {api_url}/message/sendText/{instance}
+      url = `${cfg.api_url.replace(/\/$/, '')}/message/sendText/${cfg.instance_id}`
+      init = {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          apikey: cfg.api_token,
+        },
+        body: JSON.stringify({
+          number: telefone,
+          text: body.texto,
+        }),
+      }
+    } else {
+      return jsonResponse({ error: `Provider desconhecido: ${cfg.provider}` }, 500)
+    }
+
+    const r = await fetch(url, init)
+    const data = await r.json().catch(() => ({}))
+
+    if (!r.ok) {
+      return jsonResponse({
+        ok: false,
+        provider: cfg.provider,
+        status: r.status,
+        error: JSON.stringify(data).slice(0, 500),
+      }, 502)
+    }
+
+    // Se foi parte de uma conversa, atualiza metadata da última msg
+    if (body.conversa_id) {
+      const messageId = data?.messageId ?? data?.id ?? data?.key?.id ?? null
+      if (messageId) {
+        await admin
+          .from('mensagens')
+          .update({ metadata: { wa_message_id: messageId, wa_provider: cfg.provider } })
+          .eq('conversa_id', body.conversa_id)
+          .eq('autor_tipo', 'staff')
+          .order('created_at', { ascending: false })
+          .limit(1)
+      }
+    }
+
+    return jsonResponse({ ok: true, provider: cfg.provider, raw: data })
+  } catch (e) {
+    return jsonResponse({ error: e instanceof Error ? e.message : String(e) }, 500)
+  }
+})

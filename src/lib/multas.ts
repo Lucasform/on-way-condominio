@@ -2,6 +2,7 @@ import { supabase } from './supabase'
 import type { Multa, MultaInput, StatusMulta } from '../types/multa'
 import { sendEmail } from './email'
 import { sendPush } from './push'
+import { sendWhatsApp } from './whatsapp'
 
 export async function listMultas(opts: {
   condominio_id?: string
@@ -94,7 +95,7 @@ async function notifyMoradorByEmail(multa: Multa): Promise<void> {
   if (!multa.pessoa_id) return
   const { data: pessoa } = await supabase
     .from('pessoas')
-    .select('nome, email, user_id')
+    .select('nome, email, telefone, user_id')
     .eq('id', multa.pessoa_id)
     .maybeSingle()
   if (!pessoa) return
@@ -132,6 +133,21 @@ async function notifyMoradorByEmail(multa: Multa): Promise<void> {
       corpo: multa.descricao.slice(0, 120),
       link: `/multas/${multa.id}`,
     }).catch((e) => console.warn('[multa] push falhou:', e.message))
+  }
+
+  // WhatsApp (skip silencioso se condo não configurou)
+  if (pessoa.telefone) {
+    sendWhatsApp({
+      condominio_id: multa.condominio_id,
+      telefone: pessoa.telefone,
+      texto:
+        `💰 *OnWay Condomínio*\n\n` +
+        `Foi registrada uma multa em seu nome.\n\n` +
+        `*Valor:* R$ ${Number(multa.valor).toFixed(2).replace('.', ',')}\n` +
+        (multa.artigo_regimento ? `*Artigo:* ${multa.artigo_regimento}\n` : '') +
+        `\n${multa.descricao}\n\n` +
+        `Detalhes e contestação no app.`,
+    }).catch((e) => console.warn('[multa] whatsapp falhou:', e.message))
   }
 }
 
