@@ -11,7 +11,6 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import AuthCallback from './pages/AuthCallback'
 import EscolhaPerfil from './pages/EscolhaPerfil'
-import PrestadorEmBreve from './pages/PrestadorEmBreve'
 
 // Lazy: tudo o mais
 const EsqueciSenha = lazy(() => import('./pages/EsqueciSenha'))
@@ -71,7 +70,6 @@ export default function App() {
         <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/entrar" element={<EscolhaPerfil />} />
-          <Route path="/prestador" element={<PrestadorEmBreve />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/esqueci-senha" element={<EsqueciSenha />} />

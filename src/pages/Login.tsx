@@ -11,23 +11,31 @@ import AuthShell from '../components/AuthShell'
 import { supabase } from '../lib/supabase'
 
 type Modo = 'senha' | 'email'
-type Tipo = 'admin' | 'morador' | null
+type Tipo = 'admin' | 'morador' | 'admin_onway' | null
 
 function parseTipo(raw: string | null): Tipo {
-  if (raw === 'admin' || raw === 'morador') return raw
+  if (raw === 'admin' || raw === 'morador' || raw === 'admin_onway') return raw
   return null
 }
 
 const COPY_POR_TIPO: Record<NonNullable<Tipo>, { title: string; subtitle: string }> = {
   admin: {
     title: 'Entrar como Administração',
-    subtitle: 'Síndico, administradora, portaria ou ronda.',
+    subtitle: 'Síndico, administradores, portaria ou ronda.',
   },
   morador: {
     title: 'Entrar como Morador',
     subtitle: 'Acesse sua unidade, multas, encomendas e mural.',
   },
+  admin_onway: {
+    title: 'Acesso interno OnWay',
+    subtitle: 'Somente equipe operadora do app.',
+  },
 }
+
+// Quem aceita criar conta via código de convite. admin_onway é criado
+// internamente pelo time, não por convite.
+const TIPOS_COM_CONVITE: Tipo[] = ['admin', 'morador']
 
 const inputCls =
   'w-full px-3 py-2 rounded-md bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 ' +
@@ -132,7 +140,7 @@ export default function Login() {
       subtitle={copy.subtitle}
       footer={
         <div className="space-y-3">
-          {tipo === 'morador' && (
+          {TIPOS_COM_CONVITE.includes(tipo) && (
             <div className="text-center">
               <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Primeiro acesso?</div>
               <Link
