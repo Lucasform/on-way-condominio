@@ -333,14 +333,14 @@ export default function PessoaForm() {
           </div>
         </fieldset>
 
-        <Field label="Foto" hint="JPG, PNG ou WebP. Máximo 2 MB.">
+        <Field label="Foto">
           <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={() => fotoInputRef.current?.click()}
               disabled={uploadingFoto || !form.condominio_id}
               title={form.foto_url ? 'Trocar foto' : 'Adicionar foto'}
-              className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:border-brand-500 transition disabled:opacity-50"
+              className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-slate-700 bg-slate-800 hover:border-brand-500 transition disabled:opacity-50"
             >
               {form.foto_url ? (
                 <img
@@ -350,10 +350,12 @@ export default function PessoaForm() {
                   onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3' }}
                 />
               ) : (
-                <span className="flex items-center justify-center w-full h-full text-2xl text-slate-400">+</span>
+                <span className="flex items-center justify-center w-full h-full text-slate-500">
+                  <UserPlaceholderIcon />
+                </span>
               )}
-              <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-brand-700 text-white text-[10px] flex items-center justify-center border-2 border-white dark:border-slate-950 pointer-events-none">
-                📷
+              <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-brand-700 text-white flex items-center justify-center border-2 border-slate-950 pointer-events-none">
+                <CameraIcon />
               </span>
             </button>
             <input
@@ -404,5 +406,23 @@ export default function PessoaForm() {
         </div>
       </form>
     </div>
+  )
+}
+
+function UserPlaceholderIcon() {
+  return (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  )
+}
+
+function CameraIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
   )
 }

@@ -36,6 +36,10 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
       children: [
         { to: '/condominios', label: 'Condomínios' },
         { to: '/unidades', label: 'Unidades' },
+        { to: '/pessoas', label: 'Pessoas' },
+        { to: '/veiculos', label: 'Veículos' },
+        { to: '/pets', label: 'Pets' },
+        { to: '/regimento', label: 'Regimento' },
       ],
     },
     {

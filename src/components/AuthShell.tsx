@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import Logo from './Logo'
-import ThemeToggle from './ThemeToggle'
 
 interface Props {
   children: ReactNode
@@ -13,11 +12,6 @@ interface Props {
 export default function AuthShell({ children, title, subtitle, footer }: Props) {
   return (
     <main className="min-h-screen flex flex-col bg-brand-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
-      {/* Theme toggle no canto superior direito */}
-      <div className="absolute top-4 right-4">
-        <ThemeToggle compact />
-      </div>
-
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-md">
           {/* Marca centralizada */}

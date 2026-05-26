@@ -5,7 +5,6 @@ import { signOut } from '../lib/auth'
 import { menuFor, roleLabel, isGroup } from '../lib/nav'
 import { supabase } from '../lib/supabase'
 import NotificationBell from './NotificationBell'
-import ThemeToggle from './ThemeToggle'
 import Logo from './Logo'
 import CondominioSwitcher from './CondominioSwitcher'
 import { prefetchRoutes } from '../lib/prefetchRoutes'
@@ -156,11 +155,10 @@ export default function AppShell() {
             </button>
           </div>
         )}
-        <header className="h-12 shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 flex items-center justify-end px-4 gap-1">
-          <ThemeToggle compact />
+        <header className="h-12 shrink-0 border-b border-slate-800 bg-slate-900/30 flex items-center justify-end px-4 gap-1">
           <NotificationBell />
         </header>
-        <main className="flex-1 overflow-y-auto bg-brand-50/40 dark:bg-slate-950">
+        <main className="flex-1 overflow-y-auto bg-slate-950">
           <Outlet />
         </main>
       </div>
