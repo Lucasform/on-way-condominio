@@ -222,7 +222,7 @@ export default function OcorrenciaDetalhe() {
         <div className="mt-6 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-5">
           <div className="text-sm font-medium text-emerald-200 mb-1">Gerar multa manual</div>
           <div className="text-xs text-slate-400 mb-3">
-            Pula a IA e cria a multa manualmente.
+            Pula a análise e cria a multa manualmente.
           </div>
           <Link to={`/multas/nova?ocorrencia=${ocorrencia.id}`}>
             <Button variant="secondary">Gerar multa a partir desta ocorrência →</Button>

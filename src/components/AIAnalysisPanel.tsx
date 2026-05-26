@@ -55,15 +55,14 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
     <div className="mt-6 rounded-lg border border-sky-500/30 bg-sky-500/5 p-5">
       <div className="flex items-center justify-between mb-3 gap-3">
         <div>
-          <div className="text-sm font-medium text-sky-200">🤖 Análise por IA</div>
+          <div className="text-sm font-medium text-sky-200">🧑‍💼 Análise do Gestor</div>
           <div className="text-xs text-slate-400 mt-0.5">
-            Claude Sonnet 4.6 lê a ocorrência + regimento e sugere se cabe multa.
-            Apenas sugestão. Você decide.
+            Análise com base no regimento e sugestão. Apenas sugestão, decisão administrativa.
           </div>
         </div>
         {!result && (
           <Button onClick={handleAnalyze} disabled={loading}>
-            {loading ? 'Analisando...' : 'Analisar com IA'}
+            {loading ? 'Analisando...' : 'Analisar'}
           </Button>
         )}
         {result && (
