@@ -37,7 +37,7 @@ export async function createConvite(input: ConviteInput): Promise<Convite> {
   const { data: user } = await supabase.auth.getUser()
   if (!user.user) throw new Error('Sem sessão.')
 
-  const codigo = (input.codigo ?? gerarCodigo()).toUpperCase()
+  const codigo = (input.codigo ?? gerarCodigo()).replace(/\s+/g, '').toUpperCase()
   const dias = input.dias_validade ?? 30
   const expira = new Date()
   expira.setDate(expira.getDate() + dias)

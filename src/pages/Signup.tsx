@@ -72,7 +72,7 @@ export default function Signup() {
             required
             autoComplete="off"
             value={codigo}
-            onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+            onChange={(e) => setCodigo(e.target.value.replace(/\s+/g, '').toUpperCase())}
             placeholder="EX: FLAMBOYANT2026"
             className={`${inputCls} tracking-wider uppercase`}
           />
