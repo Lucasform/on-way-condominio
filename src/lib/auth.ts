@@ -11,6 +11,10 @@ const SITE_URL =
 
 export const AUTH_REDIRECT_URL = `${SITE_URL}/auth/callback`
 
+// Flag pra mostrar botão Google. Religar depois de configurar provider em
+// https://supabase.com/dashboard/project/lkxnngzgmyfqgbbpmjvc/auth/providers
+export const GOOGLE_AUTH_ENABLED = false
+
 // ============================================================
 // Login com senha (clássico)
 // ============================================================
