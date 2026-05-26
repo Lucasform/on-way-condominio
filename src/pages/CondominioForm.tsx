@@ -15,6 +15,7 @@ import { Field, TextInput, Select } from '../components/ui/Input'
 import ConvitesPanel from '../components/ConvitesPanel'
 import LogoUpload from '../components/LogoUpload'
 import PessoasImport from '../components/PessoasImport'
+import ImportPlaceholder from '../components/ImportPlaceholder'
 import { traduzErro } from '../lib/errorMessages'
 
 const EMPTY: CondominioInput = {
@@ -140,6 +141,25 @@ export default function CondominioForm() {
         }
       />
 
+      {/* ============================================================ */}
+      {/* 1) FOTO DO CONDOMÍNIO — primeira coisa */}
+      {/* ============================================================ */}
+      {!isNew && id && (
+        <fieldset className="mb-8 border border-slate-700 rounded-md p-4 space-y-4">
+          <legend className="px-2 text-sm font-semibold text-slate-200">
+            Foto do condomínio
+          </legend>
+          <p className="text-xs text-slate-400 -mt-2">
+            Aparece no header do app pros moradores e no cabeçalho do PDF de notificação/multa.
+          </p>
+          <LogoUpload
+            condominio_id={id}
+            current={form.logo_url}
+            onChange={(url) => update('logo_url', url)}
+          />
+        </fieldset>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-5">
         <Field label="Nome" required>
           <TextInput
@@ -236,77 +256,85 @@ export default function CondominioForm() {
 
       {!isNew && id && (
         <>
+          {/* ============================================================ */}
+          {/* 2) CONFIGURAÇÕES (sem auditoria) */}
+          {/* ============================================================ */}
           <div className="mt-10">
-            <h2 className="text-base font-semibold text-slate-700 dark:text-slate-200 mb-3">
+            <h2 className="text-base font-semibold text-slate-200 mb-3">
               Configurações do condomínio
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Link
                 to={`/regimento`}
-                className="block rounded-lg border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900/40 hover:border-brand-500 dark:hover:border-brand-700 transition"
+                className="block rounded-lg border border-slate-700 p-4 bg-slate-900/40 hover:border-brand-500/60 transition"
               >
-                <div className="text-lg mb-1">📜</div>
-                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Regimento interno</div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Cadastre os artigos. A IA usa esse conteúdo pra sugerir multas em ocorrências.
+                <div className="text-sm font-semibold text-slate-100">📜 Regimento interno</div>
+                <p className="text-xs text-slate-400 mt-1">
+                  Cadastre artigos manualmente ou anexe o PDF do regimento.
+                  A IA usa esse conteúdo pra sugerir multas em ocorrências.
                 </p>
-                <span className="text-xs text-brand-700 dark:text-brand-400 mt-2 inline-block">Gerenciar artigos →</span>
+                <span className="text-xs text-brand-400 mt-2 inline-block">Gerenciar artigos →</span>
               </Link>
-
-              <div className="block rounded-lg border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900/40">
-                <div className="text-lg mb-1">📄</div>
-                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Modelo de notificação</div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Usa o modelo padrão do OnWay com o logo deste condomínio. Gere o PDF direto na tela de cada multa.
-                </p>
-                <span className="text-xs text-slate-500 mt-2 inline-block">Botão "📄 Gerar PDF" em /multas/[id]</span>
-              </div>
 
               <Link
                 to={`/whatsapp-config`}
-                className="block rounded-lg border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900/40 hover:border-brand-500 dark:hover:border-brand-700 transition"
+                className="block rounded-lg border border-slate-700 p-4 bg-slate-900/40 hover:border-brand-500/60 transition"
               >
-                <div className="text-lg mb-1">💬</div>
-                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">WhatsApp</div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                <div className="text-sm font-semibold text-slate-100">💬 WhatsApp</div>
+                <p className="text-xs text-slate-400 mt-1">
                   Configurar provider Z-API ou Evolution pra envio automático.
                 </p>
-                <span className="text-xs text-brand-700 dark:text-brand-400 mt-2 inline-block">Configurar →</span>
+                <span className="text-xs text-brand-400 mt-2 inline-block">Configurar →</span>
               </Link>
+            </div>
 
-              <Link
-                to={`/auditoria`}
-                className="block rounded-lg border border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900/40 hover:border-brand-500 dark:hover:border-brand-700 transition"
-              >
-                <div className="text-lg mb-1">📋</div>
-                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">Log de auditoria</div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Histórico de ações sensíveis: convites, desativações, resets de senha.
-                </p>
-                <span className="text-xs text-brand-700 dark:text-brand-400 mt-2 inline-block">Ver log →</span>
-              </Link>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              <ImportPlaceholder
+                titulo="📑 Anexar regimento (PDF)"
+                descricao="Suba o PDF do regimento interno. Vamos extrair os artigos automaticamente e gerar os embeddings pra IA usar."
+                hint="Vai habilitar busca semântica nos artigos do PDF."
+              />
+              <ImportPlaceholder
+                titulo="📄 Modelo de notificação (PDF)"
+                descricao="Anexe um PDF de modelo de notificação/multa do seu condomínio. Vamos copiar layout, brasão, assinaturas e tipografia pra gerar PDFs no padrão do prédio."
+                hint="Substitui o template padrão OnWay no botão Gerar PDF da multa."
+              />
             </div>
           </div>
 
-          <div className="mt-8">
-            <fieldset className="border border-slate-200 dark:border-slate-700 rounded-md p-4 space-y-4">
-              <legend className="px-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                Logo do condomínio
-              </legend>
-              <p className="text-xs text-slate-500 dark:text-slate-400 -mt-2">
-                Aparece no header da app pra moradores do condomínio E no cabeçalho do PDF de multa.
-              </p>
-              <LogoUpload
-                condominio_id={id}
-                current={form.logo_url}
-                onChange={(url) => update('logo_url', url)}
+          {/* ============================================================ */}
+          {/* 3) IMPORTAÇÕES EM MASSA */}
+          {/* ============================================================ */}
+          <div className="mt-10">
+            <h2 className="text-base font-semibold text-slate-200 mb-1">
+              Importações em massa
+            </h2>
+            <p className="text-xs text-slate-400 mb-4">
+              Suba planilhas (XLSX/CSV) pra preencher os cadastros de uma vez. Os dados são normalizados (CPF, telefone, etc.) e validados antes de inserir.
+            </p>
+
+            <div className="space-y-4">
+              <ImportPlaceholder
+                titulo="🏠 Importar Unidades"
+                descricao="Planilha com bloco, número, tipo (apartamento/casa/sala/loja) e área. Validação por bloco+número único."
+                hint="Recomendado importar antes de moradores — pessoas vinculam a unidades."
               />
-            </fieldset>
+
+              {/* PessoasImport real (já implementado) */}
+              <PessoasImport condominio_id={id} />
+
+              <ImportPlaceholder
+                titulo="🔧 Importar Fornecedores"
+                descricao="Planilha de prestadores: nome, categoria (elétrica/hidráulica/limpeza/etc.), telefone, e-mail, CPF/CNPJ, valor de referência."
+                hint="Vincula automaticamente à tabela de serviços do condomínio."
+              />
+            </div>
           </div>
-          <div className="mt-8">
-            <PessoasImport condominio_id={id} />
-          </div>
-          <div className="mt-8">
+
+          {/* ============================================================ */}
+          {/* 4) CONVITES */}
+          {/* ============================================================ */}
+          <div className="mt-10">
             <ConvitesPanel condominio_id={id} />
           </div>
         </>

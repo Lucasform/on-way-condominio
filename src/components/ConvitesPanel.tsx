@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react'
 import {
   listConvites,
   createConvite,
+  deleteConvite,
   revogarConvite,
   renovarConvite,
   type Convite,
   type ConviteRole,
 } from '../lib/convites'
 import Button from './ui/Button'
+import DeleteButton from './ui/DeleteButton'
 import { Field, TextInput, Select } from './ui/Input'
 
 interface Props {
@@ -82,6 +84,16 @@ export default function ConvitesPanel({ condominio_id }: Props) {
     }
   }
 
+  async function handleApagar(c: Convite) {
+    if (!window.confirm(`Apagar código "${c.codigo}" DEFINITIVAMENTE? Esta ação não pode ser desfeita.`)) return
+    try {
+      await deleteConvite(c.id)
+      await reload()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao apagar.')
+    }
+  }
+
   async function handleRenovar(c: Convite) {
     if (!window.confirm(`Renovar "${c.codigo}" por +30 dias?\nUsos zeram e código fica reativado.`)) return
     try {
@@ -111,7 +123,7 @@ export default function ConvitesPanel({ condominio_id }: Props) {
       </p>
 
       <div className="grid grid-cols-[1fr_140px_100px_100px_auto] gap-3 items-end">
-        <Field label="Código (vazio = gera automático)">
+        <Field label="Código" hint="vazio = gera automático">
           <TextInput
             value={codigo}
             onChange={(e) => setCodigo(e.target.value.toUpperCase())}
@@ -183,19 +195,22 @@ export default function ConvitesPanel({ condominio_id }: Props) {
                     <span className={`px-2 py-0.5 rounded text-xs ${st.cls}`}>{st.label}</span>
                   </td>
                   <td className="py-2 text-right">
-                    <Button type="button" variant="ghost" onClick={() => copiar(c.codigo)} title="Copiar código">
-                      Copiar
-                    </Button>
-                    {(c.revogado || new Date(c.expira_em) < new Date() || c.usos >= c.usos_max) && (
-                      <Button type="button" variant="secondary" onClick={() => handleRenovar(c)} title="Renovar +30 dias">
-                        Renovar
+                    <div className="inline-flex items-center gap-1">
+                      <Button type="button" variant="ghost" onClick={() => copiar(c.codigo)} title="Copiar código">
+                        Copiar
                       </Button>
-                    )}
-                    {!c.revogado && (
-                      <Button type="button" variant="danger" onClick={() => handleRevogar(c)}>
-                        Revogar
-                      </Button>
-                    )}
+                      {(c.revogado || new Date(c.expira_em) < new Date() || c.usos >= c.usos_max) && (
+                        <Button type="button" variant="secondary" onClick={() => handleRenovar(c)} title="Renovar +30 dias">
+                          Renovar
+                        </Button>
+                      )}
+                      {!c.revogado && (
+                        <Button type="button" variant="ghost" onClick={() => handleRevogar(c)} title="Revogar (bloqueia mas mantém histórico)">
+                          Revogar
+                        </Button>
+                      )}
+                      <DeleteButton label="" onClick={() => handleApagar(c)} />
+                    </div>
                   </td>
                 </tr>
               )

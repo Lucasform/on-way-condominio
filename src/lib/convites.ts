@@ -66,6 +66,12 @@ export async function revogarConvite(id: string): Promise<void> {
   if (error) throw error
 }
 
+// Hard delete — só admin_onway tem permissão na RLS (0019).
+export async function deleteConvite(id: string): Promise<void> {
+  const { error } = await supabase.from('convites_condominio').delete().eq('id', id)
+  if (error) throw error
+}
+
 export async function renovarConvite(id: string, dias_validade = 30): Promise<Convite> {
   const expira = new Date()
   expira.setDate(expira.getDate() + dias_validade)
