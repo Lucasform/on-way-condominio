@@ -17,6 +17,7 @@ import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import ContestacaoThread from '../components/ContestacaoThread'
+import { gerarPdfNotificacao } from '../lib/multaPdf'
 
 const STATUS_CLASS: Record<StatusMulta, string> = {
   em_analise: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
@@ -110,7 +111,19 @@ export default function MultaDetalhe() {
     <div className="px-8 py-10 max-w-3xl">
       <PageHeader
         title="Multa"
-        actions={<Link to="/multas"><Button variant="ghost">← Voltar</Button></Link>}
+        actions={
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => condominio && gerarPdfNotificacao({ multa, unidade, pessoa, condominio }).catch((e) => alert(e.message))}
+              disabled={!condominio}
+              title="Gerar PDF de notificação"
+            >
+              📄 Gerar PDF
+            </Button>
+            <Link to="/multas"><Button variant="ghost">← Voltar</Button></Link>
+          </div>
+        }
       />
 
       <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-6">

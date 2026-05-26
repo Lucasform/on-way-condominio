@@ -226,7 +226,54 @@ export default function Painel() {
     }
   }
 
-  const canAct = perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role)
+  // Regras do fluxo: dado um card, em quais colunas ele pode ser solto.
+  function canDropOn(card: Card, target: ColumnKey): boolean {
+    const from = card.kind === 'ocorrencia'
+      ? ocorrenciaColumn({ status: card.status } as Ocorrencia)
+      : multaColumn({ status: card.status } as Multa)
+    if (from === target) return false
+    if (card.kind === 'ocorrencia') {
+      if (card.status === 'aberta') return target === 'analise' || target === 'finalizada'
+      if (card.status === 'em_analise') return target === 'finalizada' // arquivar; virar multa só pelo detalhe
+      return false
+    }
+    // multa
+    if (card.status === 'em_analise') return target === 'em_curso' || target === 'finalizada'
+    if (card.status === 'aplicada' || card.status === 'contestada') return target === 'finalizada'
+    return false
+  }
+
+  async function moveCard(card: Card, target: ColumnKey) {
+    if (!canDropOn(card, target)) return
+    try {
+      if (card.kind === 'ocorrencia') {
+        if (card.status === 'aberta' && target === 'analise') {
+          await updateOcorrenciaStatus(card.id, 'em_analise')
+        } else if (target === 'finalizada') {
+          if (!window.confirm(`Arquivar essa ocorrência?`)) return
+          await updateOcorrenciaStatus(card.id, 'arquivada')
+        }
+      } else {
+        if (card.status === 'em_analise' && target === 'em_curso') {
+          if (!window.confirm('Aplicar multa agora?')) return
+          await changeMultaStatus(card.id, 'aplicada')
+        } else if (target === 'finalizada') {
+          const opt = window.prompt('Finalizar como: 1=Paga, 2=Cancelada, 3=Arquivada\nDigite 1, 2 ou 3:')
+          const novoStatus = opt === '1' ? 'paga' : opt === '2' ? 'cancelada' : opt === '3' ? 'arquivada' : null
+          if (!novoStatus) return
+          await changeMultaStatus(card.id, novoStatus as StatusMulta)
+        }
+      }
+      await reload()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro.')
+    }
+  }
+
+  const canAct = !!(perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role))
+
+  const [draggingCard, setDraggingCard] = useState<Card | null>(null)
+  const [hoverCol, setHoverCol] = useState<ColumnKey | null>(null)
 
   return (
     <div className="px-6 py-8 max-w-[1600px]">
@@ -263,10 +310,30 @@ export default function Painel() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {COLUMNS.map((col) => {
             const list = cards[col.key]
+            const isHover = hoverCol === col.key
+            const isValidTarget = draggingCard ? canDropOn(draggingCard, col.key) : false
+            const isInvalidHover = isHover && draggingCard && !isValidTarget
             return (
               <section
                 key={col.key}
-                className={`rounded-lg border ${col.accent} p-3 flex flex-col min-h-[400px]`}
+                onDragOver={(e) => {
+                  if (!draggingCard) return
+                  e.preventDefault()
+                  e.dataTransfer.dropEffect = canDropOn(draggingCard, col.key) ? 'move' : 'none'
+                  setHoverCol(col.key)
+                }}
+                onDragLeave={() => setHoverCol((h) => (h === col.key ? null : h))}
+                onDrop={(e) => {
+                  e.preventDefault()
+                  if (draggingCard && canDropOn(draggingCard, col.key)) {
+                    moveCard(draggingCard, col.key)
+                  }
+                  setDraggingCard(null)
+                  setHoverCol(null)
+                }}
+                className={`rounded-lg border ${col.accent} p-3 flex flex-col min-h-[400px] transition-all ${
+                  isHover && isValidTarget ? 'ring-2 ring-emerald-500 scale-[1.01]' : ''
+                } ${isInvalidHover ? 'ring-2 ring-red-500/50 opacity-70' : ''}`}
               >
                 <header className="mb-3 px-1">
                   <div className="flex items-baseline justify-between">
@@ -284,9 +351,12 @@ export default function Painel() {
                       <CardItem
                         key={`${card.kind}-${card.id}`}
                         card={card}
-                        canAct={!!canAct}
+                        canAct={canAct}
                         onClick={() => navigate(card.kind === 'ocorrencia' ? `/ocorrencias/${card.id}` : `/multas/${card.id}`)}
                         onAdvance={() => quickAdvance(card)}
+                        onDragStart={() => canAct && setDraggingCard(card)}
+                        onDragEnd={() => { setDraggingCard(null); setHoverCol(null) }}
+                        dragging={draggingCard?.id === card.id}
                       />
                     ))
                   )}
@@ -311,11 +381,17 @@ function CardItem({
   canAct,
   onClick,
   onAdvance,
+  onDragStart,
+  onDragEnd,
+  dragging,
 }: {
   card: Card
   canAct: boolean
   onClick: () => void
   onAdvance: () => void
+  onDragStart: () => void
+  onDragEnd: () => void
+  dragging: boolean
 }) {
   const isMulta = card.kind === 'multa'
   const advanceLabel = getAdvanceLabel(card)
@@ -323,7 +399,12 @@ function CardItem({
   return (
     <article
       onClick={onClick}
-      className="rounded-md border border-slate-800 bg-slate-900/60 p-3 cursor-pointer hover:border-slate-600 transition"
+      draggable={canAct}
+      onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; onDragStart() }}
+      onDragEnd={onDragEnd}
+      className={`rounded-md border border-slate-800 bg-slate-900/60 p-3 cursor-pointer hover:border-slate-600 transition ${
+        dragging ? 'opacity-40 ring-2 ring-brand-700' : ''
+      } ${canAct ? 'cursor-grab active:cursor-grabbing' : ''}`}
     >
       <div className="flex items-center gap-2 mb-2">
         <span
