@@ -73,7 +73,7 @@ export default function Regimento() {
   const canEdit = perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role)
 
   return (
-    <div className="px-8 py-10 max-w-5xl">
+    <div className="px-8 py-10 max-w-5xl mx-auto">
       <PageHeader
         title={`Regimento interno${rows.length > 0 ? ` (${rows.length} artigos)` : ''}`}
         subtitle="Artigos do regimento usados como base para análise de ocorrências pela IA."

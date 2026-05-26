@@ -96,7 +96,7 @@ export default function NotificacaoNova() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-2xl">
+    <div className="px-8 py-10 max-w-2xl mx-auto">
       <PageHeader
         title="Nova notificação"
         actions={<Link to="/notificacoes"><Button variant="ghost">← Voltar</Button></Link>}

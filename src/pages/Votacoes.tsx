@@ -55,7 +55,7 @@ export default function Votacoes() {
   }, [scopeId, isAdmin])
 
   return (
-    <div className="px-8 py-10 max-w-3xl">
+    <div className="px-8 py-10 max-w-3xl mx-auto">
       <PageHeader
         title="Votações"
         subtitle="Assembleias e decisões coletivas do condomínio."

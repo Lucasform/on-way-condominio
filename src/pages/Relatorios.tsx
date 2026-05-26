@@ -181,7 +181,7 @@ export default function Relatorios() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-2xl">
+    <div className="px-8 py-10 max-w-2xl mx-auto">
       <PageHeader
         title="Relatórios"
         subtitle="Gere relatórios em PDF do período escolhido."

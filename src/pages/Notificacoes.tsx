@@ -81,7 +81,7 @@ export default function Notificacoes() {
   ]
 
   return (
-    <div className="px-8 py-10 max-w-6xl">
+    <div className="px-8 py-10 max-w-6xl mx-auto">
       <PageHeader
         title="Notificações"
         subtitle="Advertências formais sem valor financeiro. Tipicamente usadas antes de aplicar uma multa."

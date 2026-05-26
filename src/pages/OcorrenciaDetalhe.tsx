@@ -184,7 +184,7 @@ export default function OcorrenciaDetalhe() {
 
   if (error || !ocorrencia) {
     return (
-      <div className="px-8 py-10 max-w-2xl">
+      <div className="px-8 py-10 max-w-2xl mx-auto">
         <PageHeader
           title="Ocorrência"
           actions={
@@ -205,7 +205,7 @@ export default function OcorrenciaDetalhe() {
   const transitions = ALLOWED_TRANSITIONS[ocorrencia.status]
 
   return (
-    <div className="px-8 py-10 max-w-3xl">
+    <div className="px-8 py-10 max-w-3xl mx-auto">
       <PageHeader
         title="Ocorrência"
         actions={

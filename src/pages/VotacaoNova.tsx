@@ -71,7 +71,7 @@ export default function VotacaoNova() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-2xl">
+    <div className="px-8 py-10 max-w-2xl mx-auto">
       <PageHeader
         title="Nova votação"
         actions={

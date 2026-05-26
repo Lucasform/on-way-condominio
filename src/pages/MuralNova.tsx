@@ -92,7 +92,7 @@ export default function MuralNova() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-2xl">
+    <div className="px-8 py-10 max-w-2xl mx-auto">
       <PageHeader
         title="Nova publicação"
         subtitle="Comunique algo ao condomínio. Aparece no mural pra todos os moradores."

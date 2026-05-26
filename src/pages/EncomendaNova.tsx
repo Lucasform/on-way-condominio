@@ -85,7 +85,7 @@ export default function EncomendaNova() {
   const isComida = form.tipo === 'comida'
 
   return (
-    <div className="px-8 py-10 max-w-2xl">
+    <div className="px-8 py-10 max-w-2xl mx-auto">
       <PageHeader
         title="Registrar encomenda"
         subtitle="Pacote, comida, documento ou outro item recebido na portaria."

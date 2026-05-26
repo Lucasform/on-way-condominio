@@ -67,7 +67,7 @@ export default function ChamadoNovo() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-2xl">
+    <div className="px-8 py-10 max-w-2xl mx-auto">
       <PageHeader
         title="Abrir chamado"
         subtitle="Solicite manutenção. A equipe será notificada."

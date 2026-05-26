@@ -2,7 +2,7 @@ import PageHeader from '../components/ui/PageHeader'
 
 export default function Servicos() {
   return (
-    <div className="px-8 py-10 max-w-3xl">
+    <div className="px-8 py-10 max-w-3xl mx-auto">
       <PageHeader title="Serviços" subtitle="Fornecedores e prestadores do condomínio" />
 
       <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-8 text-center">

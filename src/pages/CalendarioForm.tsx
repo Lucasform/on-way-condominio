@@ -106,7 +106,7 @@ export default function CalendarioForm() {
   if (loading) return <div className="px-8 py-10 text-slate-400">Carregando...</div>
 
   return (
-    <div className="px-8 py-10 max-w-2xl">
+    <div className="px-8 py-10 max-w-2xl mx-auto">
       <PageHeader
         title={isNew ? 'Novo evento' : 'Editar evento'}
         actions={

@@ -91,7 +91,7 @@ export default function Chat() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-4xl">
+    <div className="px-8 py-10 max-w-4xl mx-auto">
       <PageHeader
         title={isMorador ? 'Minhas conversas' : 'Conversas do condomínio'}
         subtitle={

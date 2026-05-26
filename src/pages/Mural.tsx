@@ -107,7 +107,7 @@ export default function Mural() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-2xl">
+    <div className="px-8 py-10 max-w-2xl mx-auto">
       <PageHeader
         title="Mural"
         subtitle="Publicações da administração e comunicados do condomínio."

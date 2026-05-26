@@ -111,7 +111,7 @@ export default function NotificacaoDetalhe() {
   const transitions = NOTIFICACAO_STATUS_TRANSITIONS[notificacao.status]
 
   return (
-    <div className="px-8 py-10 max-w-3xl">
+    <div className="px-8 py-10 max-w-3xl mx-auto">
       <PageHeader
         title="Notificação"
         actions={

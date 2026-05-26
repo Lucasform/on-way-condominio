@@ -128,7 +128,7 @@ export default function WhatsappConfig() {
   const webhookUrl = webhookSecret ? buildWebhookUrl(webhookSecret) : null
 
   return (
-    <div className="px-8 py-10 max-w-3xl">
+    <div className="px-8 py-10 max-w-3xl mx-auto">
       <PageHeader
         title="WhatsApp"
         subtitle="Integração via Z-API ou Evolution API (não-oficial). Conecte o WhatsApp do condomínio pra receber e enviar mensagens dos moradores direto pelo app deles."

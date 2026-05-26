@@ -127,7 +127,7 @@ export default function ChatConversa() {
 
   if (error || !conversa) {
     return (
-      <div className="px-8 py-10 max-w-3xl">
+      <div className="px-8 py-10 max-w-3xl mx-auto">
         <PageHeader
           title="Conversa"
           actions={<Link to="/chat"><Button variant="ghost">← Voltar</Button></Link>}

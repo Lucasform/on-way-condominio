@@ -128,7 +128,7 @@ export default function EncomendaDetalhe() {
 
   if (error || !encomenda) {
     return (
-      <div className="px-8 py-10 max-w-2xl">
+      <div className="px-8 py-10 max-w-2xl mx-auto">
         <PageHeader
           title="Encomenda"
           actions={<Link to="/encomendas"><Button variant="ghost">← Voltar</Button></Link>}
@@ -144,7 +144,7 @@ export default function EncomendaDetalhe() {
   const unidadeLabel = unidade ? (unidade.bloco ? `${unidade.bloco}-${unidade.numero}` : unidade.numero) : '—'
 
   return (
-    <div className="px-8 py-10 max-w-3xl">
+    <div className="px-8 py-10 max-w-3xl mx-auto">
       <PageHeader
         title="Encomenda"
         actions={<Link to="/encomendas"><Button variant="ghost">← Voltar</Button></Link>}

@@ -99,7 +99,7 @@ export default function CondominioForm() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-3xl">
+    <div className="px-8 py-10 max-w-3xl mx-auto">
       <PageHeader
         title={isNew ? 'Novo condomínio' : 'Editar condomínio'}
         subtitle={isNew ? 'Cadastre um novo condomínio na plataforma.' : 'Atualize os dados.'}

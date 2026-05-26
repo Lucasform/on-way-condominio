@@ -112,7 +112,7 @@ export default function VeiculoForm() {
   if (loading) return <div className="px-8 py-10 text-slate-400">Carregando...</div>
 
   return (
-    <div className="px-8 py-10 max-w-3xl">
+    <div className="px-8 py-10 max-w-3xl mx-auto">
       <PageHeader
         title={isNew ? 'Novo veículo' : 'Editar veículo'}
         actions={

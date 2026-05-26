@@ -85,7 +85,7 @@ export default function Chamados() {
   }, [scopeId, statusFilter, isAdmin])
 
   return (
-    <div className="px-8 py-10 max-w-5xl">
+    <div className="px-8 py-10 max-w-5xl mx-auto">
       <PageHeader
         title="Chamados de manutenção"
         actions={
