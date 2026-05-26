@@ -15,6 +15,7 @@ const STATUS_OPTS: { value: '' | StatusChamado; label: string }[] = [
   { value: 'em_andamento', label: 'Em andamento' },
   { value: 'aguardando', label: 'Aguardando' },
   { value: 'resolvido', label: 'Resolvidos' },
+  { value: 'finalizado', label: 'Finalizados' },
   { value: 'cancelado', label: 'Cancelados' },
 ]
 
@@ -23,6 +24,7 @@ const STATUS_LABEL: Record<StatusChamado, string> = {
   em_andamento: 'Em andamento',
   aguardando: 'Aguardando',
   resolvido: 'Resolvido',
+  finalizado: 'Finalizado',
   cancelado: 'Cancelado',
 }
 
@@ -31,6 +33,7 @@ const STATUS_CLASS: Record<StatusChamado, string> = {
   em_andamento: 'bg-sky-500/10 text-sky-300 border-sky-500/30',
   aguardando: 'bg-orange-500/10 text-orange-300 border-orange-500/30',
   resolvido: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
+  finalizado: 'bg-slate-500/15 text-slate-300 border-slate-500/40',
   cancelado: 'bg-slate-700/40 text-slate-500 border-slate-700',
 }
 

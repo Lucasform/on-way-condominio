@@ -18,6 +18,7 @@ import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { gerarPdfNotificacao } from '../lib/notificacaoPdf'
+import DeleteButton from '../components/ui/DeleteButton'
 
 const STATUS_CLASS: Record<StatusNotificacao, string> = {
   pendente:  'bg-amber-500/10 text-amber-300 border-amber-500/30',
@@ -115,7 +116,10 @@ export default function NotificacaoDetalhe() {
       <PageHeader
         title="Notificação"
         actions={
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {canDelete && (
+              <DeleteButton onClick={handleDelete} disabled={changing} />
+            )}
             <Button
               variant="secondary"
               onClick={() => condominio && gerarPdfNotificacao({ notificacao, unidade, pessoa, condominio }).catch((e) => alert(e.message))}
@@ -205,16 +209,6 @@ export default function NotificacaoDetalhe() {
         </div>
       )}
 
-      {canDelete && (
-        <div className="mt-8 rounded-lg border border-red-500/30 bg-red-500/5 p-4 flex items-center justify-between gap-3">
-          <div className="text-xs text-red-300">
-            <strong>Zona admin master.</strong> Excluir remove a notificação do banco permanentemente.
-          </div>
-          <Button variant="secondary" onClick={handleDelete} disabled={changing}>
-            🗑 Excluir notificação
-          </Button>
-        </div>
-      )}
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
+  deleteEncomenda,
   getEncomenda,
   darBaixaEncomenda,
   devolverEncomenda,
@@ -15,6 +16,7 @@ import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import DeleteButton from '../components/ui/DeleteButton'
 import { Field, TextInput } from '../components/ui/Input'
 
 const STATUS_CLASS: Record<StatusEncomenda, string> = {
@@ -47,7 +49,9 @@ const CAN_BAIXA = ['admin_onway', 'administradora', 'sindico', 'portaria'] as co
 
 export default function EncomendaDetalhe() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { user, perfil } = useAuth()
+  const canDelete = perfil?.role === 'admin_onway' || perfil?.role === 'sindico'
 
   const [encomenda, setEncomenda] = useState<Encomenda | null>(null)
   const [unidade, setUnidade] = useState<Unidade | null>(null)
@@ -113,6 +117,17 @@ export default function EncomendaDetalhe() {
     }
   }
 
+  async function handleDelete() {
+    if (!encomenda) return
+    if (!window.confirm('Excluir essa encomenda DEFINITIVAMENTE? Esta ação não pode ser desfeita.')) return
+    try {
+      await deleteEncomenda(encomenda.id)
+      navigate('/encomendas')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao excluir.')
+    }
+  }
+
   async function handleDevolver() {
     if (!encomenda) return
     if (!window.confirm('Marcar como devolvida? Esta ação registra que a encomenda foi devolvida ao remetente.')) return
@@ -147,7 +162,14 @@ export default function EncomendaDetalhe() {
     <div className="px-8 py-10 max-w-3xl mx-auto">
       <PageHeader
         title="Encomenda"
-        actions={<Link to="/encomendas"><Button variant="ghost">← Voltar</Button></Link>}
+        actions={
+          <div className="flex items-center gap-2">
+            {canDelete && (
+              <DeleteButton onClick={handleDelete} />
+            )}
+            <Link to="/encomendas"><Button variant="ghost">← Voltar</Button></Link>
+          </div>
+        }
       />
 
       <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-6">

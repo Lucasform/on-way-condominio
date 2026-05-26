@@ -125,6 +125,11 @@ export async function devolverEncomenda(id: string): Promise<void> {
   if (error) throw error
 }
 
+export async function deleteEncomenda(id: string): Promise<void> {
+  const { error } = await supabase.from('encomendas').delete().eq('id', id)
+  if (error) throw error
+}
+
 function trimOrNull(s: string | null): string | null {
   if (!s) return null
   const t = s.trim()

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { getVotacao, votar, encerrarVotacao, cancelarVotacao } from '../lib/votacoes'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { deleteVotacao, getVotacao, votar, encerrarVotacao, cancelarVotacao } from '../lib/votacoes'
 import type { Votacao, VotacaoOpcao, Voto, StatusVotacao } from '../types/votacao'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import DeleteButton from '../components/ui/DeleteButton'
 
 const STATUS_LABEL: Record<StatusVotacao, string> = {
   aberta: 'Aberta',
@@ -20,7 +21,9 @@ const STATUS_CLASS: Record<StatusVotacao, string> = {
 
 export default function VotacaoDetalhe() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { user, perfil } = useAuth()
+  const canDelete = perfil?.role === 'admin_onway' || perfil?.role === 'sindico'
 
   const [votacao, setVotacao] = useState<Votacao | null>(null)
   const [opcoes, setOpcoes] = useState<VotacaoOpcao[]>([])
@@ -64,6 +67,17 @@ export default function VotacaoDetalhe() {
       alert(e instanceof Error ? e.message : 'Erro ao votar.')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!votacao) return
+    if (!window.confirm('Excluir essa votação DEFINITIVAMENTE? Esta ação não pode ser desfeita.')) return
+    try {
+      await deleteVotacao(votacao.id)
+      navigate('/votacoes')
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao excluir.')
     }
   }
 
@@ -119,7 +133,14 @@ export default function VotacaoDetalhe() {
     <div className="px-8 py-10 max-w-3xl mx-auto">
       <PageHeader
         title="Votação"
-        actions={<Link to="/votacoes"><Button variant="ghost">← Voltar</Button></Link>}
+        actions={
+          <div className="flex items-center gap-2">
+            {canDelete && (
+              <DeleteButton onClick={handleDelete} />
+            )}
+            <Link to="/votacoes"><Button variant="ghost">← Voltar</Button></Link>
+          </div>
+        }
       />
 
       <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-6">

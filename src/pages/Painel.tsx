@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listOcorrencias, updateOcorrenciaStatus } from '../lib/ocorrencias'
 import { listMultas, changeMultaStatus } from '../lib/multas'
+import { listChamados, updateChamadoStatus } from '../lib/chamados'
 import { listCondominios } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
 import type { Ocorrencia, StatusOcorrencia } from '../types/ocorrencia'
 import type { Multa, StatusMulta } from '../types/multa'
+import type { Chamado, StatusChamado } from '../types/chamado'
 import type { Condominio } from '../types/condominio'
 import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
@@ -17,7 +19,7 @@ import { Select } from '../components/ui/Input'
 // fluindo por 5 colunas no estilo Kanban.
 // ----------------------------------------------------------------
 
-type CardKind = 'ocorrencia' | 'multa'
+type CardKind = 'ocorrencia' | 'multa' | 'chamado'
 
 interface Card {
   kind: CardKind
@@ -35,32 +37,32 @@ type ColumnKey = 'chegou' | 'analise' | 'envio' | 'em_curso' | 'finalizada'
 const COLUMNS: { key: ColumnKey; label: string; description: string; accent: string }[] = [
   {
     key: 'chegou',
-    label: 'Chegou',
-    description: 'Ocorrências novas, aguardando triagem',
+    label: 'Entrada',
+    description: 'Itens novos aguardando triagem',
     accent: 'border-amber-500/40 bg-amber-500/5',
   },
   {
     key: 'analise',
     label: 'Em análise',
-    description: 'No crivo do síndico',
+    description: 'Sob avaliação da gestão',
     accent: 'border-sky-500/40 bg-sky-500/5',
   },
   {
     key: 'envio',
-    label: 'Multa pendente envio',
-    description: 'Multa em rascunho, aguarda aplicação',
+    label: 'Pré-envio',
+    description: 'Multa em rascunho aguardando aplicação',
     accent: 'border-orange-500/40 bg-orange-500/5',
   },
   {
     key: 'em_curso',
     label: 'Em curso',
-    description: 'Multa aplicada ou contestada',
+    description: 'Trabalho em andamento ou contestado',
     accent: 'border-red-500/40 bg-red-500/5',
   },
   {
     key: 'finalizada',
-    label: 'Finalizadas',
-    description: 'Pagas, canceladas ou arquivadas',
+    label: 'Encerrados',
+    description: 'Resolvidos, pagos, arquivados ou cancelados',
     accent: 'border-emerald-500/30 bg-emerald-500/5',
   },
 ]
@@ -95,6 +97,20 @@ function multaColumn(m: Multa): ColumnKey {
   }
 }
 
+function chamadoColumn(c: Chamado): ColumnKey {
+  switch (c.status as StatusChamado) {
+    case 'aberto':
+      return 'chegou'
+    case 'em_andamento':
+    case 'aguardando':
+    case 'resolvido':
+      return 'em_curso'
+    case 'finalizado':
+    case 'cancelado':
+      return 'finalizada'
+  }
+}
+
 export default function Painel() {
   const { perfil } = useAuth()
   const navigate = useNavigate()
@@ -105,6 +121,7 @@ export default function Painel() {
   const [unidades, setUnidades] = useState<Unidade[]>([])
   const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([])
   const [multas, setMultas] = useState<Multa[]>([])
+  const [chamados, setChamados] = useState<Chamado[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -128,12 +145,15 @@ export default function Painel() {
     setLoading(true)
     setError(null)
     try {
-      const [oRows, mRows] = await Promise.all([
-        listOcorrencias({ condominio_id: isAdmin && scopeId ? scopeId : undefined }),
-        listMultas({ condominio_id: isAdmin && scopeId ? scopeId : undefined }),
+      const cid = isAdmin && scopeId ? scopeId : undefined
+      const [oRows, mRows, cRows] = await Promise.all([
+        listOcorrencias({ condominio_id: cid }),
+        listMultas({ condominio_id: cid }),
+        listChamados({ condominio_id: cid }),
       ])
       setOcorrencias(oRows)
       setMultas(mRows)
+      setChamados(cRows)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar.')
     } finally {
@@ -193,12 +213,26 @@ export default function Painel() {
       })
     }
 
+    // Chamados: cada chamado entra em sua coluna (visualizacao; avancos pelo detalhe)
+    for (const c of chamados) {
+      const col = chamadoColumn(c)
+      acc[col].push({
+        kind: 'chamado',
+        id: c.id,
+        unidadeId: c.unidade_id,
+        title: c.titulo.slice(0, 80) + (c.titulo.length > 80 ? '…' : ''),
+        subtitle: `${unidadeLabel(c.unidade_id)} · ${c.categoria}`,
+        date: c.created_at,
+        status: c.status,
+      })
+    }
+
     // Ordena cada coluna por data desc
     for (const k of Object.keys(acc) as ColumnKey[]) {
       acc[k].sort((a, b) => (a.date < b.date ? 1 : -1))
     }
     return acc
-  }, [ocorrencias, multas, unidades])
+  }, [ocorrencias, multas, chamados, unidades])
 
   async function quickAdvance(card: Card) {
     try {
@@ -210,7 +244,7 @@ export default function Painel() {
           navigate(`/ocorrencias/${card.id}`)
           return
         }
-      } else {
+      } else if (card.kind === 'multa') {
         if (card.status === 'em_analise') {
           navigate(`/multas/${card.id}`)
           return
@@ -218,6 +252,16 @@ export default function Painel() {
           // Marca paga (atalho rápido). Síndico pode fazer outras transições no detalhe.
           if (!window.confirm('Marcar multa como PAGA?')) return
           await changeMultaStatus(card.id, 'paga')
+        }
+      } else if (card.kind === 'chamado') {
+        if (card.status === 'aberto') {
+          await updateChamadoStatus(card.id, 'em_andamento')
+        } else if (card.status === 'resolvido') {
+          if (!window.confirm('Finalizar esse chamado?')) return
+          await updateChamadoStatus(card.id, 'finalizado')
+        } else {
+          navigate(`/chamados/${card.id}`)
+          return
         }
       }
       await reload()
@@ -228,6 +272,9 @@ export default function Painel() {
 
   // Regras do fluxo: dado um card, em quais colunas ele pode ser solto.
   function canDropOn(card: Card, target: ColumnKey): boolean {
+    // Chamado: drag-drop nao implementado nessa rodada (avanca pelo detalhe)
+    if (card.kind === 'chamado') return false
+
     const from = card.kind === 'ocorrencia'
       ? ocorrenciaColumn({ status: card.status } as Ocorrencia)
       : multaColumn({ status: card.status } as Multa)
@@ -278,8 +325,8 @@ export default function Painel() {
   return (
     <div className="px-6 py-8 max-w-[1600px]">
       <PageHeader
-        title="Painel"
-        subtitle="Pipeline de ocorrências e multas. Use as colunas pra ver onde está o trabalho."
+        title="Painel de trabalho"
+        subtitle="Pipeline de ocorrências, multas e chamados. Use as colunas pra ver onde está o trabalho."
       />
 
       <div className="mb-5 flex gap-4 items-end">
@@ -293,9 +340,17 @@ export default function Painel() {
             </Select>
           </div>
         )}
-        <Link to="/ocorrencias/novo" className="ml-auto text-sm text-emerald-400 hover:underline">
-          + Nova ocorrência
-        </Link>
+        <div className="ml-auto flex flex-wrap items-center gap-3 text-sm">
+          <Link to="/ocorrencias/novo" className="text-brand-700 dark:text-brand-400 hover:underline">+ Nova ocorrência</Link>
+          <span className="text-slate-300 dark:text-slate-700">·</span>
+          <Link to="/chamados/novo" className="text-brand-700 dark:text-brand-400 hover:underline">+ Novo chamado</Link>
+          <span className="text-slate-300 dark:text-slate-700">·</span>
+          <Link to="/multas/nova" className="text-brand-700 dark:text-brand-400 hover:underline">+ Nova multa</Link>
+          <span className="text-slate-300 dark:text-slate-700">·</span>
+          <Link to="/notificacoes/nova" className="text-brand-700 dark:text-brand-400 hover:underline">+ Nova notificação</Link>
+          <span className="text-slate-300 dark:text-slate-700">·</span>
+          <Link to="/encomendas/novo" className="text-brand-700 dark:text-brand-400 hover:underline">+ Nova encomenda</Link>
+        </div>
       </div>
 
       {error && (
@@ -352,7 +407,15 @@ export default function Painel() {
                         key={`${card.kind}-${card.id}`}
                         card={card}
                         canAct={canAct}
-                        onClick={() => navigate(card.kind === 'ocorrencia' ? `/ocorrencias/${card.id}` : `/multas/${card.id}`)}
+                        onClick={() => {
+                          const path =
+                            card.kind === 'ocorrencia'
+                              ? `/ocorrencias/${card.id}`
+                              : card.kind === 'multa'
+                              ? `/multas/${card.id}`
+                              : `/chamados/${card.id}`
+                          navigate(path)
+                        }}
                         onAdvance={() => quickAdvance(card)}
                         onDragStart={() => canAct && setDraggingCard(card)}
                         onDragEnd={() => { setDraggingCard(null); setHoverCol(null) }}
@@ -394,27 +457,29 @@ function CardItem({
   dragging: boolean
 }) {
   const isMulta = card.kind === 'multa'
+  const isChamado = card.kind === 'chamado'
+  const draggable = canAct && !isChamado // chamado nao tem drag-drop nessa rodada
   const advanceLabel = getAdvanceLabel(card)
+
+  const badge = isChamado
+    ? { cls: 'bg-orange-500/15 text-orange-300', label: '🔧 chamado' }
+    : isMulta
+    ? { cls: 'bg-red-500/15 text-red-300', label: '💰 multa' }
+    : { cls: 'bg-sky-500/15 text-sky-300', label: '📋 ocorrência' }
 
   return (
     <article
       onClick={onClick}
-      draggable={canAct}
+      draggable={draggable}
       onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; onDragStart() }}
       onDragEnd={onDragEnd}
       className={`rounded-md border border-slate-800 bg-slate-900/60 p-3 cursor-pointer hover:border-slate-600 transition ${
         dragging ? 'opacity-40 ring-2 ring-brand-700' : ''
-      } ${canAct ? 'cursor-grab active:cursor-grabbing' : ''}`}
+      } ${draggable ? 'cursor-grab active:cursor-grabbing' : ''}`}
     >
       <div className="flex items-center gap-2 mb-2">
-        <span
-          className={`text-[10px] font-mono uppercase px-1.5 py-0.5 rounded ${
-            isMulta
-              ? 'bg-red-500/15 text-red-300'
-              : 'bg-sky-500/15 text-sky-300'
-          }`}
-        >
-          {isMulta ? '💰 multa' : '📋 ocorrência'}
+        <span className={`text-[10px] font-mono uppercase px-1.5 py-0.5 rounded ${badge.cls}`}>
+          {badge.label}
         </span>
         {isMulta && card.valor != null && (
           <span className="text-xs font-semibold text-slate-200 ml-auto">
@@ -450,7 +515,13 @@ function getAdvanceLabel(card: Card): string | null {
     if (card.status === 'em_analise') return '→ Abrir e decidir'
     return null
   }
-  if (card.status === 'em_analise') return '→ Aplicar / cancelar'
-  if (card.status === 'aplicada') return '✓ Marcar paga'
+  if (card.kind === 'multa') {
+    if (card.status === 'em_analise') return '→ Aplicar / cancelar'
+    if (card.status === 'aplicada') return '✓ Marcar paga'
+    return null
+  }
+  // chamado
+  if (card.status === 'aberto') return '→ Iniciar atendimento'
+  if (card.status === 'resolvido') return '✓ Finalizar'
   return null
 }

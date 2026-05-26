@@ -51,6 +51,11 @@ export async function updateOcorrenciaStatus(id: string, status: StatusOcorrenci
   if (error) throw error
 }
 
+export async function deleteOcorrencia(id: string): Promise<void> {
+  const { error } = await supabase.from('ocorrencias').delete().eq('id', id)
+  if (error) throw error
+}
+
 export async function updateOcorrencia(id: string, patch: OcorrenciaPatch): Promise<Ocorrencia> {
   const upd: Record<string, unknown> = {}
   if (patch.unidade_id !== undefined) upd.unidade_id = patch.unidade_id || null

@@ -83,3 +83,8 @@ export async function removerVoto(votacao_id: string, user_id: string): Promise<
     .eq('user_id', user_id)
   if (error) throw error
 }
+
+export async function deleteVotacao(id: string): Promise<void> {
+  const { error } = await supabase.from('votacoes').delete().eq('id', id)
+  if (error) throw error
+}

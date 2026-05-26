@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { getChamado, updateChamadoStatus } from '../lib/chamados'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { deleteChamado, getChamado, updateChamadoStatus } from '../lib/chamados'
 import { getUnidade } from '../lib/unidades'
 import type { Chamado, StatusChamado } from '../types/chamado'
 import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import DeleteButton from '../components/ui/DeleteButton'
 import { Field, TextArea } from '../components/ui/Input'
 
 const STATUS_LABEL: Record<StatusChamado, string> = {
@@ -14,6 +15,7 @@ const STATUS_LABEL: Record<StatusChamado, string> = {
   em_andamento: 'Em andamento',
   aguardando: 'Aguardando',
   resolvido: 'Resolvido',
+  finalizado: 'Finalizado',
   cancelado: 'Cancelado',
 }
 
@@ -22,6 +24,7 @@ const STATUS_CLASS: Record<StatusChamado, string> = {
   em_andamento: 'bg-sky-500/10 text-sky-300 border-sky-500/30',
   aguardando: 'bg-orange-500/10 text-orange-300 border-orange-500/30',
   resolvido: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
+  finalizado: 'bg-slate-500/15 text-slate-300 border-slate-500/40',
   cancelado: 'bg-slate-700/40 text-slate-500 border-slate-700',
 }
 
@@ -29,14 +32,17 @@ const TRANSITIONS: Record<StatusChamado, StatusChamado[]> = {
   aberto: ['em_andamento', 'aguardando', 'cancelado'],
   em_andamento: ['aguardando', 'resolvido', 'cancelado'],
   aguardando: ['em_andamento', 'resolvido', 'cancelado'],
-  resolvido: ['em_andamento'],
+  resolvido: ['em_andamento', 'finalizado'],
+  finalizado: [],
   cancelado: ['aberto'],
 }
 
 export default function ChamadoDetalhe() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { perfil } = useAuth()
   const canManage = perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role)
+  const canDelete = perfil?.role === 'admin_onway' || perfil?.role === 'sindico'
 
   const [chamado, setChamado] = useState<Chamado | null>(null)
   const [unidade, setUnidade] = useState<Unidade | null>(null)
@@ -91,6 +97,19 @@ export default function ChamadoDetalhe() {
     }
   }
 
+  async function handleDelete() {
+    if (!chamado) return
+    if (!window.confirm('Excluir esse chamado DEFINITIVAMENTE? Esta ação não pode ser desfeita.')) return
+    setChanging(true)
+    try {
+      await deleteChamado(chamado.id)
+      navigate('/chamados')
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao excluir.')
+      setChanging(false)
+    }
+  }
+
   async function handleResolve() {
     if (!chamado) return
     setChanging(true)
@@ -126,7 +145,14 @@ export default function ChamadoDetalhe() {
     <div className="px-8 py-10 max-w-3xl mx-auto">
       <PageHeader
         title="Chamado"
-        actions={<Link to="/chamados"><Button variant="ghost">← Voltar</Button></Link>}
+        actions={
+          <div className="flex items-center gap-2">
+            {canDelete && (
+              <DeleteButton onClick={handleDelete} disabled={changing} />
+            )}
+            <Link to="/chamados"><Button variant="ghost">← Voltar</Button></Link>
+          </div>
+        }
       />
 
       <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-6">

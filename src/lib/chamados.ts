@@ -43,10 +43,16 @@ export async function updateChamadoStatus(
   resolucao_nota?: string,
 ): Promise<void> {
   const patch: Record<string, unknown> = { status: newStatus }
-  if (newStatus === 'resolvido') {
+  if (newStatus === 'resolvido' || newStatus === 'finalizado') {
+    // Marca timestamp do encerramento se ainda não estiver setado
     patch.resolvido_em = new Date().toISOString()
     if (resolucao_nota) patch.resolucao_nota = resolucao_nota.trim()
   }
   const { error } = await supabase.from('chamados').update(patch).eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteChamado(id: string): Promise<void> {
+  const { error } = await supabase.from('chamados').delete().eq('id', id)
   if (error) throw error
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
+  deleteOcorrencia,
   getOcorrencia,
   getOcorrenciaFotoSignedUrl,
   updateOcorrencia,
@@ -18,6 +19,7 @@ import type { Multa } from '../types/multa'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import DeleteButton from '../components/ui/DeleteButton'
 import AIAnalysisPanel from '../components/AIAnalysisPanel'
 
 const STATUS_LABEL: Record<StatusOcorrencia, string> = {
@@ -50,7 +52,9 @@ const ALLOWED_TRANSITIONS: Record<StatusOcorrencia, StatusOcorrencia[]> = {
 
 export default function OcorrenciaDetalhe() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { perfil } = useAuth()
+  const canDelete = perfil?.role === 'admin_onway' || perfil?.role === 'sindico'
 
   const [ocorrencia, setOcorrencia] = useState<Ocorrencia | null>(null)
   const [unidade, setUnidade] = useState<Unidade | null>(null)
@@ -178,6 +182,19 @@ export default function OcorrenciaDetalhe() {
     }
   }
 
+  async function handleDelete() {
+    if (!ocorrencia) return
+    if (!window.confirm('Excluir essa ocorrência DEFINITIVAMENTE? Esta ação não pode ser desfeita.')) return
+    setChanging(true)
+    try {
+      await deleteOcorrencia(ocorrencia.id)
+      navigate('/ocorrencias')
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao excluir.')
+      setChanging(false)
+    }
+  }
+
   if (loading) {
     return <div className="px-8 py-10 text-slate-400">Carregando...</div>
   }
@@ -209,9 +226,14 @@ export default function OcorrenciaDetalhe() {
       <PageHeader
         title="Ocorrência"
         actions={
-          <Link to="/ocorrencias">
-            <Button variant="ghost">← Voltar</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            {canDelete && (
+              <DeleteButton onClick={handleDelete} disabled={changing} />
+            )}
+            <Link to="/ocorrencias">
+              <Button variant="ghost">← Voltar</Button>
+            </Link>
+          </div>
         }
       />
 

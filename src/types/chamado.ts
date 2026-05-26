@@ -15,6 +15,7 @@ export type StatusChamado =
   | 'em_andamento'
   | 'aguardando'
   | 'resolvido'
+  | 'finalizado'
   | 'cancelado'
 
 export interface Chamado {

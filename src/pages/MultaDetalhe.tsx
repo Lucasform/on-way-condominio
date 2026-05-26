@@ -18,6 +18,7 @@ import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import ContestacaoThread from '../components/ContestacaoThread'
+import DeleteButton from '../components/ui/DeleteButton'
 import { gerarPdfNotificacao } from '../lib/multaPdf'
 
 const STATUS_CLASS: Record<StatusMulta, string> = {
@@ -131,7 +132,10 @@ export default function MultaDetalhe() {
       <PageHeader
         title="Multa"
         actions={
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            {canDelete && (
+              <DeleteButton onClick={handleDelete} disabled={changing} />
+            )}
             <Button
               variant="secondary"
               onClick={() => condominio && gerarPdfNotificacao({ multa, unidade, pessoa, condominio }).catch((e) => alert(e.message))}
@@ -258,17 +262,6 @@ export default function MultaDetalhe() {
         pessoaUserId={pessoa?.user_id ?? null}
       />
 
-      {canDelete && (
-        <div className="mt-8 rounded-lg border border-red-500/30 bg-red-500/5 p-4 flex items-center justify-between gap-3">
-          <div className="text-xs text-red-300">
-            <strong>Zona admin master.</strong> Excluir remove a multa do banco
-            permanentemente (e contestações associadas, se houver).
-          </div>
-          <Button variant="secondary" onClick={handleDelete} disabled={changing}>
-            🗑 Excluir multa
-          </Button>
-        </div>
-      )}
     </div>
   )
 }
