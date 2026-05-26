@@ -55,6 +55,7 @@ function normalize(input: CondominioInput): CondominioInput {
     estado: input.estado ? input.estado.toUpperCase().slice(0, 2) : null,
     cep: digitsOrNull(input.cep),
     administradora: trimOrNull(input.administradora),
+    logo_url: trimOrNull(input.logo_url),
     plano: input.plano,
   }
 }

@@ -10,6 +10,8 @@ import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Field, TextInput, Select } from '../components/ui/Input'
 import ConvitesPanel from '../components/ConvitesPanel'
+import LogoUpload from '../components/LogoUpload'
+import { traduzErro } from '../lib/errorMessages'
 
 const EMPTY: CondominioInput = {
   nome: '',
@@ -20,6 +22,7 @@ const EMPTY: CondominioInput = {
   estado: null,
   cep: null,
   administradora: null,
+  logo_url: null,
   plano: 'free',
 }
 
@@ -52,6 +55,7 @@ export default function CondominioForm() {
             estado: c.estado,
             cep: c.cep,
             administradora: c.administradora,
+            logo_url: c.logo_url,
             plano: c.plano,
           })
         }
@@ -83,7 +87,7 @@ export default function CondominioForm() {
         navigate('/condominios')
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao salvar.')
+      setError(traduzErro(e))
     } finally {
       setSaving(false)
     }
@@ -200,9 +204,26 @@ export default function CondominioForm() {
       </form>
 
       {!isNew && id && (
-        <div className="mt-8">
-          <ConvitesPanel condominio_id={id} />
-        </div>
+        <>
+          <div className="mt-8">
+            <fieldset className="border border-slate-200 dark:border-slate-700 rounded-md p-4 space-y-4">
+              <legend className="px-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                Logo do condomínio
+              </legend>
+              <p className="text-xs text-slate-500 dark:text-slate-400 -mt-2">
+                Aparece no header da app pra moradores do condomínio.
+              </p>
+              <LogoUpload
+                condominio_id={id}
+                current={form.logo_url}
+                onChange={(url) => update('logo_url', url)}
+              />
+            </fieldset>
+          </div>
+          <div className="mt-8">
+            <ConvitesPanel condominio_id={id} />
+          </div>
+        </>
       )}
     </div>
   )

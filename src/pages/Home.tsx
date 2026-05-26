@@ -27,19 +27,19 @@ export default function Home() {
     <div className="px-8 py-10 max-w-4xl">
       <OnboardingChecklist />
 
-      <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 to-sky-500 bg-clip-text text-transparent">
-        OnWay Condomínio
+      <h1 className="text-3xl font-bold tracking-tight text-brand-700 dark:text-brand-400">
+        OnWay <span className="text-slate-700 dark:text-slate-300">Condomínio</span>
       </h1>
-      <p className="mt-2 text-slate-400">
+      <p className="mt-2 text-slate-600 dark:text-slate-400">
         Bem-vindo, {perfil?.nome_exibicao ?? user?.email}.
       </p>
 
-      <section className="mt-8 max-w-md rounded-lg border border-slate-800 bg-slate-900/40 p-5">
-        <div className="text-sm text-slate-400">Logado como</div>
-        <div className="mt-1 text-base font-medium text-slate-100">{user?.email}</div>
+      <section className="mt-8 max-w-md rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-5">
+        <div className="text-sm text-slate-500 dark:text-slate-400">Logado como</div>
+        <div className="mt-1 text-base font-medium text-slate-900 dark:text-slate-100">{user?.email}</div>
         {perfil && (
-          <div className="mt-1 text-xs text-slate-500">
-            Perfil: <span className="text-slate-300">{roleLabel(perfil.role)}</span>
+          <div className="mt-1 text-xs text-slate-500 dark:text-slate-500">
+            Perfil: <span className="text-slate-700 dark:text-slate-300 font-medium">{roleLabel(perfil.role)}</span>
             {perfil.condominio_id && (
               <span className="ml-2 opacity-60">· condomínio {perfil.condominio_id.slice(0, 8)}…</span>
             )}
@@ -52,13 +52,13 @@ export default function Home() {
           <div className="mt-6 flex gap-3 flex-wrap">
             <Link
               to="/dashboard"
-              className="px-4 py-2 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-sm hover:bg-emerald-500/20 transition"
+              className="px-4 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-medium transition shadow-sm"
             >
               📊 Ir pro Dashboard
             </Link>
             <Link
               to="/painel"
-              className="px-4 py-2 rounded-md bg-sky-500/10 border border-sky-500/30 text-sky-200 text-sm hover:bg-sky-500/20 transition"
+              className="px-4 py-2 rounded-md bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition"
             >
               🗂 Abrir Painel Kanban
             </Link>

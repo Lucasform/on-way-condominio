@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
 import { signOut } from '../lib/auth'
 import { menuFor, roleLabel } from '../lib/nav'
+import { supabase } from '../lib/supabase'
 import NotificationBell from './NotificationBell'
 import ThemeToggle from './ThemeToggle'
 import Logo from './Logo'
@@ -11,6 +13,16 @@ export default function AppShell() {
   const { perfil, user } = useAuth()
   const navigate = useNavigate()
   const items = perfil ? menuFor(perfil.role) : []
+  const [condoLogo, setCondoLogo] = useState<string | null>(null)
+  const [condoNome, setCondoNome] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!perfil?.condominio_id) { setCondoLogo(null); setCondoNome(null); return }
+    let mounted = true
+    supabase.from('condominios').select('nome, logo_url').eq('id', perfil.condominio_id).maybeSingle()
+      .then(({ data }) => { if (mounted && data) { setCondoLogo(data.logo_url); setCondoNome(data.nome) } })
+    return () => { mounted = false }
+  }, [perfil?.condominio_id])
 
   async function handleSignOut() {
     await signOut()
@@ -21,13 +33,21 @@ export default function AppShell() {
     <div className="min-h-screen bg-brand-50/40 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors">
       <aside className="w-60 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 flex flex-col">
         <div className="px-4 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2.5">
-          <Logo size={36} />
+          {condoLogo ? (
+            <img src={condoLogo} alt={condoNome ?? ''} className="w-9 h-9 object-contain rounded" />
+          ) : (
+            <Logo size={36} />
+          )}
           <div className="min-w-0">
-            <div className="text-sm font-bold leading-tight">
-              <span className="text-brand-700 dark:text-brand-400">OnWay</span>
+            <div className="text-sm font-bold leading-tight truncate">
+              {condoNome ? (
+                <span className="text-slate-900 dark:text-slate-100">{condoNome}</span>
+              ) : (
+                <span className="text-brand-700 dark:text-brand-400">OnWay</span>
+              )}
             </div>
             <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-              Condomínio
+              {condoNome ? 'via OnWay Condomínio' : 'Condomínio'}
             </div>
           </div>
         </div>

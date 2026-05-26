@@ -10,6 +10,7 @@ import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Field, TextInput, Select } from '../components/ui/Input'
+import { traduzErro } from '../lib/errorMessages'
 
 const EMPTY: PessoaInput = {
   condominio_id: '',
@@ -111,7 +112,7 @@ export default function PessoaForm() {
       else await updatePessoa(id!, form)
       navigate('/pessoas')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao salvar.')
+      setError(traduzErro(e))
     } finally {
       setSaving(false)
     }

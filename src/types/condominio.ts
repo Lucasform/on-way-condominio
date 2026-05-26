@@ -10,6 +10,7 @@ export interface Condominio {
   estado: string | null
   cep: string | null
   administradora: string | null
+  logo_url: string | null
   plano: Plano
   ativo: boolean
   created_at: string

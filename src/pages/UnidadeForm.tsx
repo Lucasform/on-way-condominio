@@ -8,6 +8,7 @@ import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Field, TextInput, Select } from '../components/ui/Input'
+import { traduzErro } from '../lib/errorMessages'
 
 const EMPTY: UnidadeInput = {
   condominio_id: '',
@@ -86,7 +87,7 @@ export default function UnidadeForm() {
       else await updateUnidade(id!, form)
       navigate('/unidades')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao salvar.')
+      setError(traduzErro(e))
     } finally {
       setSaving(false)
     }
