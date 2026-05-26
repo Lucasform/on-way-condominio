@@ -27,6 +27,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     { to: '/dashboard', label: 'Acompanhamento Geral' },
     { to: '/painel', label: 'Painel de trabalho' },
     { to: '/condominios', label: 'Condomínios' },
+    { to: '/unidades', label: 'Unidades' },
     { to: '/ocorrencias', label: 'Ocorrências' },
     { to: '/notificacoes', label: 'Notificações' },
     { to: '/multas', label: 'Multas' },
