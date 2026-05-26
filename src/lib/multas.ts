@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { Multa, MultaInput, StatusMulta } from '../types/multa'
+import { sendEmail } from './email'
 
 export async function listMultas(opts: {
   condominio_id?: string
@@ -81,7 +82,41 @@ export async function createMultaFromOcorrencia(
       `[multa] criada (${multa.id}) mas falhou ao atualizar ocorrência ${input.ocorrencia_id}: ${upErr.message}`,
     )
   }
+  // Dispara e-mail pro morador (fire-and-forget)
+  notifyMoradorByEmail(multa).catch((e) =>
+    console.warn('[multa] falha ao enviar e-mail:', e.message),
+  )
   return multa
+}
+
+async function notifyMoradorByEmail(multa: Multa): Promise<void> {
+  if (!multa.pessoa_id) return
+  const { data: pessoa } = await supabase
+    .from('pessoas')
+    .select('nome, email')
+    .eq('id', multa.pessoa_id)
+    .maybeSingle()
+  if (!pessoa?.email) return
+
+  const { data: condo } = await supabase
+    .from('condominios')
+    .select('nome')
+    .eq('id', multa.condominio_id)
+    .maybeSingle()
+
+  await sendEmail({
+    to: pessoa.email,
+    template: 'multa-aplicada',
+    condominio_id: multa.condominio_id,
+    vars: {
+      morador_nome: pessoa.nome ?? undefined,
+      condominio_nome: condo?.nome ?? undefined,
+      valor: Number(multa.valor),
+      descricao: multa.descricao,
+      artigo: multa.artigo_regimento ?? undefined,
+      link: `${window.location.origin}/multas/${multa.id}`,
+    },
+  })
 }
 
 // ============================================================

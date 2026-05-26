@@ -1,0 +1,128 @@
+// supabase/functions/send-email/index.ts
+// Envia e-mail via Resend e registra na tabela `emails`.
+// Body: { to: string | string[], template: TemplateSlug, vars?: TemplateVars, condominio_id?: uuid, custom?: { subject, html, text? } }
+// Auth: JWT válido (user logado OU service_role pra triggers internas).
+
+import { createClient } from 'jsr:@supabase/supabase-js@2'
+import { corsHeaders, handleCors, jsonResponse } from '../_shared/cors.ts'
+import {
+  renderTemplate,
+  type TemplateSlug,
+  type TemplateVars,
+} from '../_shared/email-templates.ts'
+
+interface Body {
+  to: string | string[]
+  template: TemplateSlug
+  vars?: TemplateVars
+  condominio_id?: string
+  custom?: { subject: string; html: string; text?: string }
+}
+
+Deno.serve(async (req: Request) => {
+  const cors = handleCors(req)
+  if (cors) return cors
+
+  try {
+    const auth = req.headers.get('Authorization')
+    if (!auth) return jsonResponse({ error: 'Authorization obrigatório.' }, 401)
+
+    const resendKey = Deno.env.get('RESEND_API_KEY')
+    if (!resendKey) return jsonResponse({ error: 'RESEND_API_KEY não configurada.' }, 500)
+
+    const body = (await req.json()) as Body
+    const recipients = Array.isArray(body.to) ? body.to : [body.to]
+    if (recipients.length === 0) return jsonResponse({ error: 'to vazio.' }, 400)
+    if (!body.template) return jsonResponse({ error: 'template obrigatório.' }, 400)
+
+    const rendered = renderTemplate(body.template, body.vars ?? {}, body.custom)
+
+    // Service role pra inserir/atualizar em emails (bypass RLS)
+    const admin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    )
+
+    const results: Array<{ to: string; ok: boolean; id?: string; error?: string }> = []
+
+    for (const to of recipients) {
+      // Pré-insere log com status pending
+      const { data: emailRow, error: insErr } = await admin
+        .from('emails')
+        .insert({
+          condominio_id: body.condominio_id ?? null,
+          para: to,
+          assunto: rendered.subject,
+          html: rendered.html,
+          texto: rendered.text,
+          template_slug: body.template,
+          status: 'pending',
+        })
+        .select('id')
+        .single()
+
+      if (insErr) {
+        results.push({ to, ok: false, error: insErr.message })
+        continue
+      }
+
+      // Chama Resend
+      try {
+        const rendaResp = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            Authorization: `Bearer ${resendKey}`,
+          },
+          body: JSON.stringify({
+            from: rendered.from,
+            to,
+            subject: rendered.subject,
+            html: rendered.html,
+            text: rendered.text,
+          }),
+        })
+        const data = await rendaResp.json()
+
+        if (rendaResp.ok) {
+          await admin
+            .from('emails')
+            .update({
+              status: 'sent',
+              sent_at: new Date().toISOString(),
+              resend_id: data?.id ?? null,
+              tentativas: 1,
+            })
+            .eq('id', emailRow.id)
+          results.push({ to, ok: true, id: data?.id })
+        } else {
+          await admin
+            .from('emails')
+            .update({
+              status: 'failed',
+              erro: JSON.stringify(data).slice(0, 1000),
+              tentativas: 1,
+            })
+            .eq('id', emailRow.id)
+          results.push({ to, ok: false, error: data?.message ?? `HTTP ${rendaResp.status}` })
+        }
+      } catch (e) {
+        await admin
+          .from('emails')
+          .update({
+            status: 'failed',
+            erro: e instanceof Error ? e.message : String(e),
+            tentativas: 1,
+          })
+          .eq('id', emailRow.id)
+        results.push({ to, ok: false, error: e instanceof Error ? e.message : String(e) })
+      }
+    }
+
+    const ok = results.filter((r) => r.ok).length
+    const fail = results.length - ok
+    return jsonResponse({ total: results.length, ok, fail, results })
+  } catch (e) {
+    return jsonResponse({ error: e instanceof Error ? e.message : String(e) }, 500)
+  }
+})

@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { Publicacao, PublicacaoInput, Reacao, TipoReacao } from '../types/mural'
+import { sendEmail } from './email'
 
 const BUCKET = 'mural-imagens'
 
@@ -33,7 +34,42 @@ export async function createPublicacao(input: PublicacaoInput): Promise<Publicac
     .select('*')
     .single()
   if (error) throw error
-  return data as Publicacao
+  const pub = data as Publicacao
+  // Dispara e-mail pra todos os moradores ativos do condomínio (etapa 66)
+  notifyMoradoresPublicacao(pub).catch((e) =>
+    console.warn('[mural] falha ao enviar e-mail:', e.message),
+  )
+  return pub
+}
+
+async function notifyMoradoresPublicacao(pub: Publicacao): Promise<void> {
+  const { data: pessoas } = await supabase
+    .from('pessoas')
+    .select('email')
+    .eq('condominio_id', pub.condominio_id)
+    .eq('ativo', true)
+    .not('email', 'is', null)
+
+  const emails = (pessoas ?? []).map((p) => p.email!).filter(Boolean)
+  if (emails.length === 0) return
+
+  const { data: condo } = await supabase
+    .from('condominios')
+    .select('nome')
+    .eq('id', pub.condominio_id)
+    .maybeSingle()
+
+  await sendEmail({
+    to: emails,
+    template: 'mural-nova-publicacao',
+    condominio_id: pub.condominio_id,
+    vars: {
+      condominio_nome: condo?.nome ?? undefined,
+      publicacao_titulo: pub.titulo ?? undefined,
+      publicacao_conteudo: pub.conteudo.slice(0, 500),
+      link: `${window.location.origin}/mural`,
+    },
+  })
 }
 
 export async function deletePublicacao(id: string): Promise<void> {

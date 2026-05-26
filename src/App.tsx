@@ -40,6 +40,7 @@ import Chamados from './pages/Chamados'
 import ChamadoNovo from './pages/ChamadoNovo'
 import ChamadoDetalhe from './pages/ChamadoDetalhe'
 import Relatorios from './pages/Relatorios'
+import EmailsLog from './pages/EmailsLog'
 
 export default function App() {
   return (
@@ -369,6 +370,14 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
                   <Relatorios />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/emails-log"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <EmailsLog />
                 </ProtectedRoute>
               }
             />

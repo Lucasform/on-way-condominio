@@ -21,6 +21,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     { to: '/calendario', label: 'Calendário' },
     { to: '/votacoes', label: 'Votações' },
     { to: '/relatorios', label: 'Relatórios' },
+    { to: '/emails-log', label: 'E-mails' },
     { to: '/planos', label: 'Planos' },
   ],
   administradora: [

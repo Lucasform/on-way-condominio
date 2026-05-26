@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { Encomenda, EncomendaInput, StatusEncomenda } from '../types/encomenda'
+import { sendEmail } from './email'
 
 export async function listEncomendas(opts: {
   condominio_id?: string
@@ -44,7 +45,44 @@ export async function createEncomenda(input: EncomendaInput, recebido_por: strin
     .select('*')
     .single()
   if (error) throw error
-  return data as Encomenda
+  const encomenda = data as Encomenda
+
+  // Dispara e-mail pro morador (fire-and-forget). Etapa 61.
+  notifyMoradorEncomenda(encomenda).catch((e) =>
+    console.warn('[encomenda] falha ao enviar e-mail:', e.message),
+  )
+  return encomenda
+}
+
+async function notifyMoradorEncomenda(encomenda: Encomenda): Promise<void> {
+  // Pega e-mails dos moradores da unidade (que tenham user_id E e-mail)
+  const { data: pessoas } = await supabase
+    .from('pessoas')
+    .select('nome, email')
+    .eq('unidade_id', encomenda.unidade_id)
+    .not('email', 'is', null)
+    .eq('ativo', true)
+
+  const destinatarios = (pessoas ?? []).filter((p) => p.email)
+  if (destinatarios.length === 0) return
+
+  const { data: condo } = await supabase
+    .from('condominios')
+    .select('nome')
+    .eq('id', encomenda.condominio_id)
+    .maybeSingle()
+
+  await sendEmail({
+    to: destinatarios.map((p) => p.email!),
+    template: 'encomenda-chegou',
+    condominio_id: encomenda.condominio_id,
+    vars: {
+      condominio_nome: condo?.nome ?? undefined,
+      encomenda_tipo: encomenda.tipo,
+      descricao: encomenda.descricao ?? undefined,
+      link: `${window.location.origin}/encomendas/${encomenda.id}`,
+    },
+  })
 }
 
 export async function darBaixaEncomenda(
