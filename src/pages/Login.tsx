@@ -112,10 +112,15 @@ export default function Login() {
       subtitle="Acesse com sua conta do condomínio."
       footer={
         <>
-          Não tem conta?{' '}
-          <Link to="/signup" className="text-brand-700 dark:text-brand-400 font-medium hover:underline">
-            Criar agora
-          </Link>
+          <div className="text-center">
+            <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Morador, primeiro acesso?</div>
+            <Link
+              to="/signup"
+              className="inline-block px-4 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-semibold transition"
+            >
+              Criar conta com código de convite →
+            </Link>
+          </div>
         </>
       }
     >

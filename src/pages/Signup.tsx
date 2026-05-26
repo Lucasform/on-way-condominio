@@ -53,8 +53,8 @@ export default function Signup() {
 
   return (
     <AuthShell
-      title="Criar conta"
-      subtitle="Use o código que sua administradora ou síndico enviou."
+      title="Primeiro acesso do morador"
+      subtitle="Use o código de convite que sua administradora ou síndico enviou."
       footer={
         <>
           Já tem conta?{' '}
