@@ -44,10 +44,13 @@ export default function WhatsappConfig() {
         .then((cs) => {
           setCondos(cs)
           if (cs.length && !scopeId) setScopeId(cs[0].id)
+          else if (!cs.length) setLoading(false)
         })
-        .catch(() => {})
+        .catch(() => setLoading(false))
     } else if (perfil?.condominio_id) {
       setScopeId(perfil.condominio_id)
+    } else {
+      setLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, perfil])

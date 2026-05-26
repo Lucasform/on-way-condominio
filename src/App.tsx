@@ -10,6 +10,7 @@ import AtualizarSenha from './pages/AtualizarSenha'
 import AuthCallback from './pages/AuthCallback'
 import Termos from './pages/Termos'
 import Privacidade from './pages/Privacidade'
+import { Link } from 'react-router-dom'
 import MeuPerfil from './pages/MeuPerfil'
 import Condominios from './pages/Condominios'
 import CondominioForm from './pages/CondominioForm'
@@ -407,8 +408,25 @@ export default function App() {
               }
             />
           </Route>
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+  )
+}
+
+function NotFound() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-brand-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 p-6">
+      <div className="max-w-md text-center">
+        <h1 className="text-3xl font-bold text-brand-700 dark:text-brand-400">404</h1>
+        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+          Página não encontrada.
+        </p>
+        <Link to="/" className="mt-4 inline-block text-brand-700 dark:text-brand-400 font-medium hover:underline">
+          Voltar pro início
+        </Link>
+      </div>
+    </div>
   )
 }

@@ -24,7 +24,6 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     { to: '/relatorios', label: 'Relatórios' },
     { to: '/emails-log', label: 'E-mails' },
     { to: '/whatsapp-config', label: 'WhatsApp' },
-    { to: '/planos', label: 'Planos' },
   ],
   administradora: [
     ...COMMON_TOP,
