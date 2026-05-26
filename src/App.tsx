@@ -41,6 +41,8 @@ import ChamadoNovo from './pages/ChamadoNovo'
 import ChamadoDetalhe from './pages/ChamadoDetalhe'
 import Relatorios from './pages/Relatorios'
 import EmailsLog from './pages/EmailsLog'
+import Chat from './pages/Chat'
+import ChatConversa from './pages/ChatConversa'
 
 export default function App() {
   return (
@@ -381,6 +383,8 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+            <Route path="/chat/:id" element={<ProtectedRoute><ChatConversa /></ProtectedRoute>} />
           </Route>
         </Routes>
       </BrowserRouter>
