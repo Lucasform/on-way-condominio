@@ -14,10 +14,23 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
+const AUTH_LOAD_TIMEOUT_MS = 8000
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error(`Timeout em ${label} após ${ms}ms`)), ms)
+    promise.then(
+      (v) => { clearTimeout(t); resolve(v) },
+      (e) => { clearTimeout(t); reject(e) },
+    )
+  })
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [perfil, setPerfil] = useState<Perfil | null>(null)
   const [loading, setLoading] = useState(true)
+  const [hardError, setHardError] = useState<string | null>(null)
 
   async function loadPerfil(userId: string | null) {
     if (!userId) {
@@ -25,22 +38,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
     try {
-      const p = await fetchCurrentPerfil(userId)
+      const p = await withTimeout(fetchCurrentPerfil(userId), AUTH_LOAD_TIMEOUT_MS, 'fetchCurrentPerfil')
       setPerfil(p)
-    } catch {
+    } catch (e) {
+      console.error('[AuthProvider] loadPerfil falhou:', e)
       setPerfil(null)
     }
   }
 
   useEffect(() => {
     let mounted = true
+    let watchdog: ReturnType<typeof setTimeout> | null = null
 
-    supabase.auth.getSession().then(async ({ data }) => {
+    // Watchdog: se nada acontecer em 10s, libera a UI com erro
+    watchdog = setTimeout(() => {
       if (!mounted) return
-      setSession(data.session)
-      await loadPerfil(data.session?.user.id ?? null)
+      console.warn('[AuthProvider] Watchdog disparou — liberando UI')
+      setHardError('Tempo esgotado carregando sessão. Tente recarregar ou limpar dados.')
       setLoading(false)
-    })
+    }, AUTH_LOAD_TIMEOUT_MS + 2000)
+
+    ;(async () => {
+      try {
+        const { data } = await withTimeout(supabase.auth.getSession(), AUTH_LOAD_TIMEOUT_MS, 'getSession')
+        if (!mounted) return
+        setSession(data.session)
+        await loadPerfil(data.session?.user.id ?? null)
+      } catch (e) {
+        console.error('[AuthProvider] getSession falhou:', e)
+        if (mounted) setHardError(e instanceof Error ? e.message : 'Erro de sessão.')
+      } finally {
+        if (mounted) {
+          if (watchdog) clearTimeout(watchdog)
+          setLoading(false)
+        }
+      }
+    })()
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, sess) => {
       if (!mounted) return
@@ -50,9 +83,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       mounted = false
+      if (watchdog) clearTimeout(watchdog)
       sub.subscription.unsubscribe()
     }
   }, [])
+
+  if (hardError && loading === false) {
+    return <RecoveryScreen message={hardError} />
+  }
 
   const value: AuthContextValue = {
     user: session?.user ?? null,
@@ -63,6 +101,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+}
+
+function RecoveryScreen({ message }: { message: string }) {
+  async function limparTudo() {
+    try {
+      await supabase.auth.signOut().catch(() => {})
+      // Limpa storage
+      Object.keys(localStorage).forEach((k) => {
+        if (k.startsWith('sb-') || k.includes('supabase')) localStorage.removeItem(k)
+      })
+      sessionStorage.clear()
+      // Limpa cache do service worker
+      if ('caches' in window) {
+        const keys = await caches.keys()
+        await Promise.all(keys.map((k) => caches.delete(k)))
+      }
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations()
+        await Promise.all(regs.map((r) => r.unregister()))
+      }
+    } finally {
+      window.location.replace('/login')
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-brand-50 dark:bg-slate-950 p-6">
+      <div className="max-w-md text-center">
+        <div className="text-5xl mb-3">⚠</div>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+          Algo travou
+        </h1>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{message}</p>
+        <div className="mt-6 flex gap-2 justify-center">
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-700"
+          >
+            Recarregar
+          </button>
+          <button
+            onClick={limparTudo}
+            className="px-4 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-medium"
+          >
+            Limpar dados e entrar
+          </button>
+        </div>
+        <p className="mt-4 text-xs text-slate-500">
+          "Limpar dados" remove sessão + caches + service worker. Você precisará logar de novo.
+        </p>
+      </div>
+    </div>
+  )
 }
 
 export function useAuth() {
