@@ -44,13 +44,29 @@ export async function updatePessoa(id: string, input: PessoaInput): Promise<Pess
   return data as Pessoa
 }
 
-export async function setPessoaAtivo(id: string, ativo: boolean): Promise<void> {
-  const { error } = await supabase.from('pessoas').update({ ativo }).eq('id', id)
-  if (error) throw error
+export async function setPessoaAtivo(id: string, ativo: boolean): Promise<{ ok: boolean; auth_synced?: boolean; error?: string }> {
+  const { data, error } = await supabase.functions.invoke('set-pessoa-ativo', {
+    body: { pessoa_id: id, ativo },
+  })
+  if (error) return { ok: false, error: error.message }
+  if (data?.error) return { ok: false, error: data.error }
+  return { ok: true, auth_synced: data?.auth_synced }
 }
 
-export async function convidarPessoa(pessoa_id: string): Promise<{ ok: boolean; email?: string; error?: string }> {
-  const { data, error } = await supabase.functions.invoke('invite-pessoa', { body: { pessoa_id } })
+export async function convidarPessoa(
+  pessoa_id: string,
+  role: 'morador' | 'portaria' | 'ronda' | 'sindico' | 'administradora' = 'morador',
+): Promise<{ ok: boolean; email?: string; error?: string }> {
+  const { data, error } = await supabase.functions.invoke('invite-pessoa', {
+    body: { pessoa_id, role },
+  })
+  if (error) return { ok: false, error: error.message }
+  if (data?.error) return { ok: false, error: data.error }
+  return { ok: true, email: data?.email }
+}
+
+export async function resetSenhaUsuario(pessoa_id: string): Promise<{ ok: boolean; email?: string; error?: string }> {
+  const { data, error } = await supabase.functions.invoke('reset-senha-usuario', { body: { pessoa_id } })
   if (error) return { ok: false, error: error.message }
   if (data?.error) return { ok: false, error: data.error }
   return { ok: true, email: data?.email }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { listPessoas, setPessoaAtivo, convidarPessoa } from '../lib/pessoas'
+import { listPessoas, setPessoaAtivo, convidarPessoa, resetSenhaUsuario } from '../lib/pessoas'
 import { listCondominios } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
 import type { Pessoa } from '../types/pessoa'
@@ -66,13 +66,27 @@ export default function Pessoas() {
 
   async function handleToggleAtivo(row: Pessoa) {
     const novoEstado = !row.ativo
-    if (!window.confirm(`${novoEstado ? 'Reativar' : 'Desativar'} "${row.nome}"?`)) return
-    try {
-      await setPessoaAtivo(row.id, novoEstado)
-      await reload()
-    } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+    const aviso = novoEstado
+      ? `Reativar "${row.nome}"?${row.user_id ? '\nO acesso à conta será restaurado.' : ''}`
+      : `Desativar "${row.nome}"?${row.user_id ? '\nA conta será BLOQUEADA imediatamente.' : ''}`
+    if (!window.confirm(aviso)) return
+    const r = await setPessoaAtivo(row.id, novoEstado)
+    if (!r.ok) {
+      alert('Erro: ' + r.error)
+      return
     }
+    await reload()
+  }
+
+  async function handleResetSenha(row: Pessoa) {
+    if (!row.user_id) {
+      alert('Pessoa ainda sem conta. Use "Convidar".')
+      return
+    }
+    if (!window.confirm(`Enviar link de redefinição de senha pra ${row.email}?`)) return
+    const r = await resetSenhaUsuario(row.id)
+    if (r.ok) alert(`✓ Link de redefinição enviado pra ${r.email}.`)
+    else alert('Erro: ' + r.error)
   }
 
   async function handleConvidar(row: Pessoa) {
@@ -168,6 +182,11 @@ export default function Pessoas() {
             {r.email && !r.user_id && r.ativo && (
               <Button variant="secondary" onClick={() => handleConvidar(r)} title="Enviar convite por e-mail">
                 ✉ Convidar
+              </Button>
+            )}
+            {r.user_id && r.ativo && (
+              <Button variant="ghost" onClick={() => handleResetSenha(r)} title="Enviar link de redefinição de senha">
+                🔑 Reset
               </Button>
             )}
             <Button variant={r.ativo ? 'danger' : 'secondary'} onClick={() => handleToggleAtivo(r)}>
