@@ -14,12 +14,18 @@ import type { Votacao } from '../types/votacao'
 import type { Chamado } from '../types/chamado'
 import OnboardingChecklist from '../components/OnboardingChecklist'
 import PlanoUsoWidget from '../components/PlanoUsoWidget'
+import AdminHome from '../components/AdminHome'
 
 export default function Home() {
   const { user, perfil } = useAuth()
 
   if (perfil?.role === 'morador') {
     return <MoradorHome />
+  }
+
+  // Admin sem condomínio assumido → escolhe um
+  if (perfil?.role === 'admin_onway' && !perfil.condominio_id) {
+    return <AdminHome />
   }
 
   // Demais perfis: home simples (eles têm Dashboard/Painel próprios)

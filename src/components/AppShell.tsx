@@ -34,6 +34,13 @@ export default function AppShell() {
     navigate('/login', { replace: true })
   }
 
+  async function handleExitViewAs() {
+    await supabase.rpc('exit_view_as')
+    window.location.href = '/'
+  }
+
+  const emViewAs = perfil?.role === 'admin_onway' && perfil.condominio_id
+
   return (
     <div className="min-h-screen bg-brand-50/40 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors">
       <aside className="w-60 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 flex flex-col">
@@ -98,6 +105,19 @@ export default function AppShell() {
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden">
+        {emViewAs && (
+          <div className="shrink-0 bg-amber-500/10 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between gap-3 text-xs">
+            <span className="text-amber-700 dark:text-amber-300">
+              👁 Você está em modo "Ver como" — assumiu o condomínio <strong>{condoNome ?? '...'}</strong> como Administrador OnWay.
+            </span>
+            <button
+              onClick={handleExitViewAs}
+              className="px-3 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 dark:text-amber-200 font-medium whitespace-nowrap"
+            >
+              ← Voltar pra visão global
+            </button>
+          </div>
+        )}
         <header className="h-12 shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 flex items-center justify-end px-4 gap-1">
           <ThemeToggle compact />
           <NotificationBell />
