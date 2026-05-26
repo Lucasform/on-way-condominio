@@ -134,24 +134,15 @@ export default function AppShell() {
           })}
         </nav>
 
-        <div className="border-t border-slate-200 dark:border-slate-800 p-3 space-y-2">
-          <div className="text-xs text-slate-500 truncate" title={user?.email ?? ''}>
-            {user?.email}
-          </div>
-          <div className="flex gap-2">
-            <Link
-              to="/meu-perfil"
-              className="flex-1 px-2 py-1.5 rounded text-xs text-center text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/60 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium transition"
-            >
-              Perfil
-            </Link>
-            <button
-              onClick={handleSignOut}
-              className="flex-1 px-2 py-1.5 rounded text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800/60 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-300 font-medium transition"
-            >
-              Sair
-            </button>
-          </div>
+        <div className="border-t border-slate-200 dark:border-slate-800 p-3">
+          <button
+            onClick={handleSignOut}
+            title={user?.email ?? 'Sair'}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-slate-600 dark:text-slate-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition"
+          >
+            <SignOutIcon />
+            <span>Sair</span>
+          </button>
         </div>
       </aside>
 
@@ -178,6 +169,26 @@ export default function AppShell() {
         </main>
       </div>
     </div>
+  )
+}
+
+function SignOutIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
   )
 }
 
