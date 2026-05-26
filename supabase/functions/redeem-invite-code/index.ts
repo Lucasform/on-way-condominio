@@ -33,8 +33,23 @@ Deno.serve(async (req: Request) => {
     if (!email || !password || !nome || !codigo) {
       return jsonResponse({ error: 'email, password, nome e codigo são obrigatórios.' }, 400)
     }
-    if (password.length < 6) {
-      return jsonResponse({ error: 'Senha precisa ter no mínimo 6 caracteres.' }, 400)
+    if (password.length < 8) {
+      return jsonResponse({ error: 'Senha precisa ter no mínimo 8 caracteres.' }, 400)
+    }
+
+    // Rate limit: máx 10 tentativas/IP em 10 min
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+            ?? req.headers.get('cf-connecting-ip')
+            ?? 'unknown'
+    const adminPre = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+    const { data: allowed } = await adminPre.rpc('check_rate_limit', {
+      p_bucket: 'redeem_invite',
+      p_identifier: ip,
+      p_limit: 10,
+      p_window_secs: 600,
+    })
+    if (allowed === false) {
+      return jsonResponse({ error: 'Muitas tentativas. Aguarde 10 minutos.' }, 429)
     }
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!

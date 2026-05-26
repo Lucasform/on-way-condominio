@@ -8,6 +8,7 @@ import NotificationBell from './NotificationBell'
 import ThemeToggle from './ThemeToggle'
 import Logo from './Logo'
 import CondominioSwitcher from './CondominioSwitcher'
+import { prefetchRoutes } from '../lib/prefetchRoutes'
 
 export default function AppShell() {
   const { perfil, user } = useAuth()
@@ -15,6 +16,10 @@ export default function AppShell() {
   const items = perfil ? menuFor(perfil.role) : []
   const [condoLogo, setCondoLogo] = useState<string | null>(null)
   const [condoNome, setCondoNome] = useState<string | null>(null)
+
+  useEffect(() => {
+    prefetchRoutes()
+  }, [])
 
   useEffect(() => {
     if (!perfil?.condominio_id) { setCondoLogo(null); setCondoNome(null); return }

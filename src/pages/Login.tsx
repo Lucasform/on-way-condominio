@@ -8,6 +8,7 @@ import {
 } from '../lib/auth'
 import { useAuth } from '../components/AuthProvider'
 import AuthShell from '../components/AuthShell'
+import { supabase } from '../lib/supabase'
 
 type Modo = 'senha' | 'email'
 
@@ -28,6 +29,8 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [magicSent, setMagicSent] = useState(false)
+  const [mfa, setMfa] = useState<{ factorId: string; challengeId: string } | null>(null)
+  const [mfaCode, setMfaCode] = useState('')
 
   if (loading) {
     return (
@@ -49,11 +52,44 @@ export default function Login() {
     try {
       if (modo === 'senha') {
         await signInWithPassword(email, password)
+        // Verifica se precisa de 2FA
+        const { data: mfaData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+        if (mfaData?.currentLevel === 'aal1' && mfaData?.nextLevel === 'aal2') {
+          const { data: factors } = await supabase.auth.mfa.listFactors()
+          const totp = factors?.totp?.find((f) => f.status === 'verified')
+          if (totp) {
+            const { data: chal, error: cErr } = await supabase.auth.mfa.challenge({ factorId: totp.id })
+            if (cErr) throw cErr
+            setMfa({ factorId: totp.id, challengeId: chal.id })
+            setSubmitting(false)
+            return
+          }
+        }
         navigate('/', { replace: true })
       } else {
         await signInWithMagicLink(email)
         setMagicSent(true)
       }
+    } catch (err) {
+      setError(traduzErroAuth(err))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleMfaSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (!mfa) return
+    setSubmitting(true)
+    setError(null)
+    try {
+      const { error } = await supabase.auth.mfa.verify({
+        factorId: mfa.factorId,
+        challengeId: mfa.challengeId,
+        code: mfaCode.trim(),
+      })
+      if (error) throw error
+      navigate('/', { replace: true })
     } catch (err) {
       setError(traduzErroAuth(err))
     } finally {
@@ -109,7 +145,40 @@ export default function Login() {
         </button>
       </div>
 
-      {magicSent ? (
+      {mfa ? (
+        <form onSubmit={handleMfaSubmit} className="space-y-4">
+          <div className="text-center">
+            <div className="text-3xl mb-2">🔐</div>
+            <p className="text-sm text-slate-700 dark:text-slate-300">
+              Digite o código do app autenticador
+            </p>
+          </div>
+          <input
+            type="text"
+            value={mfaCode}
+            onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="000000"
+            maxLength={6}
+            autoFocus
+            className="w-full px-3 py-2 rounded-md bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-center text-2xl font-mono tracking-widest"
+          />
+          {error && (
+            <div className="text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-md px-3 py-2">
+              {error}
+            </div>
+          )}
+          <button type="submit" disabled={submitting || mfaCode.length !== 6} className={primaryBtn}>
+            {submitting ? 'Verificando...' : 'Entrar'}
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMfa(null); setMfaCode(''); setError(null); supabase.auth.signOut() }}
+            className="w-full text-xs text-slate-500 hover:underline"
+          >
+            Cancelar
+          </button>
+        </form>
+      ) : magicSent ? (
         <div className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/30 rounded-md px-4 py-3">
           ✓ Link de acesso enviado pra <strong>{email}</strong>. Cheque sua caixa de entrada e clique no link.
         </div>

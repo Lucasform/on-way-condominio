@@ -15,6 +15,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 const AUTH_LOAD_TIMEOUT_MS = 8000
+const PERFIL_CACHE_KEY = 'onway:perfil_cache'
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -26,23 +27,43 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   })
 }
 
+function readCache(userId: string): Perfil | null {
+  try {
+    const raw = localStorage.getItem(PERFIL_CACHE_KEY)
+    if (!raw) return null
+    const obj = JSON.parse(raw) as { user_id: string; perfil: Perfil }
+    if (obj.user_id !== userId) return null
+    return obj.perfil
+  } catch { return null }
+}
+
+function writeCache(userId: string, perfil: Perfil | null) {
+  try {
+    if (!perfil) { localStorage.removeItem(PERFIL_CACHE_KEY); return }
+    localStorage.setItem(PERFIL_CACHE_KEY, JSON.stringify({ user_id: userId, perfil }))
+  } catch { /* ignore */ }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [perfil, setPerfil] = useState<Perfil | null>(null)
   const [loading, setLoading] = useState(true)
   const [hardError, setHardError] = useState<string | null>(null)
 
-  async function loadPerfil(userId: string | null) {
-    if (!userId) {
-      setPerfil(null)
-      return
+  async function loadPerfil(userId: string | null, useCache = true) {
+    if (!userId) { setPerfil(null); writeCache('', null); return }
+    // Cache hit: renderiza imediato; refresh em background
+    if (useCache) {
+      const cached = readCache(userId)
+      if (cached) setPerfil(cached)
     }
     try {
       const p = await withTimeout(fetchCurrentPerfil(userId), AUTH_LOAD_TIMEOUT_MS, 'fetchCurrentPerfil')
       setPerfil(p)
+      writeCache(userId, p)
     } catch (e) {
       console.error('[AuthProvider] loadPerfil falhou:', e)
-      setPerfil(null)
+      // Mantém cache se houver — não derruba a sessão
     }
   }
 
@@ -50,11 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true
     let watchdog: ReturnType<typeof setTimeout> | null = null
 
-    // Watchdog: se nada acontecer em 10s, libera a UI com erro
     watchdog = setTimeout(() => {
       if (!mounted) return
-      console.warn('[AuthProvider] Watchdog disparou — liberando UI')
-      setHardError('Tempo esgotado carregando sessão. Tente recarregar ou limpar dados.')
+      console.warn('[AuthProvider] Watchdog disparou')
+      setHardError('Tempo esgotado carregando sessão.')
       setLoading(false)
     }, AUTH_LOAD_TIMEOUT_MS + 2000)
 
@@ -75,10 +95,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })()
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, sess) => {
       if (!mounted) return
       setSession(sess)
-      await loadPerfil(sess?.user.id ?? null)
+      // Só re-busca perfil em eventos significativos. TOKEN_REFRESHED não muda perfil.
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+        await loadPerfil(sess?.user.id ?? null, event !== 'SIGNED_OUT')
+      }
     })
 
     return () => {
@@ -97,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     session,
     perfil,
     loading,
-    refreshPerfil: () => loadPerfil(session?.user.id ?? null),
+    refreshPerfil: () => loadPerfil(session?.user.id ?? null, false),
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
@@ -107,12 +130,10 @@ function RecoveryScreen({ message }: { message: string }) {
   async function limparTudo() {
     try {
       await supabase.auth.signOut().catch(() => {})
-      // Limpa storage
       Object.keys(localStorage).forEach((k) => {
-        if (k.startsWith('sb-') || k.includes('supabase')) localStorage.removeItem(k)
+        if (k.startsWith('sb-') || k.includes('supabase') || k.startsWith('onway:')) localStorage.removeItem(k)
       })
       sessionStorage.clear()
-      // Limpa cache do service worker
       if ('caches' in window) {
         const keys = await caches.keys()
         await Promise.all(keys.map((k) => caches.delete(k)))
@@ -130,9 +151,7 @@ function RecoveryScreen({ message }: { message: string }) {
     <div className="min-h-screen flex items-center justify-center bg-brand-50 dark:bg-slate-950 p-6">
       <div className="max-w-md text-center">
         <div className="text-5xl mb-3">⚠</div>
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
-          Algo travou
-        </h1>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Algo travou</h1>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{message}</p>
         <div className="mt-6 flex gap-2 justify-center">
           <button
@@ -148,9 +167,6 @@ function RecoveryScreen({ message }: { message: string }) {
             Limpar dados e entrar
           </button>
         </div>
-        <p className="mt-4 text-xs text-slate-500">
-          "Limpar dados" remove sessão + caches + service worker. Você precisará logar de novo.
-        </p>
       </div>
     </div>
   )
