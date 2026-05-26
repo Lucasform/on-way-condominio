@@ -32,6 +32,7 @@ import Mural from './pages/Mural'
 import MuralNova from './pages/MuralNova'
 import Calendario from './pages/Calendario'
 import CalendarioForm from './pages/CalendarioForm'
+import Dashboard from './pages/Dashboard'
 
 export default function App() {
   return (
@@ -317,6 +318,14 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
                   <CalendarioForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <Dashboard />
                 </ProtectedRoute>
               }
             />

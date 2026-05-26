@@ -2,6 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
 import { signOut } from '../lib/auth'
 import { menuFor, roleLabel } from '../lib/nav'
+import NotificationBell from './NotificationBell'
 
 export default function AppShell() {
   const { perfil, user } = useAuth()
@@ -25,7 +26,7 @@ export default function AppShell() {
           )}
         </div>
 
-        <nav className="flex-1 py-3 px-2 space-y-1">
+        <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
           {items.map((item) => (
             <NavLink
               key={item.to}
@@ -57,9 +58,14 @@ export default function AppShell() {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto">
-        <Outlet />
-      </main>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <header className="h-12 shrink-0 border-b border-slate-800 bg-slate-900/30 flex items-center justify-end px-4 gap-2">
+          <NotificationBell />
+        </header>
+        <main className="flex-1 overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
     </div>
   )
 }

@@ -10,6 +10,7 @@ const COMMON_TOP: MenuItem[] = [{ to: '/', label: 'Início' }]
 const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
   admin_onway: [
     ...COMMON_TOP,
+    { to: '/dashboard', label: 'Dashboard' },
     { to: '/painel', label: 'Painel' },
     { to: '/condominios', label: 'Condomínios' },
     { to: '/ocorrencias', label: 'Ocorrências' },
@@ -21,6 +22,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
   ],
   administradora: [
     ...COMMON_TOP,
+    { to: '/dashboard', label: 'Dashboard' },
     { to: '/painel', label: 'Painel' },
     { to: '/unidades', label: 'Unidades' },
     { to: '/pessoas', label: 'Pessoas' },
@@ -35,6 +37,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
   ],
   sindico: [
     ...COMMON_TOP,
+    { to: '/dashboard', label: 'Dashboard' },
     { to: '/painel', label: 'Painel' },
     { to: '/unidades', label: 'Unidades' },
     { to: '/pessoas', label: 'Pessoas' },
