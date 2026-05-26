@@ -11,6 +11,7 @@ import Button from '../components/ui/Button'
 import { Field, TextInput, Select } from '../components/ui/Input'
 import ConvitesPanel from '../components/ConvitesPanel'
 import LogoUpload from '../components/LogoUpload'
+import PessoasImport from '../components/PessoasImport'
 import { traduzErro } from '../lib/errorMessages'
 
 const EMPTY: CondominioInput = {
@@ -219,6 +220,9 @@ export default function CondominioForm() {
                 onChange={(url) => update('logo_url', url)}
               />
             </fieldset>
+          </div>
+          <div className="mt-8">
+            <PessoasImport condominio_id={id} />
           </div>
           <div className="mt-8">
             <ConvitesPanel condominio_id={id} />
