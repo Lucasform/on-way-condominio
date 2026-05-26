@@ -6,7 +6,7 @@ interface Props {
 
 /**
  * Logo OnWay Condomínio — prédios estilizados em formato circular.
- * Inspirado em paleta bordô profissional (cor de marca: #8B1424).
+ * Identidade visual em índigo profissional (cor de marca: brand-700 = #4338CA).
  */
 export default function Logo({ size = 48, withText = false, className = '' }: Props) {
   return (
@@ -22,7 +22,7 @@ export default function Logo({ size = 48, withText = false, className = '' }: Pr
         <circle cx="50" cy="50" r="48" fill="currentColor" className="text-brand-50 dark:text-slate-900" />
         <circle cx="50" cy="50" r="46" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-brand-700/40" />
 
-        {/* Prédios — bordô */}
+        {/* Prédios — índigo */}
         <g fill="currentColor" className="text-brand-700">
           {/* Prédio esquerdo (médio) */}
           <rect x="22" y="42" width="16" height="38" rx="1" />
