@@ -49,6 +49,13 @@ export async function setPessoaAtivo(id: string, ativo: boolean): Promise<void> 
   if (error) throw error
 }
 
+export async function convidarPessoa(pessoa_id: string): Promise<{ ok: boolean; email?: string; error?: string }> {
+  const { data, error } = await supabase.functions.invoke('invite-pessoa', { body: { pessoa_id } })
+  if (error) return { ok: false, error: error.message }
+  if (data?.error) return { ok: false, error: data.error }
+  return { ok: true, email: data?.email }
+}
+
 function normalize(input: PessoaInput): PessoaInput {
   return {
     condominio_id: input.condominio_id,

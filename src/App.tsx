@@ -4,6 +4,10 @@ import ProtectedRoute from './components/ProtectedRoute'
 import AppShell from './components/AppShell'
 import Home from './pages/Home'
 import Login from './pages/Login'
+import Signup from './pages/Signup'
+import EsqueciSenha from './pages/EsqueciSenha'
+import AtualizarSenha from './pages/AtualizarSenha'
+import AuthCallback from './pages/AuthCallback'
 import MeuPerfil from './pages/MeuPerfil'
 import Condominios from './pages/Condominios'
 import CondominioForm from './pages/CondominioForm'
@@ -51,6 +55,10 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+          <Route path="/atualizar-senha" element={<AtualizarSenha />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route
             element={
               <ProtectedRoute>

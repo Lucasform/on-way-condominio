@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { listPessoas, setPessoaAtivo } from '../lib/pessoas'
+import { listPessoas, setPessoaAtivo, convidarPessoa } from '../lib/pessoas'
 import { listCondominios } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
 import type { Pessoa } from '../types/pessoa'
@@ -75,6 +75,25 @@ export default function Pessoas() {
     }
   }
 
+  async function handleConvidar(row: Pessoa) {
+    if (!row.email) {
+      alert('Cadastra o e-mail antes de convidar.')
+      return
+    }
+    if (row.user_id) {
+      alert('Essa pessoa já tem conta vinculada.')
+      return
+    }
+    if (!window.confirm(`Enviar convite por e-mail pra ${row.email}?\nEla vai receber link pra ativar conta.`)) return
+    const r = await convidarPessoa(row.id)
+    if (r.ok) {
+      alert(`✓ Convite enviado pra ${r.email}.`)
+      await reload()
+    } else {
+      alert('Erro: ' + r.error)
+    }
+  }
+
   const unidadeLabel = (uid: string | null) => {
     if (!uid) return '—'
     const u = unidades.find((x) => x.id === uid)
@@ -146,6 +165,11 @@ export default function Pessoas() {
             <Link to={`/pessoas/${r.id}`}>
               <Button variant="ghost">Editar</Button>
             </Link>
+            {r.email && !r.user_id && r.ativo && (
+              <Button variant="secondary" onClick={() => handleConvidar(r)} title="Enviar convite por e-mail">
+                ✉ Convidar
+              </Button>
+            )}
             <Button variant={r.ativo ? 'danger' : 'secondary'} onClick={() => handleToggleAtivo(r)}>
               {r.ativo ? 'Desativar' : 'Reativar'}
             </Button>
