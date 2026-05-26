@@ -138,7 +138,14 @@ export default function MultaDetalhe() {
             )}
             <Button
               variant="secondary"
-              onClick={() => condominio && gerarPdfNotificacao({ multa, unidade, pessoa, condominio }).catch((e) => alert(e.message))}
+              onClick={() => condominio && gerarPdfNotificacao({
+                multa,
+                unidade,
+                pessoa,
+                condominio,
+                assinaturaUrl: perfil?.assinatura_url ?? null,
+                emissorNome: perfil?.nome_exibicao ?? null,
+              }).catch((e) => alert(e.message))}
               disabled={!condominio}
               title="Gerar PDF de notificação"
             >

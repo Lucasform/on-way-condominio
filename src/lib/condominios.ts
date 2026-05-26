@@ -63,6 +63,8 @@ function normalize(input: CondominioInput): CondominioInput {
     cep: digitsOrNull(input.cep),
     administradora: trimOrNull(input.administradora),
     logo_url: trimOrNull(input.logo_url),
+    regimento_pdf_url: input.regimento_pdf_url ?? null,
+    modelo_notificacao_url: input.modelo_notificacao_url ?? null,
     plano: input.plano,
   }
 }

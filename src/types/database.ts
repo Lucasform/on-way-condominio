@@ -13,6 +13,7 @@ export interface Perfil {
   nome_exibicao: string | null
   telefone: string | null
   avatar_url: string | null
+  assinatura_url: string | null
   bio: string | null
   ativo: boolean
   created_at: string

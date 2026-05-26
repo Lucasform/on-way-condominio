@@ -23,8 +23,11 @@ interface Pessoa {
 }
 
 const AVATAR_BUCKET = 'avatares'
+const ASSINATURA_BUCKET = 'assinaturas'
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024 // 2 MB
+const MAX_ASSINATURA_BYTES = 1 * 1024 * 1024 // 1 MB
 const VALID_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const ROLES_QUE_ASSINAM: string[] = ['admin_onway', 'administradora', 'sindico']
 
 export default function MeuPerfil() {
   const { user, perfil, refreshPerfil } = useAuth()
@@ -45,6 +48,10 @@ export default function MeuPerfil() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
 
   const [feedback, setFeedback] = useState<{ kind: 'ok' | 'err'; msg: string } | null>(null)
+
+  const assinaturaInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingAssinatura, setUploadingAssinatura] = useState(false)
+  const podeAssinar = !!perfil && ROLES_QUE_ASSINAM.includes(perfil.role)
 
   useEffect(() => {
     if (!perfil || !user) return
@@ -188,6 +195,74 @@ export default function MeuPerfil() {
     flash('ok', 'Foto removida.')
   }
 
+  // ============================================================
+  // Assinatura digital (imagem) — só pra staff que assina documentos
+  // ============================================================
+
+  async function handleAssinaturaChange(file: File | null) {
+    if (!file || !user || !perfil) return
+    if (!VALID_IMAGE_TYPES.includes(file.type)) {
+      flash('err', 'Use uma imagem JPG, PNG ou WebP. PNG transparente fica melhor.')
+      return
+    }
+    if (file.size > MAX_ASSINATURA_BYTES) {
+      flash('err', `Imagem muito grande. Máximo ${Math.round(MAX_ASSINATURA_BYTES / 1024 / 1024)} MB.`)
+      return
+    }
+    setUploadingAssinatura(true)
+    setFeedback(null)
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
+      const path = `${user.id}/${Date.now()}.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from(ASSINATURA_BUCKET)
+        .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type })
+      if (upErr) throw upErr
+      const { data: pub } = supabase.storage.from(ASSINATURA_BUCKET).getPublicUrl(path)
+      const novaUrl = pub.publicUrl
+
+      const { error: updErr } = await supabase
+        .from('perfis')
+        .update({ assinatura_url: novaUrl })
+        .eq('id', perfil.id)
+      if (updErr) throw updErr
+
+      if (perfil.assinatura_url) {
+        const prevPath = extrairPathDoPublicUrl(perfil.assinatura_url, ASSINATURA_BUCKET)
+        if (prevPath && prevPath.startsWith(`${user.id}/`)) {
+          supabase.storage.from(ASSINATURA_BUCKET).remove([prevPath]).catch(() => {})
+        }
+      }
+
+      await refreshPerfil()
+      flash('ok', 'Assinatura atualizada.')
+    } catch (err) {
+      flash('err', traduzirErro(err instanceof Error ? err.message : 'Falha no upload.'))
+    } finally {
+      setUploadingAssinatura(false)
+      if (assinaturaInputRef.current) assinaturaInputRef.current.value = ''
+    }
+  }
+
+  async function handleRemoveAssinatura() {
+    if (!perfil?.assinatura_url || !user) return
+    if (!window.confirm('Remover sua assinatura?')) return
+    setUploadingAssinatura(true)
+    const prevPath = extrairPathDoPublicUrl(perfil.assinatura_url, ASSINATURA_BUCKET)
+    const { error } = await supabase.from('perfis').update({ assinatura_url: null }).eq('id', perfil.id)
+    if (error) {
+      flash('err', traduzirErro(error.message))
+      setUploadingAssinatura(false)
+      return
+    }
+    if (prevPath && prevPath.startsWith(`${user.id}/`)) {
+      supabase.storage.from(ASSINATURA_BUCKET).remove([prevPath]).catch(() => {})
+    }
+    await refreshPerfil()
+    setUploadingAssinatura(false)
+    flash('ok', 'Assinatura removida.')
+  }
+
   async function handleChangeEmail(e: FormEvent) {
     e.preventDefault()
     if (!user) return
@@ -315,6 +390,66 @@ export default function MeuPerfil() {
           </form>
         </div>
       </Section>
+
+      {/* ============================================================ */}
+      {/* Assinatura digital — só pra staff que assina documentos */}
+      {/* ============================================================ */}
+      {podeAssinar && (
+        <Section
+          title="Assinatura digital"
+          hint="Imagem da sua assinatura. Aparece no rodapé de PDFs de multa e notificação que você emitir. PNG transparente fica melhor."
+        >
+          <div className="flex flex-col sm:flex-row gap-6 items-start">
+            <div className="flex flex-col gap-2 items-center">
+              <button
+                type="button"
+                onClick={() => assinaturaInputRef.current?.click()}
+                disabled={uploadingAssinatura}
+                title="Trocar assinatura"
+                className="w-64 h-24 rounded-md border-2 border-dashed border-slate-700 bg-slate-900 hover:border-brand-500 transition disabled:opacity-50 flex items-center justify-center overflow-hidden"
+              >
+                {perfil.assinatura_url ? (
+                  <img
+                    src={perfil.assinatura_url}
+                    alt="Sua assinatura"
+                    className="max-w-full max-h-full object-contain"
+                  />
+                ) : (
+                  <span className="text-xs text-slate-500">clique pra adicionar</span>
+                )}
+              </button>
+              <input
+                ref={assinaturaInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => handleAssinaturaChange(e.target.files?.[0] ?? null)}
+              />
+              {perfil.assinatura_url && !uploadingAssinatura && (
+                <button
+                  type="button"
+                  onClick={handleRemoveAssinatura}
+                  className="text-[11px] text-slate-500 hover:text-red-400 underline-offset-2 hover:underline"
+                >
+                  remover
+                </button>
+              )}
+              {uploadingAssinatura && <div className="text-[11px] text-slate-500">enviando...</div>}
+            </div>
+            <div className="flex-1 text-xs text-slate-400 space-y-2">
+              <p>
+                <strong className="text-slate-200">Dica:</strong> assine numa folha branca, fotografe ou
+                escaneie. Use ferramenta como remove.bg pra deixar fundo transparente (PNG) — fica mais elegante no PDF.
+              </p>
+              <p className="text-[11px] text-slate-500">
+                Esta é uma <strong>assinatura visual</strong> (imagem). Não substitui assinatura digital
+                ICP-Brasil pra fins jurídicos. Serve pra notificações internas e processos administrativos
+                do condomínio.
+              </p>
+            </div>
+          </div>
+        </Section>
+      )}
 
       {/* ============================================================ */}
       {/* Contato — Email */}

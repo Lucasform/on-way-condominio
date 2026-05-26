@@ -9,9 +9,11 @@ export async function gerarPdfNotificacao(args: {
   unidade: Unidade | null
   pessoa: Pessoa | null
   condominio: Condominio
+  assinaturaUrl?: string | null
+  emissorNome?: string | null
 }): Promise<void> {
   const { jsPDF } = await import('jspdf')
-  const { notificacao, unidade, pessoa, condominio } = args
+  const { notificacao, unidade, pessoa, condominio, assinaturaUrl, emissorNome } = args
 
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const W = 210, H = 297
@@ -114,12 +116,27 @@ export async function gerarPdfNotificacao(args: {
     y += 3
   }
 
-  y = Math.max(y + 14, H - 50)
+  y = Math.max(y + 14, H - 55)
+  if (assinaturaUrl) {
+    try {
+      const ass = await carregarImagem(assinaturaUrl)
+      const maxW = 50, maxH = 18
+      const ratio = ass.width / ass.height
+      let w = maxW, h = maxW / ratio
+      if (h > maxH) { h = maxH; w = maxH * ratio }
+      doc.addImage(ass.dataUrl, ass.format, 105 - w / 2, y - h, w, h)
+    } catch { /* ignora */ }
+  }
   doc.setDrawColor(150)
   doc.line(60, y, W - 60, y)
   doc.setFontSize(10)
-  doc.text('Síndico(a) / Administradora', 105, y + 5, { align: 'center' })
+  doc.text(emissorNome ?? 'Síndico', 105, y + 5, { align: 'center' })
   doc.text(condominio.nome, 105, y + 10, { align: 'center' })
+  doc.setFontSize(8)
+  doc.setTextColor(120)
+  doc.text(`Emitido em ${fmtData(new Date().toISOString())}`, 105, y + 14, { align: 'center' })
+  doc.setTextColor(20)
+  doc.setFontSize(10)
 
   doc.setFontSize(8)
   doc.setTextColor(140)

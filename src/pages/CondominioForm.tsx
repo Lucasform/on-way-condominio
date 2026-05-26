@@ -15,7 +15,9 @@ import { Field, TextInput, Select } from '../components/ui/Input'
 import ConvitesPanel from '../components/ConvitesPanel'
 import LogoUpload from '../components/LogoUpload'
 import PessoasImport from '../components/PessoasImport'
-import ImportPlaceholder from '../components/ImportPlaceholder'
+import UnidadesImport from '../components/UnidadesImport'
+import FornecedoresImport from '../components/FornecedoresImport'
+import CondominioAnexoPdf from '../components/CondominioAnexoPdf'
 import { traduzErro } from '../lib/errorMessages'
 
 const EMPTY: CondominioInput = {
@@ -28,6 +30,8 @@ const EMPTY: CondominioInput = {
   cep: null,
   administradora: null,
   logo_url: null,
+  regimento_pdf_url: null,
+  modelo_notificacao_url: null,
   plano: 'free',
 }
 
@@ -83,6 +87,8 @@ export default function CondominioForm() {
             cep: c.cep,
             administradora: c.administradora,
             logo_url: c.logo_url,
+            regimento_pdf_url: c.regimento_pdf_url,
+            modelo_notificacao_url: c.modelo_notificacao_url,
             plano: c.plano,
           })
         }
@@ -289,15 +295,27 @@ export default function CondominioForm() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-              <ImportPlaceholder
-                titulo="📑 Anexar regimento (PDF)"
-                descricao="Suba o PDF do regimento interno. Vamos extrair os artigos automaticamente e gerar os embeddings pra IA usar."
-                hint="Vai habilitar busca semântica nos artigos do PDF."
+              <CondominioAnexoPdf
+                condominio_id={id}
+                campo="regimento_pdf_url"
+                subpasta="regimento"
+                titulo="Anexar regimento (PDF)"
+                emoji="📑"
+                descricao="Suba o PDF oficial do regimento interno."
+                current={form.regimento_pdf_url}
+                onChange={(url) => update('regimento_pdf_url', url)}
+                hint="Por enquanto só guarda o PDF. Extração automática de artigos e embeddings pra IA virá em update futuro."
               />
-              <ImportPlaceholder
-                titulo="📄 Modelo de notificação (PDF)"
-                descricao="Anexe um PDF de modelo de notificação/multa do seu condomínio. Vamos copiar layout, brasão, assinaturas e tipografia pra gerar PDFs no padrão do prédio."
-                hint="Substitui o template padrão OnWay no botão Gerar PDF da multa."
+              <CondominioAnexoPdf
+                condominio_id={id}
+                campo="modelo_notificacao_url"
+                subpasta="modelo-notificacao"
+                titulo="Modelo de notificação (PDF)"
+                emoji="📄"
+                descricao="Anexe um modelo PDF de notificação/multa no padrão do seu condomínio."
+                current={form.modelo_notificacao_url}
+                onChange={(url) => update('modelo_notificacao_url', url)}
+                hint="Por enquanto só guarda o modelo. Substituição do template padrão no Gerar PDF da multa virá em update futuro."
               />
             </div>
           </div>
@@ -310,24 +328,13 @@ export default function CondominioForm() {
               Importações em massa
             </h2>
             <p className="text-xs text-slate-400 mb-4">
-              Suba planilhas (XLSX/CSV) pra preencher os cadastros de uma vez. Os dados são normalizados (CPF, telefone, etc.) e validados antes de inserir.
+              Suba planilhas (XLSX/CSV). Os dados são normalizados (CPF/telefone só dígitos, valor com vírgula vira número) e validados antes de inserir.
             </p>
 
             <div className="space-y-4">
-              <ImportPlaceholder
-                titulo="🏠 Importar Unidades"
-                descricao="Planilha com bloco, número, tipo (apartamento/casa/sala/loja) e área. Validação por bloco+número único."
-                hint="Recomendado importar antes de moradores — pessoas vinculam a unidades."
-              />
-
-              {/* PessoasImport real (já implementado) */}
+              <UnidadesImport condominio_id={id} />
               <PessoasImport condominio_id={id} />
-
-              <ImportPlaceholder
-                titulo="🔧 Importar Fornecedores"
-                descricao="Planilha de prestadores: nome, categoria (elétrica/hidráulica/limpeza/etc.), telefone, e-mail, CPF/CNPJ, valor de referência."
-                hint="Vincula automaticamente à tabela de serviços do condomínio."
-              />
+              <FornecedoresImport condominio_id={id} />
             </div>
           </div>
 

@@ -11,6 +11,8 @@ export interface Condominio {
   cep: string | null
   administradora: string | null
   logo_url: string | null
+  regimento_pdf_url: string | null
+  modelo_notificacao_url: string | null
   plano: Plano
   ativo: boolean
   created_at: string

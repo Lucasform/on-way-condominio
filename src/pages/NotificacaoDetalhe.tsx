@@ -122,7 +122,14 @@ export default function NotificacaoDetalhe() {
             )}
             <Button
               variant="secondary"
-              onClick={() => condominio && gerarPdfNotificacao({ notificacao, unidade, pessoa, condominio }).catch((e) => alert(e.message))}
+              onClick={() => condominio && gerarPdfNotificacao({
+                notificacao,
+                unidade,
+                pessoa,
+                condominio,
+                assinaturaUrl: perfil?.assinatura_url ?? null,
+                emissorNome: perfil?.nome_exibicao ?? null,
+              }).catch((e) => alert(e.message))}
               disabled={!condominio}
               title="Gerar PDF"
             >
