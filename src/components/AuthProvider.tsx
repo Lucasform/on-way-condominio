@@ -61,7 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [perfil, setPerfil] = useState<Perfil | null>(null)
   const [loading, setLoading] = useState(true)
-  const [hardError, setHardError] = useState<string | null>(null)
+  // hardError reservado pra erros realmente irrecuperáveis. Hoje não temos
+  // caminho que dispare — `RecoveryScreen` segue acessível via `limparTudo`
+  // se o supabase-js eventualmente travar de forma irrecuperável.
+  const [hardError] = useState<string | null>(null)
 
   // Confirmação adiada de SIGNED_OUT: se for refresh transitório, ignoramos.
   const pendingSignOutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
