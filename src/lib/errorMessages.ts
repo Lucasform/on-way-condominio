@@ -1,6 +1,11 @@
 // Traduz erros técnicos do Supabase/Postgres pra mensagens em português amigáveis.
 export function traduzErro(err: unknown): string {
-  const raw = err instanceof Error ? err.message : String(err)
+  // PostgrestError: {message, details, hint, code}
+  let raw: string
+  if (err instanceof Error) raw = err.message
+  else if (typeof err === 'object' && err !== null && 'message' in err) {
+    raw = String((err as { message: unknown }).message)
+  } else raw = String(err)
   const msg = raw.toLowerCase()
 
   // Quotas (raise exception 'Limite de X recurso atingido no plano Y')

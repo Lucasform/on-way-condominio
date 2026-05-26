@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthProvider'
+import { traduzErro } from '../lib/errorMessages'
 
 interface CondoUso {
   condominio_id: string
@@ -40,28 +41,26 @@ export default function AdminHome() {
 
   async function assumir(condoId: string) {
     setTrocando(condoId)
-    try {
-      const { error } = await supabase.rpc('set_active_condominio', { p_condominio: condoId })
-      if (error) throw error
-      await refreshPerfil()
-      window.location.href = '/'
-    } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+    const { error } = await supabase.rpc('set_active_condominio', { p_condominio: condoId })
+    if (error) {
+      alert(traduzErro(error))
       setTrocando(null)
+      return
     }
+    await refreshPerfil()
+    window.location.href = '/'
   }
 
   async function sairViewAs() {
     setTrocando('exit')
-    try {
-      const { error } = await supabase.rpc('exit_view_as')
-      if (error) throw error
-      await refreshPerfil()
-      window.location.href = '/'
-    } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+    const { error } = await supabase.rpc('exit_view_as')
+    if (error) {
+      alert(traduzErro(error))
       setTrocando(null)
+      return
     }
+    await refreshPerfil()
+    window.location.href = '/'
   }
 
   // Se admin já está em view-as, redireciona pra Home do condomínio
