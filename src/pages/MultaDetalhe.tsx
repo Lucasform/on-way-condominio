@@ -16,6 +16,7 @@ import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import ContestacaoThread from '../components/ContestacaoThread'
 
 const STATUS_CLASS: Record<StatusMulta, string> = {
   em_analise: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
@@ -219,6 +220,11 @@ export default function MultaDetalhe() {
           Status terminal — nenhuma transição disponível.
         </div>
       )}
+
+      <ContestacaoThread
+        multaId={multa.id}
+        pessoaUserId={pessoa?.user_id ?? null}
+      />
 
       <div className="mt-8 text-xs text-slate-600">
         ID: <span className="font-mono">{multa.id}</span>
