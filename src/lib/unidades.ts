@@ -50,6 +50,13 @@ export async function setUnidadeAtivo(id: string, ativo: boolean): Promise<void>
   if (error) throw error
 }
 
+// Hard delete — pode falhar se houver registros relacionados sem cascade.
+// RLS permite admin_onway + sindico (alinhado ao padrão geral).
+export async function deleteUnidade(id: string): Promise<void> {
+  const { error } = await supabase.from('unidades').delete().eq('id', id)
+  if (error) throw error
+}
+
 function normalize(input: UnidadeInput): UnidadeInput {
   return {
     condominio_id: input.condominio_id,

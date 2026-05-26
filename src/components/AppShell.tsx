@@ -16,6 +16,10 @@ export default function AppShell() {
   const items = perfil ? menuFor(perfil.role) : []
   const [condoLogo, setCondoLogo] = useState<string | null>(null)
   const [condoNome, setCondoNome] = useState<string | null>(null)
+  const [unidadesAtivas, setUnidadesAtivas] = useState<number | null>(null)
+
+  // Quem cuida do condomínio enxerga o widget de unidades
+  const canVerUnidades = !!perfil && ['admin_onway', 'administradora', 'sindico', 'portaria'].includes(perfil.role)
 
   useEffect(() => {
     prefetchRoutes()
@@ -28,6 +32,15 @@ export default function AppShell() {
       .then(({ data }) => { if (mounted && data) { setCondoLogo(data.logo_url); setCondoNome(data.nome) } })
     return () => { mounted = false }
   }, [perfil?.condominio_id])
+
+  useEffect(() => {
+    if (!canVerUnidades) { setUnidadesAtivas(null); return }
+    let mounted = true
+    let q = supabase.from('unidades').select('*', { count: 'exact', head: true }).eq('ativo', true)
+    if (perfil?.condominio_id) q = q.eq('condominio_id', perfil.condominio_id)
+    q.then(({ count }) => { if (mounted) setUnidadesAtivas(count ?? 0) })
+    return () => { mounted = false }
+  }, [canVerUnidades, perfil?.condominio_id])
 
   async function handleSignOut() {
     await signOut()
@@ -133,6 +146,25 @@ export default function AppShell() {
             )
           })}
         </nav>
+
+        {canVerUnidades && unidadesAtivas !== null && (
+          <Link
+            to="/unidades"
+            className="mx-2 mb-2 mt-1 px-3 py-2 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 hover:bg-brand-50 dark:hover:bg-brand-700/10 hover:border-brand-500 dark:hover:border-brand-500/60 transition flex items-center gap-2 text-xs"
+            title="Ver unidades"
+          >
+            <span className="text-base leading-none">🏠</span>
+            <div className="flex-1 min-w-0">
+              <div className="font-semibold text-slate-900 dark:text-slate-100 leading-tight">
+                {unidadesAtivas} {unidadesAtivas === 1 ? 'unidade ativa' : 'unidades ativas'}
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-500">
+                clique pra abrir
+              </div>
+            </div>
+            <span className="text-slate-400 dark:text-slate-600">→</span>
+          </Link>
+        )}
 
         <div className="border-t border-slate-200 dark:border-slate-800 p-3 space-y-2">
           <div className="text-xs text-slate-500 truncate" title={user?.email ?? ''}>

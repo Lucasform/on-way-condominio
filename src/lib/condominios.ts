@@ -45,6 +45,13 @@ export async function setCondominioAtivo(id: string, ativo: boolean): Promise<vo
   if (error) throw error
 }
 
+// Hard delete — cascade apaga todos os filhos (unidades, ocorrências, multas, etc).
+// RLS permite só admin_onway.
+export async function deleteCondominio(id: string): Promise<void> {
+  const { error } = await supabase.from('condominios').delete().eq('id', id)
+  if (error) throw error
+}
+
 function normalize(input: CondominioInput): CondominioInput {
   return {
     nome: input.nome.trim(),

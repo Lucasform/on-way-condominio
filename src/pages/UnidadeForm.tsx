@@ -1,12 +1,13 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { createUnidade, getUnidade, updateUnidade } from '../lib/unidades'
+import { createUnidade, deleteUnidade, getUnidade, updateUnidade } from '../lib/unidades'
 import { listCondominios } from '../lib/condominios'
 import type { UnidadeInput, TipoUnidade } from '../types/unidade'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import DeleteButton from '../components/ui/DeleteButton'
 import { Field, TextInput, Select } from '../components/ui/Input'
 import { traduzErro } from '../lib/errorMessages'
 
@@ -24,12 +25,28 @@ export default function UnidadeForm() {
   const { perfil } = useAuth()
   const isNew = !id || id === 'novo'
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
+  const canDelete = !isNew && (perfil?.role === 'admin_onway' || perfil?.role === 'sindico')
 
   const [form, setForm] = useState<UnidadeInput>(EMPTY)
   const [condos, setCondos] = useState<Condominio[]>([])
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleDelete() {
+    if (!id) return
+    if (!window.confirm('Excluir essa unidade DEFINITIVAMENTE? Esta ação não pode ser desfeita. Se houver multas, ocorrências ou outros registros vinculados, a exclusão pode falhar.')) return
+    setDeleting(true)
+    setError(null)
+    try {
+      await deleteUnidade(id)
+      navigate('/unidades')
+    } catch (e) {
+      setError(traduzErro(e))
+      setDeleting(false)
+    }
+  }
 
   useEffect(() => {
     if (isAdmin) {
@@ -100,9 +117,14 @@ export default function UnidadeForm() {
       <PageHeader
         title={isNew ? 'Nova unidade' : 'Editar unidade'}
         actions={
-          <Link to="/unidades">
-            <Button variant="ghost">← Voltar</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            {canDelete && (
+              <DeleteButton onClick={handleDelete} disabled={deleting} />
+            )}
+            <Link to="/unidades">
+              <Button variant="ghost">← Voltar</Button>
+            </Link>
+          </div>
         }
       />
 

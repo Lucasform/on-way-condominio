@@ -2,12 +2,15 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import {
   createCondominio,
+  deleteCondominio,
   getCondominio,
   updateCondominio,
 } from '../lib/condominios'
 import type { CondominioInput, Plano } from '../types/condominio'
+import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import DeleteButton from '../components/ui/DeleteButton'
 import { Field, TextInput, Select } from '../components/ui/Input'
 import ConvitesPanel from '../components/ConvitesPanel'
 import LogoUpload from '../components/LogoUpload'
@@ -30,12 +33,34 @@ const EMPTY: CondominioInput = {
 export default function CondominioForm() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { perfil } = useAuth()
   const isNew = !id || id === 'novo'
+  // Apenas admin_onway pode excluir um condomínio (efeito em cascata pesado)
+  const canDelete = !isNew && perfil?.role === 'admin_onway'
 
   const [form, setForm] = useState<CondominioInput>(EMPTY)
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleDelete() {
+    if (!id) return
+    const nomeAlvo = form.nome || 'esse condomínio'
+    const conf = window.prompt(
+      `Excluir "${nomeAlvo}" DEFINITIVAMENTE remove todos os dados associados (unidades, pessoas, multas, ocorrências, mural, calendário, chat, etc).\n\nEsta ação é irreversível.\n\nDigite EXCLUIR para confirmar:`,
+    )
+    if (conf !== 'EXCLUIR') return
+    setDeleting(true)
+    setError(null)
+    try {
+      await deleteCondominio(id)
+      navigate('/condominios')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao excluir.')
+      setDeleting(false)
+    }
+  }
 
   useEffect(() => {
     if (isNew) return
@@ -104,9 +129,14 @@ export default function CondominioForm() {
         title={isNew ? 'Novo condomínio' : 'Editar condomínio'}
         subtitle={isNew ? 'Cadastre um novo condomínio na plataforma.' : 'Atualize os dados.'}
         actions={
-          <Link to="/condominios">
-            <Button variant="ghost">← Voltar</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            {canDelete && (
+              <DeleteButton onClick={handleDelete} disabled={deleting} />
+            )}
+            <Link to="/condominios">
+              <Button variant="ghost">← Voltar</Button>
+            </Link>
+          </div>
         }
       />
 
