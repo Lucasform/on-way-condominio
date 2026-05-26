@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { createEvento, getEvento, updateEvento } from '../lib/eventos'
+import { createEvento, getEvento, updateEvento, enviarLembreteEvento } from '../lib/eventos'
 import { listCondominios } from '../lib/condominios'
 import type { EventoInput, TipoEvento } from '../types/evento'
 import type { Condominio } from '../types/condominio'
@@ -32,6 +32,8 @@ export default function CalendarioForm() {
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [sendingLembrete, setSendingLembrete] = useState(false)
+  const [lembreteMsg, setLembreteMsg] = useState<string | null>(null)
 
   useEffect(() => {
     if (isAdmin) {
@@ -211,6 +213,42 @@ export default function CalendarioForm() {
           </Link>
         </div>
       </form>
+
+      {/* Etapa 70: enviar lembrete por e-mail (só pra evento existente, público) */}
+      {!isNew && form.publico && (
+        <div className="mt-8 rounded-lg border border-sky-500/30 bg-sky-500/5 p-5">
+          <div className="text-sm font-medium text-sky-200 mb-1">📣 Lembrete por e-mail</div>
+          <p className="text-xs text-slate-400 mb-3">
+            Envia agora um e-mail pra todos os moradores com e-mail cadastrado lembrando deste evento.
+          </p>
+          <Button
+            type="button"
+            variant="secondary"
+            disabled={sendingLembrete}
+            onClick={async () => {
+              if (!id) return
+              if (!window.confirm('Enviar lembrete por e-mail pra todos os moradores agora?')) return
+              setSendingLembrete(true)
+              setLembreteMsg(null)
+              try {
+                const r = await enviarLembreteEvento(id)
+                setLembreteMsg(
+                  r.enviados === 0
+                    ? 'Nenhum morador com e-mail cadastrado.'
+                    : `✓ Enviados ${r.enviados}. Falhas: ${r.falhas}.`,
+                )
+              } catch (e) {
+                setLembreteMsg('Erro: ' + (e instanceof Error ? e.message : String(e)))
+              } finally {
+                setSendingLembrete(false)
+              }
+            }}
+          >
+            {sendingLembrete ? 'Enviando...' : '📧 Enviar lembrete agora'}
+          </Button>
+          {lembreteMsg && <div className="mt-2 text-xs text-slate-300">{lembreteMsg}</div>}
+        </div>
+      )}
     </div>
   )
 }

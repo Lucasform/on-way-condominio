@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { Evento, EventoInput } from '../types/evento'
+import { sendEmail } from './email'
 
 export async function listEventos(opts: {
   condominio_id?: string
@@ -70,4 +71,52 @@ export async function updateEvento(id: string, input: EventoInput): Promise<Even
 export async function deleteEvento(id: string): Promise<void> {
   const { error } = await supabase.from('eventos').update({ ativo: false }).eq('id', id)
   if (error) throw error
+}
+
+/**
+ * Envia lembrete por e-mail pros moradores do condomínio sobre um evento.
+ * Etapa 70 do ROADMAP.
+ */
+export async function enviarLembreteEvento(eventoId: string): Promise<{ enviados: number; falhas: number }> {
+  const ev = await getEvento(eventoId)
+  if (!ev) throw new Error('Evento não encontrado.')
+
+  const { data: pessoas } = await supabase
+    .from('pessoas')
+    .select('email')
+    .eq('condominio_id', ev.condominio_id)
+    .eq('ativo', true)
+    .not('email', 'is', null)
+
+  const emails = (pessoas ?? []).map((p) => p.email!).filter(Boolean)
+  if (emails.length === 0) return { enviados: 0, falhas: 0 }
+
+  const { data: condo } = await supabase
+    .from('condominios')
+    .select('nome')
+    .eq('id', ev.condominio_id)
+    .maybeSingle()
+
+  const dataLegivel = new Date(ev.data_inicio).toLocaleString('pt-BR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
+  const result = await sendEmail({
+    to: emails,
+    template: 'evento-lembrete',
+    condominio_id: ev.condominio_id,
+    vars: {
+      condominio_nome: condo?.nome ?? undefined,
+      evento_titulo: ev.titulo,
+      evento_data: dataLegivel,
+      descricao: ev.descricao ?? undefined,
+      link: `${window.location.origin}/calendario`,
+    },
+  })
+
+  return { enviados: result.ok, falhas: result.fail }
 }

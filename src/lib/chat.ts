@@ -76,6 +76,13 @@ export async function createConversa(input: {
     conteudo: input.primeira_mensagem.trim(),
   })
 
+  // Dispara bot pra primeira resposta (fire-and-forget)
+  setTimeout(() => {
+    supabase.functions
+      .invoke('chat-bot', { body: { conversa_id: conversa.id } })
+      .catch(() => {})
+  }, 800)
+
   return conversa
 }
 
@@ -92,6 +99,19 @@ export async function enviarMensagem(input: {
     conteudo: input.conteudo.trim(),
   })
   if (error) throw error
+
+  // Se foi morador escrevendo, dispara o bot (fire-and-forget). Etapa 52.
+  if (input.autor_tipo === 'morador') {
+    triggerBot(input.conversa_id).catch((e) =>
+      console.warn('[chat-bot] falha:', e.message),
+    )
+  }
+}
+
+async function triggerBot(conversa_id: string): Promise<void> {
+  // Aguarda 800ms (sensação de "digitando...")
+  await new Promise((r) => setTimeout(r, 800))
+  await supabase.functions.invoke('chat-bot', { body: { conversa_id } })
 }
 
 export async function mudarStatusConversa(id: string, status: StatusConversa, atribuida_para?: string | null): Promise<void> {
