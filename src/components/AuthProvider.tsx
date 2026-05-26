@@ -127,6 +127,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 function RecoveryScreen({ message }: { message: string }) {
+  // Mensagem técnica vai pro console; usuário vê algo amigável.
+  console.warn('[RecoveryScreen]', message)
   async function limparTudo() {
     try {
       await supabase.auth.signOut().catch(() => {})
@@ -149,22 +151,26 @@ function RecoveryScreen({ message }: { message: string }) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-brand-50 dark:bg-slate-950 p-6">
-      <div className="max-w-md text-center">
-        <div className="text-5xl mb-3">⚠</div>
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Algo travou</h1>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{message}</p>
+      <div className="max-w-sm text-center">
+        <div className="text-5xl mb-4">🤔</div>
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+          Não conseguimos te conectar
+        </h1>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+          Pode ser uma instabilidade momentânea. Tente recarregar — se persistir, faça login de novo.
+        </p>
         <div className="mt-6 flex gap-2 justify-center">
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-700"
+            className="px-5 py-2 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-700"
           >
             Recarregar
           </button>
           <button
             onClick={limparTudo}
-            className="px-4 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-medium"
+            className="px-5 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-medium"
           >
-            Limpar dados e entrar
+            Fazer login de novo
           </button>
         </div>
       </div>
