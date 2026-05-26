@@ -219,14 +219,45 @@ export default function OcorrenciaDetalhe() {
       />
 
       {canGenerateMulta && (
-        <div className="mt-6 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-5">
-          <div className="text-sm font-medium text-emerald-200 mb-1">Gerar multa manual</div>
+        <div className="mt-6 rounded-lg border border-slate-700 bg-slate-900/40 p-5">
+          <div className="text-sm font-medium text-slate-200 mb-1">Decidir o desfecho</div>
           <div className="text-xs text-slate-400 mb-3">
-            Pula a análise e cria a multa manualmente.
+            Escolha uma das ações abaixo de acordo com a gravidade. Notificação é advertência sem valor; multa tem valor financeiro.
           </div>
-          <Link to={`/multas/nova?ocorrencia=${ocorrencia.id}`}>
-            <Button variant="secondary">Gerar multa a partir desta ocorrência →</Button>
-          </Link>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Link to={`/notificacoes/nova?ocorrencia=${ocorrencia.id}`} className="block">
+              <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3 hover:bg-amber-500/10 transition">
+                <div className="text-sm font-semibold text-amber-200">📋 Virar notificação</div>
+                <div className="text-xs text-slate-400 mt-1">Advertência formal, sem valor financeiro.</div>
+              </div>
+            </Link>
+            <Link to={`/multas/nova?ocorrencia=${ocorrencia.id}`} className="block">
+              <div className="rounded-md border border-red-500/30 bg-red-500/5 p-3 hover:bg-red-500/10 transition">
+                <div className="text-sm font-semibold text-red-200">💰 Virar multa</div>
+                <div className="text-xs text-slate-400 mt-1">Sanção com valor monetário conforme regimento.</div>
+              </div>
+            </Link>
+            <button
+              type="button"
+              onClick={() => handleChangeStatus('arquivada' as StatusOcorrencia)}
+              className="block text-left"
+            >
+              <div className="rounded-md border border-slate-600 bg-slate-800/40 p-3 hover:bg-slate-800/60 transition">
+                <div className="text-sm font-semibold text-slate-200">📦 Arquivar</div>
+                <div className="text-xs text-slate-400 mt-1">Sem ação necessária. Fica registrada no histórico.</div>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleChangeStatus('cancelada' as StatusOcorrencia)}
+              className="block text-left"
+            >
+              <div className="rounded-md border border-slate-700 bg-slate-900/40 p-3 hover:bg-slate-800/60 transition">
+                <div className="text-sm font-semibold text-slate-400">✕ Cancelar</div>
+                <div className="text-xs text-slate-500 mt-1">Registro inválido ou duplicado.</div>
+              </div>
+            </button>
+          </div>
         </div>
       )}
 

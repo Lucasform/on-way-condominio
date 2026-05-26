@@ -33,6 +33,9 @@ const OcorrenciaDetalhe = lazy(() => import('./pages/OcorrenciaDetalhe'))
 const MultaNova = lazy(() => import('./pages/MultaNova'))
 const Multas = lazy(() => import('./pages/Multas'))
 const MultaDetalhe = lazy(() => import('./pages/MultaDetalhe'))
+const Notificacoes = lazy(() => import('./pages/Notificacoes'))
+const NotificacaoNova = lazy(() => import('./pages/NotificacaoNova'))
+const NotificacaoDetalhe = lazy(() => import('./pages/NotificacaoDetalhe'))
 const UnidadeHistorico = lazy(() => import('./pages/UnidadeHistorico'))
 const Regimento = lazy(() => import('./pages/Regimento'))
 const RegimentoForm = lazy(() => import('./pages/RegimentoForm'))
@@ -247,6 +250,22 @@ export default function App() {
                   <MultaDetalhe />
                 </ProtectedRoute>
               }
+            />
+            <Route
+              path="/notificacoes"
+              element={<ProtectedRoute><Notificacoes /></ProtectedRoute>}
+            />
+            <Route
+              path="/notificacoes/nova"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <NotificacaoNova />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notificacoes/:id"
+              element={<ProtectedRoute><NotificacaoDetalhe /></ProtectedRoute>}
             />
             <Route
               path="/unidades/:id/historico"
