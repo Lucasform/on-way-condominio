@@ -55,7 +55,7 @@ export default function Login() {
         setMagicSent(true)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro desconhecido')
+      setError(traduzErroAuth(err))
     } finally {
       setSubmitting(false)
     }
@@ -193,4 +193,25 @@ export default function Login() {
       )}
     </AuthShell>
   )
+}
+
+function traduzErroAuth(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err)
+  const msg = raw.toLowerCase()
+  if (msg.includes('signups not allowed')) {
+    return 'Esse e-mail ainda não tem conta. Peça pra sua administradora ou síndico te convidar.'
+  }
+  if (msg.includes('invalid login credentials')) {
+    return 'E-mail ou senha incorretos.'
+  }
+  if (msg.includes('email not confirmed')) {
+    return 'Confirme seu e-mail antes de entrar. Veja sua caixa de entrada.'
+  }
+  if (msg.includes('rate limit') || msg.includes('too many')) {
+    return 'Muitas tentativas. Aguarde alguns minutos.'
+  }
+  if (msg.includes('unsupported provider')) {
+    return 'Esse método de login ainda não está disponível.'
+  }
+  return raw
 }
