@@ -1,6 +1,7 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { createPessoa, deletePessoa, getPessoa, updatePessoa } from '../lib/pessoas'
+import { supabase } from '../lib/supabase'
 import { listCondominios } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
 import type { PessoaInput, TipoVinculo, RelacaoUnidade } from '../types/pessoa'
@@ -54,6 +55,73 @@ export default function PessoaForm() {
       setError(traduzErro(e))
       setDeleting(false)
     }
+  }
+
+  // --- Upload de foto ---
+  const fotoInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingFoto, setUploadingFoto] = useState(false)
+  const FOTO_BUCKET = 'fotos-pessoas'
+  const MAX_FOTO_BYTES = 2 * 1024 * 1024 // 2 MB
+  const VALID_FOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
+  function extrairPathDoPublicUrl(url: string): string | null {
+    const marker = `/${FOTO_BUCKET}/`
+    const idx = url.indexOf(marker)
+    if (idx === -1) return null
+    return url.slice(idx + marker.length)
+  }
+
+  async function handleFotoChange(file: File | null) {
+    if (!file) return
+    if (!form.condominio_id) {
+      setError('Selecione o condomínio antes de enviar a foto.')
+      return
+    }
+    if (!VALID_FOTO_TYPES.includes(file.type)) {
+      setError('Use uma imagem JPG, PNG ou WebP.')
+      return
+    }
+    if (file.size > MAX_FOTO_BYTES) {
+      setError(`Imagem muito grande. Máximo ${Math.round(MAX_FOTO_BYTES / 1024 / 1024)} MB.`)
+      return
+    }
+    setUploadingFoto(true)
+    setError(null)
+    try {
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+      const path = `${form.condominio_id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+      const { error: upErr } = await supabase.storage
+        .from(FOTO_BUCKET)
+        .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type })
+      if (upErr) throw upErr
+      const { data: pub } = supabase.storage.from(FOTO_BUCKET).getPublicUrl(path)
+      const novaUrl = pub.publicUrl
+
+      // Apaga foto anterior se for do mesmo bucket (best-effort)
+      if (form.foto_url) {
+        const prevPath = extrairPathDoPublicUrl(form.foto_url)
+        if (prevPath) {
+          supabase.storage.from(FOTO_BUCKET).remove([prevPath]).catch(() => {})
+        }
+      }
+
+      update('foto_url', novaUrl)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Falha no upload.')
+    } finally {
+      setUploadingFoto(false)
+      if (fotoInputRef.current) fotoInputRef.current.value = ''
+    }
+  }
+
+  async function handleRemoverFoto() {
+    if (!form.foto_url) return
+    if (!window.confirm('Remover a foto?')) return
+    const prevPath = extrairPathDoPublicUrl(form.foto_url)
+    if (prevPath) {
+      supabase.storage.from(FOTO_BUCKET).remove([prevPath]).catch(() => {})
+    }
+    update('foto_url', null)
   }
 
   // Carrega condomínios (admin) ou usa o do perfil
@@ -265,26 +333,57 @@ export default function PessoaForm() {
           </div>
         </fieldset>
 
-        <Field label="Foto" hint="URL pública de uma imagem (avatar do morador).">
+        <Field label="Foto" hint="JPG, PNG ou WebP. Máximo 2 MB.">
           <div className="flex items-center gap-4">
-            {form.foto_url ? (
-              <img
-                src={form.foto_url}
-                alt=""
-                className="w-16 h-16 rounded-full object-cover border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800"
-                onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3' }}
-              />
-            ) : (
-              <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-slate-400 text-xs">
-                sem foto
-              </div>
-            )}
-            <div className="flex-1">
-              <TextInput
-                value={form.foto_url ?? ''}
-                onChange={(e) => update('foto_url', e.target.value)}
-                placeholder="https://..."
-              />
+            <button
+              type="button"
+              onClick={() => fotoInputRef.current?.click()}
+              disabled={uploadingFoto || !form.condominio_id}
+              title={form.foto_url ? 'Trocar foto' : 'Adicionar foto'}
+              className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:border-brand-500 transition disabled:opacity-50"
+            >
+              {form.foto_url ? (
+                <img
+                  src={form.foto_url}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3' }}
+                />
+              ) : (
+                <span className="flex items-center justify-center w-full h-full text-2xl text-slate-400">+</span>
+              )}
+              <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-brand-700 text-white text-[10px] flex items-center justify-center border-2 border-white dark:border-slate-950 pointer-events-none">
+                📷
+              </span>
+            </button>
+            <input
+              ref={fotoInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(e) => handleFotoChange(e.target.files?.[0] ?? null)}
+            />
+            <div className="flex flex-col gap-1">
+              <button
+                type="button"
+                onClick={() => fotoInputRef.current?.click()}
+                disabled={uploadingFoto || !form.condominio_id}
+                className="text-sm text-brand-700 dark:text-brand-400 hover:underline disabled:opacity-50 text-left"
+              >
+                {uploadingFoto ? 'Enviando...' : form.foto_url ? 'Trocar foto' : 'Adicionar foto'}
+              </button>
+              {form.foto_url && !uploadingFoto && (
+                <button
+                  type="button"
+                  onClick={handleRemoverFoto}
+                  className="text-xs text-slate-500 hover:text-red-600 dark:hover:text-red-400 text-left"
+                >
+                  remover
+                </button>
+              )}
+              {!form.condominio_id && (
+                <span className="text-[11px] text-slate-500">Selecione o condomínio antes.</span>
+              )}
             </div>
           </div>
         </Field>
