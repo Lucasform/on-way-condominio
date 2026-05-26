@@ -33,6 +33,13 @@ import MuralNova from './pages/MuralNova'
 import Calendario from './pages/Calendario'
 import CalendarioForm from './pages/CalendarioForm'
 import Dashboard from './pages/Dashboard'
+import Votacoes from './pages/Votacoes'
+import VotacaoNova from './pages/VotacaoNova'
+import VotacaoDetalhe from './pages/VotacaoDetalhe'
+import Chamados from './pages/Chamados'
+import ChamadoNovo from './pages/ChamadoNovo'
+import ChamadoDetalhe from './pages/ChamadoDetalhe'
+import Relatorios from './pages/Relatorios'
 
 export default function App() {
   return (
@@ -326,6 +333,42 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/votacoes"
+              element={<ProtectedRoute><Votacoes /></ProtectedRoute>}
+            />
+            <Route
+              path="/votacoes/nova"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <VotacaoNova />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/votacoes/:id"
+              element={<ProtectedRoute><VotacaoDetalhe /></ProtectedRoute>}
+            />
+            <Route
+              path="/chamados"
+              element={<ProtectedRoute><Chamados /></ProtectedRoute>}
+            />
+            <Route
+              path="/chamados/novo"
+              element={<ProtectedRoute><ChamadoNovo /></ProtectedRoute>}
+            />
+            <Route
+              path="/chamados/:id"
+              element={<ProtectedRoute><ChamadoDetalhe /></ProtectedRoute>}
+            />
+            <Route
+              path="/relatorios"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <Relatorios />
                 </ProtectedRoute>
               }
             />
