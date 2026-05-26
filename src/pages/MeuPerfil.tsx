@@ -211,8 +211,67 @@ export default function MeuPerfil() {
       <div className="mt-8">
         <PushToggle />
       </div>
+
+      {/* LGPD: exportar dados + excluir conta */}
+      {pessoa && (
+        <div className="mt-10 pt-6 border-t border-slate-800">
+          <h2 className="text-base font-semibold text-slate-100">Privacidade (LGPD)</h2>
+          <p className="mt-1 text-xs text-slate-400">
+            Você tem direito a baixar seus dados ou solicitar exclusão da conta.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => exportarMeusDados(pessoa)}
+              className="px-4 py-2 rounded-md bg-slate-700 hover:bg-slate-600 text-slate-100 text-sm font-medium transition"
+            >
+              📥 Baixar meus dados
+            </button>
+            <button
+              type="button"
+              onClick={solicitarExclusao}
+              className="px-4 py-2 rounded-md bg-red-700 hover:bg-red-600 text-white text-sm font-medium transition"
+            >
+              🗑 Solicitar exclusão da conta
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
+}
+
+async function exportarMeusDados(pessoa: Pessoa) {
+  const { data: u } = await supabase.auth.getUser()
+  const payload = {
+    exportado_em: new Date().toISOString(),
+    usuario: { id: u.user?.id, email: u.user?.email, created_at: u.user?.created_at },
+    pessoa,
+  }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `meus-dados-${pessoa.nome.replace(/\s+/g, '_')}-${new Date().toISOString().slice(0, 10)}.json`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+async function solicitarExclusao() {
+  const conf = window.prompt(
+    'Tem certeza? Sua conta será desativada e enviada pra revisão de exclusão.\nDigite EXCLUIR pra confirmar:',
+  )
+  if (conf !== 'EXCLUIR') return
+  const { data: u } = await supabase.auth.getUser()
+  if (!u.user) return
+  const { error } = await supabase.functions.invoke('solicitar-exclusao-conta', {})
+  if (error) {
+    alert('Erro ao solicitar: ' + error.message)
+    return
+  }
+  alert('Solicitação registrada. Você receberá um e-mail em até 5 dias úteis.')
+  await supabase.auth.signOut()
+  window.location.href = '/login'
 }
 
 const inputCls =

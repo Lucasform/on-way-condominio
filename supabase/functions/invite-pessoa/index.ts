@@ -15,6 +15,7 @@ import {
   canCreateRole,
   assertSameScope,
   HttpError,
+  audit,
   type Role,
 } from '../_shared/auth.ts'
 
@@ -111,6 +112,14 @@ Deno.serve(async (req: Request) => {
         .eq('id', userId)
       if (pUpdErr) return jsonResponse({ error: `Falha ao atualizar perfil: ${pUpdErr.message}` }, 500)
     }
+
+    await audit(caller, req, {
+      acao: 'pessoa.convidada',
+      alvo_tipo: 'pessoa',
+      alvo_id: pessoa_id,
+      condominio_id: pessoa.condominio_id,
+      detalhes: { role, email: pessoa.email, user_id: userId },
+    })
 
     return jsonResponse({
       ok: true,

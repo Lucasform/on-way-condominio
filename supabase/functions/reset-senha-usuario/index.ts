@@ -11,6 +11,7 @@ import {
   canManagePessoas,
   assertSameScope,
   HttpError,
+  audit,
 } from '../_shared/auth.ts'
 
 interface Body {
@@ -53,6 +54,14 @@ Deno.serve(async (req: Request) => {
       options: { redirectTo: `${siteUrl}/atualizar-senha` },
     })
     if (linkErr) return jsonResponse({ error: `Falha: ${linkErr.message}` }, 500)
+
+    await audit(caller, req, {
+      acao: 'usuario.reset_senha_solicitado',
+      alvo_tipo: 'user',
+      alvo_id: pessoa.user_id,
+      condominio_id: pessoa.condominio_id,
+      detalhes: { pessoa_id, email: pessoa.email },
+    })
 
     return jsonResponse({
       ok: true,

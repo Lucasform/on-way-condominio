@@ -12,6 +12,7 @@ import {
   canManagePessoas,
   assertSameScope,
   HttpError,
+  audit,
 } from '../_shared/auth.ts'
 
 interface Body {
@@ -65,6 +66,14 @@ Deno.serve(async (req: Request) => {
         auth_synced = true
       }
     }
+
+    await audit(caller, req, {
+      acao: ativo ? 'pessoa.reativada' : 'pessoa.desativada',
+      alvo_tipo: 'pessoa',
+      alvo_id: pessoa_id,
+      condominio_id: pessoa.condominio_id,
+      detalhes: { nome: pessoa.nome, auth_synced, had_user: !!pessoa.user_id },
+    })
 
     return jsonResponse({
       ok: true,

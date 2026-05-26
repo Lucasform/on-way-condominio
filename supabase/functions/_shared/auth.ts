@@ -87,3 +87,35 @@ export class HttpError extends Error {
     super(message)
   }
 }
+
+// ============================================================
+// Audit log helper (fire-and-forget)
+// ============================================================
+
+export interface AuditInput {
+  acao: string                 // ex: 'pessoa.desativada'
+  alvo_tipo?: string           // 'pessoa' | 'user' | 'convite' | ...
+  alvo_id?: string
+  condominio_id?: string | null
+  detalhes?: Record<string, unknown>
+}
+
+export async function audit(caller: Caller, req: Request, input: AuditInput): Promise<void> {
+  try {
+    const { data: u } = await caller.userClient.auth.getUser()
+    await caller.admin.from('audit_log').insert({
+      ator_id: caller.userId,
+      ator_role: caller.perfil.role,
+      ator_email: u?.user?.email ?? null,
+      condominio_id: input.condominio_id ?? caller.perfil.condominio_id ?? null,
+      acao: input.acao,
+      alvo_tipo: input.alvo_tipo ?? null,
+      alvo_id: input.alvo_id ?? null,
+      detalhes: input.detalhes ?? {},
+      ip: req.headers.get('x-forwarded-for') ?? req.headers.get('cf-connecting-ip'),
+      user_agent: req.headers.get('user-agent'),
+    })
+  } catch (e) {
+    console.warn('[audit] falhou (não derruba operação):', e)
+  }
+}

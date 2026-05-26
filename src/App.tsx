@@ -8,6 +8,8 @@ import Signup from './pages/Signup'
 import EsqueciSenha from './pages/EsqueciSenha'
 import AtualizarSenha from './pages/AtualizarSenha'
 import AuthCallback from './pages/AuthCallback'
+import Termos from './pages/Termos'
+import Privacidade from './pages/Privacidade'
 import MeuPerfil from './pages/MeuPerfil'
 import Condominios from './pages/Condominios'
 import CondominioForm from './pages/CondominioForm'
@@ -59,6 +61,8 @@ export default function App() {
           <Route path="/esqueci-senha" element={<EsqueciSenha />} />
           <Route path="/atualizar-senha" element={<AtualizarSenha />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/termos" element={<Termos />} />
+          <Route path="/privacidade" element={<Privacidade />} />
           <Route
             element={
               <ProtectedRoute>

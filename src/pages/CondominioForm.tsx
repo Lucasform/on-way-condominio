@@ -9,6 +9,7 @@ import type { CondominioInput, Plano } from '../types/condominio'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Field, TextInput, Select } from '../components/ui/Input'
+import ConvitesPanel from '../components/ConvitesPanel'
 
 const EMPTY: CondominioInput = {
   nome: '',
@@ -197,6 +198,12 @@ export default function CondominioForm() {
           </Link>
         </div>
       </form>
+
+      {!isNew && id && (
+        <div className="mt-8">
+          <ConvitesPanel condominio_id={id} />
+        </div>
+      )}
     </div>
   )
 }
