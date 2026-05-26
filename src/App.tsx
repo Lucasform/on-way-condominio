@@ -1,61 +1,68 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
 import { AuthProvider } from './components/AuthProvider'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppShell from './components/AppShell'
+import Logo from './components/Logo'
+
+// Eager: telas críticas de entrada
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
-import EsqueciSenha from './pages/EsqueciSenha'
-import AtualizarSenha from './pages/AtualizarSenha'
 import AuthCallback from './pages/AuthCallback'
-import Termos from './pages/Termos'
-import Privacidade from './pages/Privacidade'
-import { Link } from 'react-router-dom'
-import MeuPerfil from './pages/MeuPerfil'
-import Condominios from './pages/Condominios'
-import CondominioForm from './pages/CondominioForm'
-import Unidades from './pages/Unidades'
-import UnidadeForm from './pages/UnidadeForm'
-import Pessoas from './pages/Pessoas'
-import PessoaForm from './pages/PessoaForm'
-import Veiculos from './pages/Veiculos'
-import VeiculoForm from './pages/VeiculoForm'
-import Pets from './pages/Pets'
-import PetForm from './pages/PetForm'
-import Ocorrencias from './pages/Ocorrencias'
-import OcorrenciaNova from './pages/OcorrenciaNova'
-import OcorrenciaDetalhe from './pages/OcorrenciaDetalhe'
-import MultaNova from './pages/MultaNova'
-import Multas from './pages/Multas'
-import MultaDetalhe from './pages/MultaDetalhe'
-import UnidadeHistorico from './pages/UnidadeHistorico'
-import Regimento from './pages/Regimento'
-import RegimentoForm from './pages/RegimentoForm'
-import Painel from './pages/Painel'
-import Encomendas from './pages/Encomendas'
-import EncomendaNova from './pages/EncomendaNova'
-import EncomendaDetalhe from './pages/EncomendaDetalhe'
-import Mural from './pages/Mural'
-import MuralNova from './pages/MuralNova'
-import Calendario from './pages/Calendario'
-import CalendarioForm from './pages/CalendarioForm'
-import Dashboard from './pages/Dashboard'
-import Votacoes from './pages/Votacoes'
-import VotacaoNova from './pages/VotacaoNova'
-import VotacaoDetalhe from './pages/VotacaoDetalhe'
-import Chamados from './pages/Chamados'
-import ChamadoNovo from './pages/ChamadoNovo'
-import ChamadoDetalhe from './pages/ChamadoDetalhe'
-import Relatorios from './pages/Relatorios'
-import EmailsLog from './pages/EmailsLog'
-import Chat from './pages/Chat'
-import ChatConversa from './pages/ChatConversa'
-import WhatsappConfig from './pages/WhatsappConfig'
+
+// Lazy: tudo o mais
+const EsqueciSenha = lazy(() => import('./pages/EsqueciSenha'))
+const AtualizarSenha = lazy(() => import('./pages/AtualizarSenha'))
+const Termos = lazy(() => import('./pages/Termos'))
+const Privacidade = lazy(() => import('./pages/Privacidade'))
+const MeuPerfil = lazy(() => import('./pages/MeuPerfil'))
+const Condominios = lazy(() => import('./pages/Condominios'))
+const CondominioForm = lazy(() => import('./pages/CondominioForm'))
+const Unidades = lazy(() => import('./pages/Unidades'))
+const UnidadeForm = lazy(() => import('./pages/UnidadeForm'))
+const Pessoas = lazy(() => import('./pages/Pessoas'))
+const PessoaForm = lazy(() => import('./pages/PessoaForm'))
+const Veiculos = lazy(() => import('./pages/Veiculos'))
+const VeiculoForm = lazy(() => import('./pages/VeiculoForm'))
+const Pets = lazy(() => import('./pages/Pets'))
+const PetForm = lazy(() => import('./pages/PetForm'))
+const Ocorrencias = lazy(() => import('./pages/Ocorrencias'))
+const OcorrenciaNova = lazy(() => import('./pages/OcorrenciaNova'))
+const OcorrenciaDetalhe = lazy(() => import('./pages/OcorrenciaDetalhe'))
+const MultaNova = lazy(() => import('./pages/MultaNova'))
+const Multas = lazy(() => import('./pages/Multas'))
+const MultaDetalhe = lazy(() => import('./pages/MultaDetalhe'))
+const UnidadeHistorico = lazy(() => import('./pages/UnidadeHistorico'))
+const Regimento = lazy(() => import('./pages/Regimento'))
+const RegimentoForm = lazy(() => import('./pages/RegimentoForm'))
+const Painel = lazy(() => import('./pages/Painel'))
+const Encomendas = lazy(() => import('./pages/Encomendas'))
+const EncomendaNova = lazy(() => import('./pages/EncomendaNova'))
+const EncomendaDetalhe = lazy(() => import('./pages/EncomendaDetalhe'))
+const Mural = lazy(() => import('./pages/Mural'))
+const MuralNova = lazy(() => import('./pages/MuralNova'))
+const Calendario = lazy(() => import('./pages/Calendario'))
+const CalendarioForm = lazy(() => import('./pages/CalendarioForm'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Votacoes = lazy(() => import('./pages/Votacoes'))
+const VotacaoNova = lazy(() => import('./pages/VotacaoNova'))
+const VotacaoDetalhe = lazy(() => import('./pages/VotacaoDetalhe'))
+const Chamados = lazy(() => import('./pages/Chamados'))
+const ChamadoNovo = lazy(() => import('./pages/ChamadoNovo'))
+const ChamadoDetalhe = lazy(() => import('./pages/ChamadoDetalhe'))
+const Relatorios = lazy(() => import('./pages/Relatorios'))
+const EmailsLog = lazy(() => import('./pages/EmailsLog'))
+const Chat = lazy(() => import('./pages/Chat'))
+const ChatConversa = lazy(() => import('./pages/ChatConversa'))
+const WhatsappConfig = lazy(() => import('./pages/WhatsappConfig'))
+const AuditLog = lazy(() => import('./pages/AuditLog'))
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
@@ -407,25 +414,57 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/auditoria"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                  <AuditLog />
+                </ProtectedRoute>
+              }
+            />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </AuthProvider>
   )
 }
 
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-brand-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 text-sm">
+      Carregando...
+    </div>
+  )
+}
+
 function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-brand-50 dark:bg-slate-950 p-6 transition-colors">
       <div className="max-w-md text-center">
-        <h1 className="text-3xl font-bold text-brand-700 dark:text-brand-400">404</h1>
+        <div className="flex justify-center mb-6 opacity-90">
+          <Logo size={80} />
+        </div>
+        <h1 className="text-6xl font-bold text-brand-700 dark:text-brand-400 tracking-tight">404</h1>
+        <h2 className="mt-3 text-xl font-semibold text-slate-900 dark:text-slate-100">Página não encontrada</h2>
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Página não encontrada.
+          Essa rota não existe ou foi movida.
         </p>
-        <Link to="/" className="mt-4 inline-block text-brand-700 dark:text-brand-400 font-medium hover:underline">
-          Voltar pro início
-        </Link>
+        <div className="mt-6 flex gap-3 justify-center">
+          <Link
+            to="/"
+            className="px-5 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white font-medium text-sm transition shadow-sm"
+          >
+            Ir pro início
+          </Link>
+          <button
+            onClick={() => history.back()}
+            className="px-5 py-2 rounded-md bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-medium text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+          >
+            ← Voltar
+          </button>
+        </div>
       </div>
     </div>
   )

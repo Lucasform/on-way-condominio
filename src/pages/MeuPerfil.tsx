@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthProvider'
 import PushToggle from '../components/PushToggle'
+import TwoFactorPanel from '../components/TwoFactorPanel'
 
 interface Pessoa {
   id: string
@@ -210,6 +211,11 @@ export default function MeuPerfil() {
       {/* Push notifications (etapa 78) */}
       <div className="mt-8">
         <PushToggle />
+      </div>
+
+      {/* 2FA */}
+      <div className="mt-10 pt-6 border-t border-slate-800">
+        <TwoFactorPanel />
       </div>
 
       {/* LGPD: exportar dados + excluir conta */}

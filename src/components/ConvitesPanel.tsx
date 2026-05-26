@@ -3,6 +3,7 @@ import {
   listConvites,
   createConvite,
   revogarConvite,
+  renovarConvite,
   type Convite,
   type ConviteRole,
 } from '../lib/convites'
@@ -75,6 +76,16 @@ export default function ConvitesPanel({ condominio_id }: Props) {
     if (!window.confirm(`Revogar código "${c.codigo}"? Não dará mais pra usar.`)) return
     try {
       await revogarConvite(c.id)
+      await reload()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro.')
+    }
+  }
+
+  async function handleRenovar(c: Convite) {
+    if (!window.confirm(`Renovar "${c.codigo}" por +30 dias?\nUsos zeram e código fica reativado.`)) return
+    try {
+      await renovarConvite(c.id, 30)
       await reload()
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Erro.')
@@ -175,6 +186,11 @@ export default function ConvitesPanel({ condominio_id }: Props) {
                     <Button type="button" variant="ghost" onClick={() => copiar(c.codigo)} title="Copiar código">
                       Copiar
                     </Button>
+                    {(c.revogado || new Date(c.expira_em) < new Date() || c.usos >= c.usos_max) && (
+                      <Button type="button" variant="secondary" onClick={() => handleRenovar(c)} title="Renovar +30 dias">
+                        Renovar
+                      </Button>
+                    )}
                     {!c.revogado && (
                       <Button type="button" variant="danger" onClick={() => handleRevogar(c)}>
                         Revogar

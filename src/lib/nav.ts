@@ -24,6 +24,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     { to: '/relatorios', label: 'Relatórios' },
     { to: '/emails-log', label: 'E-mails' },
     { to: '/whatsapp-config', label: 'WhatsApp' },
+    { to: '/auditoria', label: 'Auditoria' },
   ],
   administradora: [
     ...COMMON_TOP,
@@ -43,6 +44,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     { to: '/votacoes', label: 'Votações' },
     { to: '/regimento', label: 'Regimento' },
     { to: '/relatorios', label: 'Relatórios' },
+    { to: '/auditoria', label: 'Auditoria' },
   ],
   sindico: [
     ...COMMON_TOP,
@@ -62,6 +64,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     { to: '/votacoes', label: 'Votações' },
     { to: '/regimento', label: 'Regimento' },
     { to: '/relatorios', label: 'Relatórios' },
+    { to: '/auditoria', label: 'Auditoria' },
   ],
   portaria: [
     ...COMMON_TOP,

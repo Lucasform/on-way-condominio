@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { updatePassword } from '../lib/auth'
 import { useAuth } from '../components/AuthProvider'
 import AuthShell from '../components/AuthShell'
+import { validatePassword, PASSWORD_HINT } from '../lib/passwordPolicy'
 
 const inputCls =
   'w-full px-3 py-2 rounded-md bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 ' +
@@ -21,7 +22,8 @@ export default function AtualizarSenha() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (novaSenha.length < 6) return setError('Mín 6 caracteres.')
+    const v = validatePassword(novaSenha)
+    if (!v.ok) return setError('Senha fraca: ' + v.errors.join(', ') + '.')
     if (novaSenha !== confirmar) return setError('As senhas não batem.')
 
     setSubmitting(true)
@@ -60,12 +62,13 @@ export default function AtualizarSenha() {
           <input
             type="password"
             required
-            minLength={6}
+            minLength={8}
             autoComplete="new-password"
             value={novaSenha}
             onChange={(e) => setNovaSenha(e.target.value)}
             className={inputCls}
           />
+          <span className="text-xs text-slate-500 mt-1 block">{PASSWORD_HINT}</span>
         </label>
 
         <label className="block">

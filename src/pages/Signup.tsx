@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { redeemInviteCode } from '../lib/convites'
 import { useAuth } from '../components/AuthProvider'
 import AuthShell from '../components/AuthShell'
+import { validatePassword, PASSWORD_HINT } from '../lib/passwordPolicy'
 
 const inputCls =
   'w-full px-3 py-2 rounded-md bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 ' +
@@ -29,8 +30,9 @@ export default function Signup() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (password.length < 6) {
-      setError('Senha precisa ter no mínimo 6 caracteres.')
+    const v = validatePassword(password)
+    if (!v.ok) {
+      setError('Senha fraca: ' + v.errors.join(', ') + '.')
       return
     }
     if (!aceitouTermos) {
@@ -91,8 +93,8 @@ export default function Signup() {
 
         <label className="block">
           <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Senha</span>
-          <input type="password" required minLength={6} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} />
-          <span className="text-xs text-slate-500 mt-1 block">Mín 6 caracteres.</span>
+          <input type="password" required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} />
+          <span className="text-xs text-slate-500 mt-1 block">{PASSWORD_HINT}</span>
         </label>
 
         <label className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400 cursor-pointer">

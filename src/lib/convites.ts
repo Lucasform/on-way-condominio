@@ -66,6 +66,19 @@ export async function revogarConvite(id: string): Promise<void> {
   if (error) throw error
 }
 
+export async function renovarConvite(id: string, dias_validade = 30): Promise<Convite> {
+  const expira = new Date()
+  expira.setDate(expira.getDate() + dias_validade)
+  const { data, error } = await supabase
+    .from('convites_condominio')
+    .update({ expira_em: expira.toISOString(), revogado: false, usos: 0 })
+    .eq('id', id)
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as Convite
+}
+
 export async function redeemInviteCode(input: {
   email: string
   password: string

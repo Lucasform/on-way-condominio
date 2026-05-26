@@ -70,6 +70,7 @@ export type TemplateSlug =
   | 'encomenda-chegou'
   | 'mural-nova-publicacao'
   | 'evento-lembrete'
+  | 'boas-vindas'
   | 'custom'
 
 const BR = (v?: number) =>
@@ -151,6 +152,26 @@ ${vars.link ? button('Ver no calendário', vars.link) : ''}`,
           vars.condominio_nome,
         ),
         text: `Lembrete de evento:\n${vars.evento_titulo ?? ''}\n${vars.evento_data ?? ''}\n${vars.descricao ?? ''}\n${vars.link ?? ''}`,
+      }
+
+    case 'boas-vindas':
+      return {
+        from: FROM_EMAIL,
+        subject: `Bem-vindo ao OnWay Condomínio${vars.condominio_nome ? ` — ${vars.condominio_nome}` : ''}`,
+        html: shell(
+          `${p(`Olá, <strong>${escape(nome)}</strong>! Boas-vindas ao OnWay Condomínio.`)}
+${p(`Sua conta foi criada com sucesso${vars.condominio_nome ? ` no <strong>${escape(vars.condominio_nome)}</strong>` : ''}. A partir de agora você pode:`)}
+<ul style="font-size:14px;color:#475569;line-height:1.7;padding-left:20px;margin:10px 0">
+  <li>Acompanhar ocorrências, multas e chamados</li>
+  <li>Ver encomendas e avisos do mural</li>
+  <li>Conversar com a administração via chat</li>
+  <li>Participar de votações e eventos</li>
+</ul>
+${vars.link ? button('Acessar o app', vars.link) : button('Acessar o app', 'https://on-way-condominio.vercel.app')}
+${p(`Qualquer dúvida, fale com a administração do seu condomínio. Bom uso!`)}`,
+          vars.condominio_nome,
+        ),
+        text: `Olá, ${nome}! Boas-vindas ao OnWay Condomínio${vars.condominio_nome ? ` (${vars.condominio_nome})` : ''}.\nSua conta foi criada com sucesso.\nAcesse: ${vars.link ?? 'https://on-way-condominio.vercel.app'}`,
       }
   }
 }

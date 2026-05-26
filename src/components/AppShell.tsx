@@ -5,6 +5,7 @@ import { menuFor, roleLabel } from '../lib/nav'
 import NotificationBell from './NotificationBell'
 import ThemeToggle from './ThemeToggle'
 import Logo from './Logo'
+import CondominioSwitcher from './CondominioSwitcher'
 
 export default function AppShell() {
   const { perfil, user } = useAuth()
@@ -36,6 +37,8 @@ export default function AppShell() {
             {roleLabel(perfil.role)}
           </div>
         )}
+
+        <CondominioSwitcher />
 
         <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
           {items.map((item) => (

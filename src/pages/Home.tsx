@@ -12,6 +12,8 @@ import type { Encomenda } from '../types/encomenda'
 import type { Evento } from '../types/evento'
 import type { Votacao } from '../types/votacao'
 import type { Chamado } from '../types/chamado'
+import OnboardingChecklist from '../components/OnboardingChecklist'
+import PlanoUsoWidget from '../components/PlanoUsoWidget'
 
 export default function Home() {
   const { user, perfil } = useAuth()
@@ -22,7 +24,9 @@ export default function Home() {
 
   // Demais perfis: home simples (eles têm Dashboard/Painel próprios)
   return (
-    <div className="px-8 py-10">
+    <div className="px-8 py-10 max-w-4xl">
+      <OnboardingChecklist />
+
       <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-emerald-400 to-sky-500 bg-clip-text text-transparent">
         OnWay Condomínio
       </h1>
@@ -44,20 +48,28 @@ export default function Home() {
       </section>
 
       {perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role) && (
-        <div className="mt-6 flex gap-3 flex-wrap">
-          <Link
-            to="/dashboard"
-            className="px-4 py-2 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-sm hover:bg-emerald-500/20 transition"
-          >
-            📊 Ir pro Dashboard
-          </Link>
-          <Link
-            to="/painel"
-            className="px-4 py-2 rounded-md bg-sky-500/10 border border-sky-500/30 text-sky-200 text-sm hover:bg-sky-500/20 transition"
-          >
-            🗂 Abrir Painel Kanban
-          </Link>
-        </div>
+        <>
+          <div className="mt-6 flex gap-3 flex-wrap">
+            <Link
+              to="/dashboard"
+              className="px-4 py-2 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-sm hover:bg-emerald-500/20 transition"
+            >
+              📊 Ir pro Dashboard
+            </Link>
+            <Link
+              to="/painel"
+              className="px-4 py-2 rounded-md bg-sky-500/10 border border-sky-500/30 text-sky-200 text-sm hover:bg-sky-500/20 transition"
+            >
+              🗂 Abrir Painel Kanban
+            </Link>
+          </div>
+
+          {perfil.condominio_id && (
+            <div className="mt-6 max-w-md">
+              <PlanoUsoWidget />
+            </div>
+          )}
+        </>
       )}
     </div>
   )

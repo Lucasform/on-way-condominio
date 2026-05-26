@@ -106,6 +106,27 @@ Deno.serve(async (req: Request) => {
       })
     }
 
+    // Boas-vindas (fire-and-forget)
+    try {
+      const { data: condo } = await admin
+        .from('condominios')
+        .select('nome')
+        .eq('id', row.condominio_id)
+        .maybeSingle()
+      await admin.functions.invoke('send-email', {
+        body: {
+          to: email,
+          template: 'boas-vindas',
+          vars: {
+            morador_nome: nome,
+            condominio_nome: condo?.nome,
+            link: 'https://on-way-condominio.vercel.app',
+          },
+          condominio_id: row.condominio_id,
+        },
+      })
+    } catch (_) { /* não derruba */ }
+
     // Audit (sem caller — gravando direto via admin)
     try {
       await admin.from('audit_log').insert({
