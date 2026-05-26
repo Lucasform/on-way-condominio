@@ -1,13 +1,20 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, Navigate } from 'react-router-dom'
 import { listCondominios, setCondominioAtivo } from '../lib/condominios'
 import type { Condominio } from '../types/condominio'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DataTable, { type Column } from '../components/ui/DataTable'
+import { useAuth } from '../components/AuthProvider'
 
 export default function Condominios() {
   const navigate = useNavigate()
+  const { perfil } = useAuth()
+
+  // Admin em "view as" enxerga apenas o condomínio assumido — vai direto pro detalhe
+  if (perfil?.role === 'admin_onway' && perfil.condominio_id) {
+    return <Navigate to={`/condominios/${perfil.condominio_id}`} replace />
+  }
   const [rows, setRows] = useState<Condominio[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
