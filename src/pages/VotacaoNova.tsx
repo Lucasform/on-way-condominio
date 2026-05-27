@@ -63,6 +63,10 @@ export default function VotacaoNova() {
     e.preventDefault()
     if (!form.condominio_id) return setError('Selecione o condomínio.')
     if (!form.titulo.trim()) return setError('Título obrigatório.')
+    if (!form.data_fim) return setError('Informe a data e hora do encerramento.')
+    if (new Date(form.data_fim) <= new Date(form.data_inicio)) {
+      return setError('A data de encerramento precisa ser depois do início.')
+    }
     const opcoesValidas = form.opcoes.map((o) => o.trim()).filter(Boolean)
     if (opcoesValidas.length < 2) return setError('Pelo menos 2 opções de voto.')
 
@@ -153,9 +157,10 @@ export default function VotacaoNova() {
               onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
             />
           </Field>
-          <Field label="Fim (opcional)">
+          <Field label="Encerramento" required>
             <TextInput
               type="datetime-local"
+              required
               value={form.data_fim ?? ''}
               onChange={(e) => setForm({ ...form, data_fim: e.target.value || null })}
               onFocus={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}

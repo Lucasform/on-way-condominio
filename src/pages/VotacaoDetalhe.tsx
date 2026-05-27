@@ -60,16 +60,22 @@ export default function VotacaoDetalhe() {
 
   async function handleVotar(opcaoId: string, textoOpcao: string) {
     if (!user || !votacao) return
-    // Se ja votou, nao permite trocar
-    const jaVotou = votos.some((v) => v.user_id === user.id)
-    if (jaVotou) {
-      alert('Você já votou nesta votação. O voto é definitivo e não pode ser alterado.')
-      return
+    const meuVotoAtual = votos.find((v) => v.user_id === user.id)
+    // Se ja votou nessa opcao, nao faz nada
+    if (meuVotoAtual?.opcao_id === opcaoId) return
+    // Se ja votou em outra, confirma a troca
+    if (meuVotoAtual) {
+      const opcaoAnterior = opcoes.find((o) => o.id === meuVotoAtual.opcao_id)
+      const ok = window.confirm(
+        `Você já votou em "${opcaoAnterior?.texto ?? '(anterior)'}".\n\nTrocar para "${textoOpcao}"?\n\nO voto pode ser alterado quantas vezes quiser até o encerramento da votação. O que vale é o voto final.`,
+      )
+      if (!ok) return
+    } else {
+      const ok = window.confirm(
+        `Confirmar voto em "${textoOpcao}"?\n\nVocê pode trocar até o encerramento da votação. O voto final é o que vale.`,
+      )
+      if (!ok) return
     }
-    // Confirmacao com aviso de irreversibilidade
-    if (!window.confirm(
-      `Confirmar voto em "${textoOpcao}"?\n\nIMPORTANTE: o voto é definitivo e não poderá ser alterado depois.`,
-    )) return
     setSubmitting(true)
     try {
       await votar(votacao.id, opcaoId, user.id)
@@ -133,7 +139,7 @@ export default function VotacaoDetalhe() {
   const totalVotos = votos.length
   const meuVoto = user ? votos.find((v) => v.user_id === user.id) : null
   const votacaoAtiva = votacao.status === 'aberta' && (!votacao.data_fim || new Date(votacao.data_fim) > new Date())
-  const podeVotar = votacaoAtiva && !meuVoto  // bloqueia se ja votou
+  const podeVotar = votacaoAtiva  // troca permitida ate o encerramento
   const canManage = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
 
   const votosPorOpcao = opcoes.map((o) => ({
@@ -215,17 +221,16 @@ export default function VotacaoDetalhe() {
           })}
         </div>
 
-        {!podeVotar && (
-          <div className="mt-4 text-xs italic">
-            {meuVoto && votacaoAtiva ? (
-              <span className="text-emerald-400">
-                ✓ Seu voto foi registrado. Voto definitivo, não pode ser alterado.
-              </span>
-            ) : votacao.status === 'aberta' ? (
-              <span className="text-slate-500">Período de votação encerrado.</span>
-            ) : (
-              <span className="text-slate-500">Votação {STATUS_LABEL[votacao.status].toLowerCase()}.</span>
-            )}
+        {meuVoto && votacaoAtiva && (
+          <div className="mt-4 text-xs italic text-emerald-400">
+            ✓ Seu voto foi registrado. Você pode trocar até o encerramento — o voto final é o que vale.
+          </div>
+        )}
+        {!votacaoAtiva && (
+          <div className="mt-4 text-xs italic text-slate-500">
+            {votacao.status === 'aberta'
+              ? 'Período de votação encerrado.'
+              : `Votação ${STATUS_LABEL[votacao.status].toLowerCase()}.`}
           </div>
         )}
       </div>
