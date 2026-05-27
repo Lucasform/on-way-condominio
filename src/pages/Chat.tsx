@@ -11,6 +11,7 @@ import type { AssuntoConversa, Conversa, StatusConversa } from '../types/chat'
 import { listCondominios } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
 import { listPessoas } from '../lib/pessoas'
+import { supabase } from '../lib/supabase'
 import type { Condominio } from '../types/condominio'
 import type { Unidade } from '../types/unidade'
 import type { Pessoa } from '../types/pessoa'
@@ -59,6 +60,32 @@ export default function Chat() {
   const [staffMsg, setStaffMsg] = useState('')
   const comboRef = useRef<HTMLDivElement>(null)
   const [staffError, setStaffError] = useState<string | null>(null)
+  const [polindo, setPolindo] = useState(false)
+
+  async function melhorarComAgente() {
+    if (!staffMsg.trim()) {
+      setStaffError('Escreva um esboço antes de chamar o Agente.')
+      return
+    }
+    setPolindo(true)
+    setStaffError(null)
+    try {
+      const { data, error: e } = await supabase.functions.invoke('improve-template', {
+        body: {
+          tipo: 'chat',
+          corpo: staffMsg.trim(),
+          condominio_id: perfil?.condominio_id ?? undefined,
+        },
+      })
+      if (e) throw e
+      if (data?.error) throw new Error(data.error)
+      if (typeof data?.corpo === 'string') setStaffMsg(data.corpo)
+    } catch (e) {
+      setStaffError(e instanceof Error ? e.message : 'Erro ao melhorar com o Agente.')
+    } finally {
+      setPolindo(false)
+    }
+  }
 
   // fecha combo ao clicar fora
   useEffect(() => {
@@ -353,8 +380,21 @@ export default function Chat() {
               rows={4}
               value={staffMsg}
               onChange={(e) => setStaffMsg(e.target.value)}
-              placeholder="Escreva a mensagem que será enviada."
+              placeholder="Escreva a mensagem que será enviada. O Agente pode polir o texto antes."
             />
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={melhorarComAgente}
+                disabled={polindo || !staffMsg.trim()}
+                className="px-3 py-1.5 rounded-md text-xs font-medium bg-violet-700/20 text-violet-200 border border-violet-500/40 hover:bg-violet-700/30 disabled:opacity-50 transition"
+              >
+                {polindo ? '✨ Pensando...' : '✨ Melhorar com o Agente'}
+              </button>
+              <span className="text-[11px] text-slate-500">
+                Reescreve seu esboço no tom do chat, mantendo o objetivo.
+              </span>
+            </div>
           </Field>
 
           {staffError && (
