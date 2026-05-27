@@ -48,11 +48,61 @@ export async function createEncomenda(input: EncomendaInput, recebido_por: strin
   if (error) throw error
   const encomenda = data as Encomenda
 
-  // Dispara e-mail pro morador (fire-and-forget). Etapa 61.
+  // Dispara e-mail + push pro morador (fire-and-forget).
   notifyMoradorEncomenda(encomenda).catch((e) =>
     console.warn('[encomenda] falha ao enviar e-mail:', e.message),
   )
+  // Tambem abre uma conversa no chat com mensagem padrao incluindo a descricao.
+  abrirChatEncomenda(encomenda, recebido_por).catch((e) =>
+    console.warn('[encomenda] falha ao abrir chat:', e.message),
+  )
   return encomenda
+}
+
+async function abrirChatEncomenda(encomenda: Encomenda, staff_user_id: string): Promise<void> {
+  // Importacao dinamica pra evitar dependencia circular (chat -> push -> chat)
+  const { createConversa } = await import('./chat')
+  const { data: pessoas } = await supabase
+    .from('pessoas')
+    .select('user_id, nome')
+    .eq('unidade_id', encomenda.unidade_id)
+    .eq('ativo', true)
+    .not('user_id', 'is', null)
+
+  const moradores = (pessoas ?? []).filter((p) => !!p.user_id)
+  if (moradores.length === 0) return
+
+  // Texto padrao da mensagem, com a descricao e armazenamento (quando houver)
+  const isComida = encomenda.tipo === 'comida'
+  const partes: string[] = []
+  if (isComida) {
+    partes.push('🍔 Sua entrega de comida acabou de chegar na portaria.')
+    partes.push('Por favor, desça pra retirar o quanto antes.')
+  } else if (encomenda.tipo === 'documento') {
+    partes.push('📄 Chegou um documento pra você na portaria.')
+  } else {
+    partes.push('📦 Uma encomenda chegou pra você na portaria.')
+  }
+  if (encomenda.descricao) partes.push(`Descrição: ${encomenda.descricao}`)
+  if (encomenda.transportadora) partes.push(`Transportadora: ${encomenda.transportadora}`)
+  if (encomenda.local_armazenamento) partes.push(`Local: ${encomenda.local_armazenamento}`)
+  const mensagem = partes.join('\n')
+
+  for (const m of moradores) {
+    try {
+      await createConversa({
+        condominio_id: encomenda.condominio_id,
+        morador_user_id: m.user_id as string,
+        assunto: 'encomenda',
+        primeira_mensagem: mensagem,
+        autor_tipo: 'staff',
+        autor_id: staff_user_id,
+        skip_bot: true,
+      })
+    } catch (e) {
+      console.warn('[encomenda] chat falhou para', m.nome, e)
+    }
+  }
 }
 
 async function notifyMoradorEncomenda(encomenda: Encomenda): Promise<void> {

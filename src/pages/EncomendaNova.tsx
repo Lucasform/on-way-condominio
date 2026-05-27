@@ -273,8 +273,8 @@ export default function EncomendaNova() {
 
         {isComida && (
           <div className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-200">
-            ⚡ <strong>Comida = entrega imediata.</strong> O morador deve buscar agora.
-            Aviso instantâneo (via chat / e-mail) virá com a Fase 4 — por enquanto registra e chama o morador.
+            ⚡ <strong>Comida = entrega imediata.</strong> Ao registrar, o morador recebe automaticamente:
+            mensagem no chat, e-mail e push notification com a descrição.
           </div>
         )}
 
