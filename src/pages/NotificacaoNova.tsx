@@ -34,9 +34,35 @@ export default function NotificacaoNova() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!ocorrenciaId) return
     listUnidades().then(setUnidades).catch(() => {})
     listPessoas().then(setPessoas).catch(() => {})
-  }, [])
+  }, [ocorrenciaId])
+
+  // Notificacao so pode ser emitida a partir de uma ocorrencia (mesmo padrao da multa).
+  if (!ocorrenciaId) {
+    return (
+      <div className="px-8 py-10 max-w-2xl mx-auto">
+        <PageHeader
+          title="Nova notificação"
+          actions={<Link to="/notificacoes"><Button variant="ghost">← Voltar</Button></Link>}
+        />
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-5 text-sm text-amber-200 space-y-3">
+          <div>
+            <strong>Notificações são emitidas a partir de uma ocorrência.</strong>
+          </div>
+          <div className="text-amber-100/90">
+            Registre a ocorrência primeiro e, depois da análise, escolha "Emitir notificação" no card de desfecho.
+          </div>
+          <div className="pt-2">
+            <Link to="/ocorrencias">
+              <Button>Ir para ocorrências →</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // Pré-popula a partir da ocorrência + análise persistida da IA (se houver)
   useEffect(() => {
