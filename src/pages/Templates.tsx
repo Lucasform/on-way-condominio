@@ -141,6 +141,7 @@ export default function Templates() {
       })
       if (e) throw e
       if (data?.error) throw new Error(data.error)
+      if (typeof data?.titulo === 'string' && data.titulo.trim()) setTitulo(data.titulo.trim())
       if (typeof data?.corpo === 'string') setCorpo(data.corpo)
       if (tipo === 'email' && typeof data?.assunto === 'string') setAssunto(data.assunto)
     } catch (e) {

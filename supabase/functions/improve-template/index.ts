@@ -77,13 +77,14 @@ Regras gerais:
 - Mantenha o OBJETIVO original do esboço. Não invente fatos novos.
 - Português brasileiro claro, sem regionalismos.
 - NÃO use travessão "—" no meio de frases (use vírgula, parênteses, ponto, ou dois pontos).
-- Não use markdown (sem **, sem #).${tipo === 'email' ? guideEmail : guideChat}
+- Não use markdown (sem **, sem #).
+- Sugira um TÍTULO INTERNO curto (3 a 6 palavras) que descreva o assunto do template. Esse título é só pra organização interna do app, não vai pro destinatário. Pode usar 1 emoji sutil no início. Sem ponto final.${tipo === 'email' ? guideEmail : guideChat}
 ${aiInstrucoes ? `\nINSTRUÇÕES DESTE CONDOMÍNIO (siga o tom):\n${aiInstrucoes}` : ''}
 
 Responda EXCLUSIVAMENTE em JSON, sem markdown:
 ${tipo === 'email'
-  ? '{"corpo": "texto melhorado", "assunto": "linha de assunto curta e objetiva"}'
-  : '{"corpo": "texto melhorado"}'}`
+  ? '{"titulo": "titulo interno curto", "corpo": "texto melhorado", "assunto": "linha de assunto curta e objetiva"}'
+  : '{"titulo": "titulo interno curto", "corpo": "texto melhorado"}'}`
 
     const userMsg = `${titulo ? `Título interno do template: ${titulo}\n` : ''}${
       tipo === 'email' && assuntoIn ? `Assunto atual: ${assuntoIn}\n` : ''
@@ -116,7 +117,7 @@ ${corpo}`
     if (!jsonMatch) {
       return jsonResponse({ error: 'Resposta sem JSON válido.', raw: rawText.slice(0, 300) }, 502)
     }
-    let parsed: { corpo?: string; assunto?: string }
+    let parsed: { titulo?: string; corpo?: string; assunto?: string }
     try {
       parsed = JSON.parse(jsonMatch[0])
     } catch {
@@ -124,6 +125,7 @@ ${corpo}`
     }
 
     return jsonResponse({
+      titulo: parsed.titulo ?? titulo ?? null,
       corpo: parsed.corpo ?? corpo,
       assunto: tipo === 'email' ? (parsed.assunto ?? assuntoIn ?? null) : null,
       modelo: MODEL,
