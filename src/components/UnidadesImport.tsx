@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import {
   applyHeaderMap,
   gerarXlsxModelo,
+  msgErroImport,
   numberOrNull,
   parseTabularFile,
 } from '../lib/importHelpers'
@@ -102,7 +103,7 @@ export default function UnidadesImport({ condominio_id, onDone }: Props) {
           idx.add(ch)
           res[i] = { row: r, status: 'ok' }
         } catch (e) {
-          res[i] = { row: r, status: 'erro', msg: e instanceof Error ? e.message : String(e) }
+          res[i] = { row: r, status: 'erro', msg: msgErroImport(e) }
         }
         setResults([...res])
       }

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { msgErroImport } from '../lib/importHelpers'
 
 interface Props {
   condominio_id: string
@@ -160,7 +161,7 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
           if (pErr) throw pErr
           res[i] = { row: r, status: 'ok' }
         } catch (e) {
-          res[i] = { row: r, status: 'erro', msg: e instanceof Error ? e.message : String(e) }
+          res[i] = { row: r, status: 'erro', msg: msgErroImport(e) }
         }
         setResults([...res])
       }

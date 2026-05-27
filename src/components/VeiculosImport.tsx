@@ -4,6 +4,7 @@ import {
   applyHeaderMap,
   digitsOrNull,
   gerarXlsxModelo,
+  msgErroImport,
   parseTabularFile,
 } from '../lib/importHelpers'
 
@@ -169,7 +170,7 @@ export default function VeiculosImport({ condominio_id, onDone }: Props) {
           placasExistentes.add(r.placa)
           res[i] = { row: r, status: 'ok' }
         } catch (e) {
-          res[i] = { row: r, status: 'erro', msg: e instanceof Error ? e.message : String(e) }
+          res[i] = { row: r, status: 'erro', msg: msgErroImport(e) }
         }
         setResults([...res])
       }

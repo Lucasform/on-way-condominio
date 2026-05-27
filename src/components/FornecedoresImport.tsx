@@ -4,6 +4,7 @@ import {
   applyHeaderMap,
   digitsOrNull,
   gerarXlsxModelo,
+  msgErroImport,
   numberOrNull,
   parseTabularFile,
 } from '../lib/importHelpers'
@@ -113,7 +114,7 @@ export default function FornecedoresImport({ condominio_id, onDone }: Props) {
           idx.add(r.nome.toLowerCase())
           res[i] = { row: r, status: 'ok' }
         } catch (e) {
-          res[i] = { row: r, status: 'erro', msg: e instanceof Error ? e.message : String(e) }
+          res[i] = { row: r, status: 'erro', msg: msgErroImport(e) }
         }
         setResults([...res])
       }

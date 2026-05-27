@@ -1,5 +1,27 @@
 // Utilitários compartilhados pra importação XLSX/CSV em massa.
 
+// Extrai uma mensagem de erro legivel a partir de qualquer coisa que tenha
+// vindo do supabase. Erros do supabase sao objetos planos com { message,
+// code, hint, details }, nao instancias de Error — `String(obj)` retornaria
+// "[object Object]". Aqui tentamos hint > details > message, e mapeamos os
+// codigos comuns pra texto em PT-BR breve (cabe inline no resultado da linha).
+export function msgErroImport(e: unknown): string {
+  if (!e) return 'erro desconhecido'
+  if (typeof e === 'string') return e
+  const obj = e as { code?: string; message?: string; details?: string; hint?: string }
+  const code = obj.code
+  if (code === '23505') return 'já existe (chave duplicada)'
+  if (code === '23503') return 'referência inválida (registro relacionado não existe)'
+  if (code === '23502') return 'campo obrigatório vazio'
+  if (code === '23514') return 'valor fora do permitido pela regra'
+  if (code === '42501' || code === 'PGRST301') return 'sem permissão (RLS) pra inserir'
+  const raw = obj.hint || obj.details || obj.message
+  if (!raw) {
+    try { return JSON.stringify(e).slice(0, 120) } catch { return 'erro desconhecido' }
+  }
+  return String(raw).replace(/\s+/g, ' ').trim().slice(0, 160)
+}
+
 export async function parseTabularFile(file: File): Promise<Record<string, string>[]> {
   const ext = file.name.split('.').pop()?.toLowerCase()
   if (ext === 'csv' || file.type.includes('csv')) {
