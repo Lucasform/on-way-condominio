@@ -33,7 +33,7 @@ export default function EscolhaPerfil() {
       to: '/login?tipo=admin',
       emoji: '🛡',
       titulo: 'Administração',
-      descricao: 'Síndico, administradores, portaria ou ronda.',
+      descricao: 'Síndico, subsíndico, conselheiro, administradora, portaria ou ronda.',
     },
     {
       to: '/login?tipo=morador',
