@@ -207,55 +207,6 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
         Pula linhas duplicadas (mesmo CPF ou e-mail).
       </p>
 
-      <details className="text-xs">
-        <summary className="cursor-pointer text-slate-700 dark:text-slate-300 font-medium">
-          📋 Formato esperado das colunas (clique pra expandir)
-        </summary>
-        <div className="mt-3 space-y-3 pl-2 border-l-2 border-brand-700/30">
-          <p className="text-slate-600 dark:text-slate-400">
-            A planilha deve ter uma <strong>linha de cabeçalho</strong> com as colunas abaixo.
-            A ordem não importa. Só <strong>nome</strong> é obrigatório.
-          </p>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-[11px] border border-slate-200 dark:border-slate-700">
-              <thead className="bg-slate-50 dark:bg-slate-900/60 text-slate-500 uppercase">
-                <tr>
-                  <th className="text-left px-2 py-1.5">Coluna</th>
-                  <th className="text-left px-2 py-1.5">Obrigatório</th>
-                  <th className="text-left px-2 py-1.5">Formato / Exemplo</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                <tr><td className="px-2 py-1.5 font-mono">nome</td><td className="px-2 py-1.5 text-red-600 dark:text-red-400">sim</td><td className="px-2 py-1.5 text-slate-500">João da Silva</td></tr>
-                <tr><td className="px-2 py-1.5 font-mono">email</td><td className="px-2 py-1.5">não</td><td className="px-2 py-1.5 text-slate-500">joao@email.com</td></tr>
-                <tr><td className="px-2 py-1.5 font-mono">cpf</td><td className="px-2 py-1.5">não</td><td className="px-2 py-1.5 text-slate-500">12345678901 (só dígitos, máscaras são ignoradas)</td></tr>
-                <tr><td className="px-2 py-1.5 font-mono">telefone</td><td className="px-2 py-1.5">não</td><td className="px-2 py-1.5 text-slate-500">11999990000 (DDD + número, só dígitos)</td></tr>
-                <tr><td className="px-2 py-1.5 font-mono">data_nascimento</td><td className="px-2 py-1.5">não</td><td className="px-2 py-1.5 text-slate-500">1985-04-12 ou 12/04/1985</td></tr>
-                <tr><td className="px-2 py-1.5 font-mono">bloco</td><td className="px-2 py-1.5">não</td><td className="px-2 py-1.5 text-slate-500">A (vazio se sem bloco)</td></tr>
-                <tr><td className="px-2 py-1.5 font-mono">numero</td><td className="px-2 py-1.5">recomendado</td><td className="px-2 py-1.5 text-slate-500">101 (sem isso a pessoa fica sem unidade vinculada)</td></tr>
-                <tr><td className="px-2 py-1.5 font-mono">tipo_vinculo</td><td className="px-2 py-1.5">não</td><td className="px-2 py-1.5 text-slate-500">titular | conjuge | filho | dependente | inquilino | funcionario | morador | outro (default: morador)</td></tr>
-                <tr><td className="px-2 py-1.5 font-mono">relacao_unidade</td><td className="px-2 py-1.5">não</td><td className="px-2 py-1.5 text-slate-500">proprietario | inquilino | dependente</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div className="space-y-1 text-slate-600 dark:text-slate-400">
-            <div>📌 <strong>Aceita aliases nos cabeçalhos:</strong> "e-mail", "celular", "phone", "apartamento", "apto", "unidade", "vínculo", "tipo", "nascimento" são reconhecidos automaticamente.</div>
-            <div>📌 <strong>Separador CSV:</strong> aceita vírgula ou ponto-e-vírgula (Excel BR usa <code className="px-1 bg-slate-100 dark:bg-slate-800 rounded">;</code>).</div>
-            <div>📌 <strong>Unidade nova é criada</strong> automaticamente se "Bloco-Numero" não existir ainda no condomínio.</div>
-            <div>📌 <strong>Duplicados</strong>: pessoas com mesmo CPF ou e-mail já existentes são puladas (não viram erro).</div>
-            <div>📌 <strong>Após importar</strong>, use o painel "Códigos de convite" abaixo pra gerar um código e mandar pros moradores ativarem a conta.</div>
-          </div>
-
-          <div className="bg-slate-50 dark:bg-slate-900/40 rounded p-2 font-mono text-[10px] text-slate-600 dark:text-slate-300 overflow-x-auto">
-            nome,email,cpf,telefone,data_nascimento,bloco,numero,tipo_vinculo,relacao_unidade<br />
-            João Silva,joao@email.com,12345678901,11999990000,1985-04-12,A,101,titular,proprietario<br />
-            Maria Souza,maria@email.com,,11988880000,1990-08-22,A,101,conjuge,proprietario
-          </div>
-        </div>
-      </details>
-
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
