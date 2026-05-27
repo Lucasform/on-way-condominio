@@ -120,6 +120,7 @@ export default function Encomendas() {
   }
 
   const canRegister = perfil && ['admin_onway', 'administradora', 'sindico', 'portaria'].includes(perfil.role)
+  const canSeeStats = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico', 'portaria'].includes(perfil.role)
   const aguardando = rows.filter((r) => r.status === 'aguardando').length
 
   return (
@@ -132,20 +133,29 @@ export default function Encomendas() {
             : 'Pacotes, comida e documentos recebidos na portaria.'
         }
         actions={
-          canRegister && (
+          (canRegister || canSeeStats) && (
             <div className="flex items-center flex-wrap gap-2">
-              <Link to="/encomendas/novo?tipo=encomenda">
-                <Button>📦 Pacote</Button>
-              </Link>
-              <Link to="/encomendas/novo?tipo=comida">
-                <Button variant="secondary">🍔 Comida</Button>
-              </Link>
-              <Link to="/encomendas/novo?tipo=documento">
-                <Button variant="secondary">📄 Documento</Button>
-              </Link>
-              <Link to="/encomendas/novo?tipo=outro">
-                <Button variant="secondary">📬 Outro</Button>
-              </Link>
+              {canRegister && (
+                <>
+                  <Link to="/encomendas/novo?tipo=encomenda">
+                    <Button>📦 Pacote</Button>
+                  </Link>
+                  <Link to="/encomendas/novo?tipo=comida">
+                    <Button variant="secondary">🍔 Comida</Button>
+                  </Link>
+                  <Link to="/encomendas/novo?tipo=documento">
+                    <Button variant="secondary">📄 Documento</Button>
+                  </Link>
+                  <Link to="/encomendas/novo?tipo=outro">
+                    <Button variant="secondary">📬 Outro</Button>
+                  </Link>
+                </>
+              )}
+              {canSeeStats && (
+                <Link to="/encomendas/estatisticas">
+                  <Button variant="secondary">📊 Estatísticas</Button>
+                </Link>
+              )}
             </div>
           )
         }

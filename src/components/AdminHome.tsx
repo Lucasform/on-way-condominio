@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthProvider'
 import { traduzErro } from '../lib/errorMessages'
+import AdminKPIs from './AdminKPIs'
 
 interface CondoUso {
   condominio_id: string
@@ -92,7 +93,9 @@ export default function AdminHome() {
         )}
       </div>
 
-      <div className="flex flex-wrap justify-center gap-3 mb-8">
+      <AdminKPIs />
+
+      <div className="flex flex-wrap justify-center gap-3 mb-8 mt-6">
         <Link
           to="/condominios"
           className="px-4 py-2 rounded-md bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700"

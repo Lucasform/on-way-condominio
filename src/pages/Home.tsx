@@ -14,6 +14,8 @@ import type { Votacao } from '../types/votacao'
 import type { Chamado } from '../types/chamado'
 import OnboardingChecklist from '../components/OnboardingChecklist'
 import AdminHome from '../components/AdminHome'
+import AdminKPIs from '../components/AdminKPIs'
+import { isStaff } from '../lib/permissions'
 
 export default function Home() {
   const { user, perfil } = useAuth()
@@ -51,6 +53,8 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      {perfil && isStaff(perfil.role) && <AdminKPIs />}
 
       {perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role) && (
         <>

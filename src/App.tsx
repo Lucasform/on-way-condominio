@@ -44,6 +44,7 @@ const Painel = lazy(() => import('./pages/Painel'))
 const Encomendas = lazy(() => import('./pages/Encomendas'))
 const EncomendaNova = lazy(() => import('./pages/EncomendaNova'))
 const EncomendaDetalhe = lazy(() => import('./pages/EncomendaDetalhe'))
+const EncomendasEstatisticas = lazy(() => import('./pages/EncomendasEstatisticas'))
 const Mural = lazy(() => import('./pages/Mural'))
 const MuralNova = lazy(() => import('./pages/MuralNova'))
 const Calendario = lazy(() => import('./pages/Calendario'))
@@ -319,6 +320,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <Encomendas />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/encomendas/estatisticas"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico', 'portaria']}>
+                  <EncomendasEstatisticas />
                 </ProtectedRoute>
               }
             />

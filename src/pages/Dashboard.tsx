@@ -19,6 +19,7 @@ import type { Pessoa } from '../types/pessoa'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import { Select } from '../components/ui/Input'
+import HeatmapOcorrencias from '../components/HeatmapOcorrencias'
 
 // ----------------------------------------------------------------
 // Cores
@@ -248,6 +249,10 @@ export default function Dashboard() {
                 </ResponsiveContainer>
               )}
             </ChartCard>
+          </div>
+
+          <div className="mt-4">
+            <HeatmapOcorrencias condominio_id={isAdmin && scopeId ? scopeId : (perfil?.condominio_id ?? undefined)} dias={90} />
           </div>
 
         </>
