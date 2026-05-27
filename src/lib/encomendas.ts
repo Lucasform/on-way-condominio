@@ -48,14 +48,21 @@ export async function createEncomenda(input: EncomendaInput, recebido_por: strin
   if (error) throw error
   const encomenda = data as Encomenda
 
-  // Dispara e-mail + push pro morador (fire-and-forget).
-  notifyMoradorEncomenda(encomenda).catch((e) =>
-    console.warn('[encomenda] falha ao enviar e-mail:', e.message),
-  )
-  // Tambem abre uma conversa no chat com mensagem padrao incluindo a descricao.
-  abrirChatEncomenda(encomenda, recebido_por).catch((e) =>
-    console.warn('[encomenda] falha ao abrir chat:', e.message),
-  )
+  // Avisos automaticos por tipo:
+  //   - comida: chat + email + push (urgente, retirada imediata)
+  //   - demais (pacote, documento, outro): so email
+  if (encomenda.tipo === 'comida') {
+    notifyMoradorEncomenda(encomenda, { email: true, push: true }).catch((e) =>
+      console.warn('[encomenda] falha em e-mail/push:', e.message),
+    )
+    abrirChatEncomenda(encomenda, recebido_por).catch((e) =>
+      console.warn('[encomenda] falha ao abrir chat:', e.message),
+    )
+  } else {
+    notifyMoradorEncomenda(encomenda, { email: true, push: false }).catch((e) =>
+      console.warn('[encomenda] falha em e-mail:', e.message),
+    )
+  }
   return encomenda
 }
 
@@ -105,7 +112,10 @@ async function abrirChatEncomenda(encomenda: Encomenda, staff_user_id: string): 
   }
 }
 
-async function notifyMoradorEncomenda(encomenda: Encomenda): Promise<void> {
+async function notifyMoradorEncomenda(
+  encomenda: Encomenda,
+  canais: { email: boolean; push: boolean } = { email: true, push: true },
+): Promise<void> {
   const { data: pessoas } = await supabase
     .from('pessoas')
     .select('nome, email, user_id')
@@ -121,32 +131,34 @@ async function notifyMoradorEncomenda(encomenda: Encomenda): Promise<void> {
     .eq('id', encomenda.condominio_id)
     .maybeSingle()
 
-  // E-mail
-  const emails = moradores.map((p) => p.email).filter((e): e is string => !!e)
-  if (emails.length > 0) {
-    sendEmail({
-      to: emails,
-      template: 'encomenda-chegou',
-      condominio_id: encomenda.condominio_id,
-      vars: {
-        condominio_nome: condo?.nome ?? undefined,
-        encomenda_tipo: encomenda.tipo,
-        descricao: encomenda.descricao ?? undefined,
-        link: `${window.location.origin}/encomendas/${encomenda.id}`,
-      },
-    }).catch((e) => console.warn('[encomenda] email falhou:', e.message))
+  if (canais.email) {
+    const emails = moradores.map((p) => p.email).filter((e): e is string => !!e)
+    if (emails.length > 0) {
+      sendEmail({
+        to: emails,
+        template: 'encomenda-chegou',
+        condominio_id: encomenda.condominio_id,
+        vars: {
+          condominio_nome: condo?.nome ?? undefined,
+          encomenda_tipo: encomenda.tipo,
+          descricao: encomenda.descricao ?? undefined,
+          link: `${window.location.origin}/encomendas/${encomenda.id}`,
+        },
+      }).catch((e) => console.warn('[encomenda] email falhou:', e.message))
+    }
   }
 
-  // Push
-  const userIds = moradores.map((p) => p.user_id).filter((u): u is string => !!u)
-  if (userIds.length > 0) {
-    const titulo = encomenda.tipo === 'comida' ? '🍔 Sua comida chegou' : '📦 Encomenda na portaria'
-    sendPush({
-      user_ids: userIds,
-      titulo,
-      corpo: encomenda.descricao ?? 'Retire na portaria.',
-      link: `/encomendas/${encomenda.id}`,
-    }).catch((e) => console.warn('[encomenda] push falhou:', e.message))
+  if (canais.push) {
+    const userIds = moradores.map((p) => p.user_id).filter((u): u is string => !!u)
+    if (userIds.length > 0) {
+      const titulo = encomenda.tipo === 'comida' ? '🍔 Sua comida chegou' : '📦 Encomenda na portaria'
+      sendPush({
+        user_ids: userIds,
+        titulo,
+        corpo: encomenda.descricao ?? 'Retire na portaria.',
+        link: `/encomendas/${encomenda.id}`,
+      }).catch((e) => console.warn('[encomenda] push falhou:', e.message))
+    }
   }
 }
 
