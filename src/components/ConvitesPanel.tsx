@@ -127,7 +127,7 @@ export default function ConvitesPanel({ condominio_id }: Props) {
       </p>
 
       <div className="grid grid-cols-[1fr_140px_100px_100px_auto] gap-3 items-end">
-        <Field label="Código" hint="vazio = gera automático">
+        <Field label="Código">
           <TextInput
             value={codigo}
             onChange={(e) => setCodigo(e.target.value.toUpperCase())}
