@@ -317,7 +317,7 @@ export default function Painel() {
     }
   }
 
-  const canAct = !!(perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role))
+  const canAct = !!(perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role))
 
   const [draggingCard, setDraggingCard] = useState<Card | null>(null)
   const [hoverCol, setHoverCol] = useState<ColumnKey | null>(null)

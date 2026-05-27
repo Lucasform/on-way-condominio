@@ -5,6 +5,7 @@ import { getUnidade } from '../lib/unidades'
 import type { Chamado, StatusChamado } from '../types/chamado'
 import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
+import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -41,8 +42,8 @@ export default function ChamadoDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { perfil } = useAuth()
-  const canManage = perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role)
-  const canDelete = perfil?.role === 'admin_onway' || perfil?.role === 'sindico'
+  const canManage = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
+  const canDelete = isGestor(perfil?.role)
 
   const [chamado, setChamado] = useState<Chamado | null>(null)
   const [unidade, setUnidade] = useState<Unidade | null>(null)

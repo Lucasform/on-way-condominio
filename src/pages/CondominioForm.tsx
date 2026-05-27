@@ -14,10 +14,8 @@ import DeleteButton from '../components/ui/DeleteButton'
 import { Field, TextInput } from '../components/ui/Input'
 import ConvitesPanel from '../components/ConvitesPanel'
 import LogoUpload from '../components/LogoUpload'
-import PessoasImport from '../components/PessoasImport'
-import UnidadesImport from '../components/UnidadesImport'
-import FornecedoresImport from '../components/FornecedoresImport'
 import CondominioAnexosManager from '../components/CondominioAnexosManager'
+import CondominioDiretoria from '../components/CondominioDiretoria'
 import AgenteTreinamento from '../components/AgenteTreinamento'
 import { traduzErro } from '../lib/errorMessages'
 
@@ -322,21 +320,10 @@ export default function CondominioForm() {
           </div>
 
           {/* ============================================================ */}
-          {/* 3) IMPORTAÇÕES EM MASSA */}
+          {/* 3) DIRETORIA */}
           {/* ============================================================ */}
           <div className="mt-10">
-            <h2 className="text-base font-semibold text-slate-200 mb-1">
-              Importações em massa
-            </h2>
-            <p className="text-xs text-slate-400 mb-4">
-              Envie sua planilha em Excel ou CSV. A gente cuida da formatação (CPF e telefone só com números, valores aceitam vírgula brasileira) e checa duplicatas antes de cadastrar.
-            </p>
-
-            <div className="space-y-4">
-              <UnidadesImport condominio_id={id} />
-              <PessoasImport condominio_id={id} />
-              <FornecedoresImport condominio_id={id} />
-            </div>
+            <CondominioDiretoria condominio_id={id} />
           </div>
 
           {/* ============================================================ */}

@@ -21,7 +21,7 @@ export default function Chat() {
   const navigate = useNavigate()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const isMorador = perfil?.role === 'morador'
-  const isStaff = perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role)
+  const isStaff = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
 
   const [condos, setCondos] = useState<Condominio[]>([])
   const [scopeId, setScopeId] = useState<string | null>(null)

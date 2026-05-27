@@ -65,6 +65,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     {
       label: 'Administração',
       children: [
+        { to: '/assembleias', label: 'Assembleias' },
         { to: '/votacoes', label: 'Votações' },
         { to: '/relatorios', label: 'Relatórios' },
         { to: '/auditoria', label: 'Auditorias' },
@@ -116,6 +117,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     {
       label: 'Administração',
       children: [
+        { to: '/assembleias', label: 'Assembleias' },
         { to: '/votacoes', label: 'Votações' },
         { to: '/relatorios', label: 'Relatórios' },
         { to: '/auditoria', label: 'Auditoria' },
@@ -167,10 +169,95 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
     {
       label: 'Administração',
       children: [
+        { to: '/assembleias', label: 'Assembleias' },
         { to: '/votacoes', label: 'Votações' },
         { to: '/relatorios', label: 'Relatórios' },
         { to: '/auditoria', label: 'Auditoria' },
         { to: '/servicos', label: 'Serviços' },
+      ],
+    },
+  ],
+
+  // ============================================================
+  // Subsíndico — espelha o menu do síndico
+  // ============================================================
+  subsindico: [
+    ...COMMON_TOP,
+    {
+      label: 'Visão geral',
+      children: [
+        { to: '/dashboard', label: 'Acompanhamento Geral' },
+        { to: '/painel', label: 'Painel de trabalho' },
+      ],
+    },
+    {
+      label: 'Cadastros',
+      children: [
+        { to: '/unidades', label: 'Unidades' },
+        { to: '/pessoas', label: 'Pessoas' },
+        { to: '/veiculos', label: 'Veículos' },
+        { to: '/pets', label: 'Pets' },
+        { to: '/regimento', label: 'Regimento' },
+      ],
+    },
+    {
+      label: 'Operação',
+      children: [
+        { to: '/ocorrencias', label: 'Ocorrências' },
+        { to: '/notificacoes', label: 'Notificações' },
+        { to: '/multas', label: 'Multas' },
+        { to: '/chamados', label: 'Chamados' },
+        { to: '/encomendas', label: 'Serviços de Portaria' },
+      ],
+    },
+    {
+      label: 'Comunicação',
+      children: [
+        { to: '/mural', label: 'Mural informativo' },
+        { to: '/calendario', label: 'Calendário' },
+        { to: '/chat', label: 'Chat interno' },
+      ],
+    },
+    {
+      label: 'Administração',
+      children: [
+        { to: '/assembleias', label: 'Assembleias' },
+        { to: '/votacoes', label: 'Votações' },
+        { to: '/relatorios', label: 'Relatórios' },
+        { to: '/auditoria', label: 'Auditoria' },
+        { to: '/servicos', label: 'Serviços' },
+      ],
+    },
+  ],
+
+  // ============================================================
+  // Conselheiro — visão acompanhamento, sem operação
+  // ============================================================
+  conselheiro: [
+    ...COMMON_TOP,
+    {
+      label: 'Acompanhamento',
+      children: [
+        { to: '/dashboard', label: 'Acompanhamento Geral' },
+        { to: '/painel', label: 'Painel de trabalho' },
+      ],
+    },
+    {
+      label: 'Consulta',
+      children: [
+        { to: '/ocorrencias', label: 'Ocorrências' },
+        { to: '/multas', label: 'Multas' },
+        { to: '/notificacoes', label: 'Notificações' },
+        { to: '/regimento', label: 'Regimento' },
+      ],
+    },
+    {
+      label: 'Condomínio',
+      children: [
+        { to: '/assembleias', label: 'Assembleias' },
+        { to: '/votacoes', label: 'Votações' },
+        { to: '/mural', label: 'Mural informativo' },
+        { to: '/calendario', label: 'Calendário' },
       ],
     },
   ],
@@ -264,6 +351,8 @@ export function roleLabel(role: Role): string {
     admin_onway: 'Administrador OnWay',
     administradora: 'Administradora',
     sindico: 'Síndico',
+    subsindico: 'Subsíndico',
+    conselheiro: 'Conselheiro',
     portaria: 'Portaria',
     ronda: 'Ronda',
     morador: 'Morador',

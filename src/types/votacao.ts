@@ -3,6 +3,7 @@ export type StatusVotacao = 'aberta' | 'encerrada' | 'cancelada'
 export interface Votacao {
   id: string
   condominio_id: string
+  assembleia_id: string | null
   criado_por: string
   titulo: string
   descricao: string | null
@@ -32,6 +33,7 @@ export interface Voto {
 
 export interface VotacaoInput {
   condominio_id: string
+  assembleia_id?: string | null
   titulo: string
   descricao: string | null
   data_inicio: string

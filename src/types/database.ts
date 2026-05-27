@@ -2,6 +2,8 @@ export type Role =
   | 'admin_onway'
   | 'administradora'
   | 'sindico'
+  | 'subsindico'
+  | 'conselheiro'
   | 'portaria'
   | 'ronda'
   | 'morador'

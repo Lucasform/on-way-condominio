@@ -52,7 +52,7 @@ export default function Home() {
         )}
       </section>
 
-      {perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role) && (
+      {perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role) && (
         <>
           <div className="mt-6 flex gap-3 flex-wrap">
             <Link

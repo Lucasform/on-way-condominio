@@ -60,7 +60,7 @@ export async function setPessoaAtivo(id: string, ativo: boolean): Promise<{ ok: 
 
 export async function convidarPessoa(
   pessoa_id: string,
-  role: 'morador' | 'portaria' | 'ronda' | 'sindico' | 'administradora' = 'morador',
+  role: 'morador' | 'portaria' | 'ronda' | 'sindico' | 'subsindico' | 'conselheiro' | 'administradora' = 'morador',
 ): Promise<{ ok: boolean; email?: string; error?: string }> {
   const { data, error } = await supabase.functions.invoke('invite-pessoa', {
     body: { pessoa_id, role },

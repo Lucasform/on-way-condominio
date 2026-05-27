@@ -27,7 +27,7 @@ const ASSINATURA_BUCKET = 'assinaturas'
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024 // 2 MB
 const MAX_ASSINATURA_BYTES = 1 * 1024 * 1024 // 1 MB
 const VALID_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-const ROLES_QUE_ASSINAM: string[] = ['admin_onway', 'administradora', 'sindico']
+const ROLES_QUE_ASSINAM: string[] = ['admin_onway', 'administradora', 'sindico', 'subsindico']
 
 export default function MeuPerfil() {
   const { user, perfil, refreshPerfil } = useAuth()

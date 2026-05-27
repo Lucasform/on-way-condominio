@@ -70,7 +70,7 @@ export default function Calendario() {
   const { perfil } = useAuth()
   const navigate = useNavigate()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
-  const canCreate = perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role)
+  const canCreate = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
 
   const [condos, setCondos] = useState<Condominio[]>([])
   const [scopeId, setScopeId] = useState<string | null>(null)

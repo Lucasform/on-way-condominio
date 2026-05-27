@@ -7,10 +7,12 @@ import type { Pessoa } from '../types/pessoa'
 import type { Condominio } from '../types/condominio'
 import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
+import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
 import DataTable, { type Column } from '../components/ui/DataTable'
+import PessoasImport from '../components/PessoasImport'
 
 export default function Pessoas() {
   const { perfil } = useAuth()
@@ -195,6 +197,16 @@ export default function Pessoas() {
           </div>
         )}
       />
+
+      {isGestor(perfil?.role) && (perfil?.condominio_id || (isAdmin && scopeId)) && (
+        <div className="mt-10">
+          <h2 className="text-base font-semibold text-slate-200 mb-1">Importar em massa</h2>
+          <p className="text-xs text-slate-400 mb-4">
+            Envie sua planilha em Excel ou CSV. Cria unidades automaticamente quando "Bloco-Número" não existir. Linhas duplicadas (mesmo CPF ou e-mail) são puladas.
+          </p>
+          <PessoasImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} />
+        </div>
+      )}
     </div>
   )
 }

@@ -8,6 +8,7 @@ import type { PessoaInput, TipoVinculo, RelacaoUnidade } from '../types/pessoa'
 import type { Condominio } from '../types/condominio'
 import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
+import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -33,7 +34,7 @@ export default function PessoaForm() {
   const { perfil } = useAuth()
   const isNew = !id || id === 'novo'
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
-  const canDelete = !isNew && (perfil?.role === 'admin_onway' || perfil?.role === 'sindico')
+  const canDelete = !isNew && isGestor(perfil?.role)
 
   const [form, setForm] = useState<PessoaInput>(EMPTY)
   const [condos, setCondos] = useState<Condominio[]>([])

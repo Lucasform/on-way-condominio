@@ -16,7 +16,7 @@ export default function OnboardingChecklist() {
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
-    if (!perfil || !['administradora', 'sindico'].includes(perfil.role)) return
+    if (!perfil || !['administradora', 'sindico', 'subsindico'].includes(perfil.role)) return
     if (!perfil.condominio_id) return
     if (localStorage.getItem('onboarding_dismissed') === '1') {
       setDismissed(true)

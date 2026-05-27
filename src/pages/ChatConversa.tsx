@@ -25,7 +25,7 @@ export default function ChatConversa() {
   const { id } = useParams()
   const { user, perfil } = useAuth()
   const isMorador = perfil?.role === 'morador'
-  const isStaff = perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role)
+  const isStaff = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
 
   const [conversa, setConversa] = useState<Conversa | null>(null)
   const [mensagens, setMensagens] = useState<Mensagem[]>([])

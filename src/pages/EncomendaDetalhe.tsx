@@ -14,6 +14,7 @@ import type { Unidade } from '../types/unidade'
 import type { Pessoa } from '../types/pessoa'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
+import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -51,7 +52,7 @@ export default function EncomendaDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user, perfil } = useAuth()
-  const canDelete = perfil?.role === 'admin_onway' || perfil?.role === 'sindico'
+  const canDelete = isGestor(perfil?.role)
 
   const [encomenda, setEncomenda] = useState<Encomenda | null>(null)
   const [unidade, setUnidade] = useState<Unidade | null>(null)

@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import type { Votacao, VotacaoOpcao, Voto, VotacaoInput, StatusVotacao } from '../types/votacao'
 
-export async function listVotacoes(opts: { condominio_id?: string; status?: StatusVotacao } = {}): Promise<Votacao[]> {
+export async function listVotacoes(opts: { condominio_id?: string; status?: StatusVotacao; assembleia_id?: string | null } = {}): Promise<Votacao[]> {
   let q = supabase
     .from('votacoes')
     .select('*')
@@ -9,6 +9,10 @@ export async function listVotacoes(opts: { condominio_id?: string; status?: Stat
     .order('data_inicio', { ascending: false })
   if (opts.condominio_id) q = q.eq('condominio_id', opts.condominio_id)
   if (opts.status) q = q.eq('status', opts.status)
+  if (opts.assembleia_id !== undefined) {
+    if (opts.assembleia_id === null) q = q.is('assembleia_id', null)
+    else q = q.eq('assembleia_id', opts.assembleia_id)
+  }
   const { data, error } = await q
   if (error) throw error
   return (data ?? []) as Votacao[]
@@ -34,6 +38,7 @@ export async function createVotacao(input: VotacaoInput): Promise<Votacao> {
     .from('votacoes')
     .insert({
       condominio_id: input.condominio_id,
+      assembleia_id: input.assembleia_id ?? null,
       titulo: input.titulo.trim(),
       descricao: input.descricao?.trim() || null,
       data_inicio: input.data_inicio,

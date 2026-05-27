@@ -15,6 +15,7 @@ import type { Unidade } from '../types/unidade'
 import type { Pessoa } from '../types/pessoa'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
+import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { gerarPdfNotificacao } from '../lib/notificacaoPdf'
@@ -28,7 +29,7 @@ const STATUS_CLASS: Record<StatusNotificacao, string> = {
   cancelada: 'bg-slate-700/40 text-slate-500 border-slate-700',
 }
 
-const CAN_CHANGE = ['admin_onway', 'administradora', 'sindico'] as const
+const CAN_CHANGE = ['admin_onway', 'administradora', 'sindico', 'subsindico'] as const
 
 export default function NotificacaoDetalhe() {
   const { id } = useParams()
@@ -108,7 +109,7 @@ export default function NotificacaoDetalhe() {
   }
 
   const canChange = perfil && (CAN_CHANGE as readonly string[]).includes(perfil.role)
-  const canDelete = perfil?.role === 'admin_onway' || perfil?.role === 'sindico'
+  const canDelete = isGestor(perfil?.role)
   const transitions = NOTIFICACAO_STATUS_TRANSITIONS[notificacao.status]
 
   return (

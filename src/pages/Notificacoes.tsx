@@ -55,7 +55,7 @@ export default function Notificacoes() {
     return u ? (u.bloco ? `${u.bloco}-${u.numero}` : u.numero) : '—'
   }
 
-  const podeCriar = perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role)
+  const podeCriar = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
 
   const columns: Column<Notificacao>[] = [
     {

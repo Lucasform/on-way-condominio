@@ -17,6 +17,7 @@ import type { Pessoa } from '../types/pessoa'
 import type { Condominio } from '../types/condominio'
 import type { Multa } from '../types/multa'
 import { useAuth } from '../components/AuthProvider'
+import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -39,7 +40,7 @@ const STATUS_CLASS: Record<StatusOcorrencia, string> = {
 }
 
 // Quem pode mudar status: admin_onway, administradora, sindico
-const CAN_CHANGE_STATUS = ['admin_onway', 'administradora', 'sindico'] as const
+const CAN_CHANGE_STATUS = ['admin_onway', 'administradora', 'sindico', 'subsindico'] as const
 
 // Transições permitidas a partir de cada status
 const ALLOWED_TRANSITIONS: Record<StatusOcorrencia, StatusOcorrencia[]> = {
@@ -54,7 +55,7 @@ export default function OcorrenciaDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { perfil } = useAuth()
-  const canDelete = perfil?.role === 'admin_onway' || perfil?.role === 'sindico'
+  const canDelete = isGestor(perfil?.role)
 
   const [ocorrencia, setOcorrencia] = useState<Ocorrencia | null>(null)
   const [unidade, setUnidade] = useState<Unidade | null>(null)

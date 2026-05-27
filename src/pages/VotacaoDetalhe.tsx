@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { deleteVotacao, getVotacao, votar, encerrarVotacao, cancelarVotacao } from '../lib/votacoes'
 import type { Votacao, VotacaoOpcao, Voto, StatusVotacao } from '../types/votacao'
 import { useAuth } from '../components/AuthProvider'
+import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -23,7 +24,7 @@ export default function VotacaoDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user, perfil } = useAuth()
-  const canDelete = perfil?.role === 'admin_onway' || perfil?.role === 'sindico'
+  const canDelete = isGestor(perfil?.role)
 
   const [votacao, setVotacao] = useState<Votacao | null>(null)
   const [opcoes, setOpcoes] = useState<VotacaoOpcao[]>([])
@@ -122,7 +123,7 @@ export default function VotacaoDetalhe() {
   const totalVotos = votos.length
   const meuVoto = user ? votos.find((v) => v.user_id === user.id) : null
   const podeVotar = votacao.status === 'aberta' && (!votacao.data_fim || new Date(votacao.data_fim) > new Date())
-  const canManage = perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role)
+  const canManage = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
 
   const votosPorOpcao = opcoes.map((o) => ({
     opcao: o,

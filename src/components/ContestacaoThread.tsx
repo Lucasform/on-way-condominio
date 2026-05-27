@@ -53,7 +53,7 @@ export default function ContestacaoThread({ multaId, pessoaUserId }: Props) {
   }, [multaId])
 
   const isMorador = perfil?.role === 'morador'
-  const isStaff = perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role)
+  const isStaff = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
   const podePostar = isMorador
     ? user?.id === pessoaUserId  // só o morador vinculado pode contestar
     : isStaff

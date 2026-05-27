@@ -11,6 +11,7 @@ import { listCondominios } from '../lib/condominios'
 import type { RegimentoArtigo } from '../types/regimento'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
+import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
@@ -110,8 +111,8 @@ export default function Regimento() {
     }
   }
 
-  const canEdit = perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role)
-  const canDelete = perfil && ['admin_onway', 'sindico'].includes(perfil.role)
+  const canEdit = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
+  const canDelete = isGestor(perfil?.role)
   const temInativos = rows.some((r) => !r.ativo)
 
   return (

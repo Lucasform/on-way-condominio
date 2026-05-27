@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../components/AuthProvider'
+import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -23,6 +24,7 @@ import {
   type Servico,
   type StatusServico,
 } from '../types/servico'
+import FornecedoresImport from '../components/FornecedoresImport'
 
 type Tab = 'em_curso' | 'historico' | 'prestadores'
 
@@ -42,8 +44,8 @@ const STATUSES: StatusServico[] = ['agendado', 'em_andamento', 'concluido', 'can
 export default function Servicos() {
   const { perfil } = useAuth()
   const condominioId = perfil?.condominio_id ?? null
-  const canManage = !!perfil && ['admin_onway', 'administradora', 'sindico', 'portaria'].includes(perfil.role)
-  const canDelete = perfil?.role === 'admin_onway' || perfil?.role === 'sindico'
+  const canManage = !!perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico', 'portaria'].includes(perfil.role)
+  const canDelete = isGestor(perfil?.role)
 
   const [tab, setTab] = useState<Tab>('em_curso')
   const [prestadores, setPrestadores] = useState<Prestador[]>([])
@@ -164,6 +166,16 @@ export default function Servicos() {
           onClose={() => setShowFormPrestador(false)}
           onSaved={() => { setShowFormPrestador(false); reload() }}
         />
+      )}
+
+      {tab === 'prestadores' && isGestor(perfil?.role) && condominioId && (
+        <div className="mt-10">
+          <h2 className="text-base font-semibold text-slate-200 mb-1">Importar prestadores em massa</h2>
+          <p className="text-xs text-slate-400 mb-4">
+            Envie sua planilha em Excel ou CSV. Prestadores com nome já cadastrado são pulados.
+          </p>
+          <FornecedoresImport condominio_id={condominioId} />
+        </div>
       )}
     </div>
   )

@@ -6,6 +6,8 @@ export type Role =
   | 'admin_onway'
   | 'administradora'
   | 'sindico'
+  | 'subsindico'
+  | 'conselheiro'
   | 'portaria'
   | 'ronda'
   | 'morador'
@@ -54,17 +56,20 @@ export async function getCaller(req: Request): Promise<Caller> {
 }
 
 // Matriz: quem pode criar/gerenciar quem.
-const STAFF_ROLES: Role[] = ['admin_onway', 'administradora', 'sindico']
+const STAFF_ROLES: Role[] = ['admin_onway', 'administradora', 'sindico', 'subsindico']
 
 export function canManagePessoas(role: Role): boolean {
   return STAFF_ROLES.includes(role)
 }
 
 // Roles que cada perfil pode CRIAR ao convidar alguém.
+// Subsindico tem os mesmos poderes do sindico.
 const CAN_CREATE: Record<Role, Role[]> = {
-  admin_onway:    ['sindico', 'administradora', 'portaria', 'ronda', 'morador'],
-  sindico:        ['administradora', 'portaria', 'ronda', 'morador'],
+  admin_onway:    ['sindico', 'subsindico', 'conselheiro', 'administradora', 'portaria', 'ronda', 'morador'],
+  sindico:        ['subsindico', 'conselheiro', 'administradora', 'portaria', 'ronda', 'morador'],
+  subsindico:     ['conselheiro', 'administradora', 'portaria', 'ronda', 'morador'],
   administradora: ['portaria', 'ronda', 'morador'],
+  conselheiro:    [],
   portaria:       [],
   ronda:          [],
   morador:        [],

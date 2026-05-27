@@ -149,7 +149,7 @@ export default function MultaNova() {
 
   if (loading) return <div className="px-8 py-10 text-slate-400">Carregando...</div>
 
-  if (!perfil || !['admin_onway', 'administradora', 'sindico'].includes(perfil.role)) {
+  if (!perfil || !['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)) {
     return (
       <div className="px-8 py-10 max-w-2xl mx-auto">
         <PageHeader title="Gerar multa" actions={<Link to="/ocorrencias"><Button variant="ghost">← Voltar</Button></Link>} />

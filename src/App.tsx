@@ -52,6 +52,9 @@ const Dashboard = lazy(() => import('./pages/Dashboard'))
 const Votacoes = lazy(() => import('./pages/Votacoes'))
 const VotacaoNova = lazy(() => import('./pages/VotacaoNova'))
 const VotacaoDetalhe = lazy(() => import('./pages/VotacaoDetalhe'))
+const Assembleias = lazy(() => import('./pages/Assembleias'))
+const AssembleiaForm = lazy(() => import('./pages/AssembleiaForm'))
+const AssembleiaDetalhe = lazy(() => import('./pages/AssembleiaDetalhe'))
 const Chamados = lazy(() => import('./pages/Chamados'))
 const ChamadoNovo = lazy(() => import('./pages/ChamadoNovo'))
 const ChamadoDetalhe = lazy(() => import('./pages/ChamadoDetalhe'))
@@ -113,7 +116,7 @@ export default function App() {
             <Route
               path="/unidades"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <Unidades />
                 </ProtectedRoute>
               }
@@ -121,7 +124,7 @@ export default function App() {
             <Route
               path="/unidades/novo"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <UnidadeForm />
                 </ProtectedRoute>
               }
@@ -129,7 +132,7 @@ export default function App() {
             <Route
               path="/unidades/:id"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <UnidadeForm />
                 </ProtectedRoute>
               }
@@ -137,7 +140,7 @@ export default function App() {
             <Route
               path="/pessoas"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <Pessoas />
                 </ProtectedRoute>
               }
@@ -145,7 +148,7 @@ export default function App() {
             <Route
               path="/pessoas/novo"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <PessoaForm />
                 </ProtectedRoute>
               }
@@ -153,7 +156,7 @@ export default function App() {
             <Route
               path="/pessoas/:id"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <PessoaForm />
                 </ProtectedRoute>
               }
@@ -161,7 +164,7 @@ export default function App() {
             <Route
               path="/veiculos"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <Veiculos />
                 </ProtectedRoute>
               }
@@ -169,7 +172,7 @@ export default function App() {
             <Route
               path="/veiculos/novo"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <VeiculoForm />
                 </ProtectedRoute>
               }
@@ -177,7 +180,7 @@ export default function App() {
             <Route
               path="/veiculos/:id"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <VeiculoForm />
                 </ProtectedRoute>
               }
@@ -185,7 +188,7 @@ export default function App() {
             <Route
               path="/pets"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <Pets />
                 </ProtectedRoute>
               }
@@ -193,7 +196,7 @@ export default function App() {
             <Route
               path="/pets/novo"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <PetForm />
                 </ProtectedRoute>
               }
@@ -201,7 +204,7 @@ export default function App() {
             <Route
               path="/pets/:id"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <PetForm />
                 </ProtectedRoute>
               }
@@ -233,7 +236,7 @@ export default function App() {
             <Route
               path="/multas/nova"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <MultaNova />
                 </ProtectedRoute>
               }
@@ -261,7 +264,7 @@ export default function App() {
             <Route
               path="/notificacoes/nova"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <NotificacaoNova />
                 </ProtectedRoute>
               }
@@ -273,7 +276,7 @@ export default function App() {
             <Route
               path="/unidades/:id/historico"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <UnidadeHistorico />
                 </ProtectedRoute>
               }
@@ -289,7 +292,7 @@ export default function App() {
             <Route
               path="/regimento/novo"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <RegimentoForm />
                 </ProtectedRoute>
               }
@@ -297,7 +300,7 @@ export default function App() {
             <Route
               path="/regimento/:id"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <RegimentoForm />
                 </ProtectedRoute>
               }
@@ -305,7 +308,7 @@ export default function App() {
             <Route
               path="/painel"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <Painel />
                 </ProtectedRoute>
               }
@@ -321,7 +324,7 @@ export default function App() {
             <Route
               path="/encomendas/novo"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'portaria']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico', 'portaria']}>
                   <EncomendaNova />
                 </ProtectedRoute>
               }
@@ -345,7 +348,7 @@ export default function App() {
             <Route
               path="/mural/novo"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <MuralNova />
                 </ProtectedRoute>
               }
@@ -361,7 +364,7 @@ export default function App() {
             <Route
               path="/calendario/novo"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <CalendarioForm />
                 </ProtectedRoute>
               }
@@ -369,7 +372,7 @@ export default function App() {
             <Route
               path="/calendario/:id"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <CalendarioForm />
                 </ProtectedRoute>
               }
@@ -377,7 +380,7 @@ export default function App() {
             <Route
               path="/dashboard"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <Dashboard />
                 </ProtectedRoute>
               }
@@ -389,7 +392,7 @@ export default function App() {
             <Route
               path="/votacoes/nova"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <VotacaoNova />
                 </ProtectedRoute>
               }
@@ -397,6 +400,30 @@ export default function App() {
             <Route
               path="/votacoes/:id"
               element={<ProtectedRoute><VotacaoDetalhe /></ProtectedRoute>}
+            />
+            <Route
+              path="/assembleias"
+              element={<ProtectedRoute><Assembleias /></ProtectedRoute>}
+            />
+            <Route
+              path="/assembleias/nova"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
+                  <AssembleiaForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/assembleias/:id"
+              element={<ProtectedRoute><AssembleiaDetalhe /></ProtectedRoute>}
+            />
+            <Route
+              path="/assembleias/:id/editar"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
+                  <AssembleiaForm />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/chamados"
@@ -413,7 +440,7 @@ export default function App() {
             <Route
               path="/relatorios"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <Relatorios />
                 </ProtectedRoute>
               }
@@ -421,7 +448,7 @@ export default function App() {
             <Route
               path="/emails-log"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <EmailsLog />
                 </ProtectedRoute>
               }
@@ -431,7 +458,7 @@ export default function App() {
             <Route
               path="/whatsapp-config"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <WhatsappConfig />
                 </ProtectedRoute>
               }
@@ -439,7 +466,7 @@ export default function App() {
             <Route
               path="/auditoria"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <AuditLog />
                 </ProtectedRoute>
               }
@@ -447,7 +474,7 @@ export default function App() {
             <Route
               path="/servicos"
               element={
-                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico']}>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <Servicos />
                 </ProtectedRoute>
               }
