@@ -131,21 +131,11 @@ Deno.serve(async (req: Request) => {
       similarity: number
     }>
 
-    // 4) Monta prompts. Prompt caching do Claude exige bloco com >= 1024 tokens
-    // (~4000 chars em PT-BR). Aplicamos cache_control só quando o bloco passa
-    // desse limiar; senão Anthropic rejeita a request inteira.
-    type Bloco = { type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }
-    const systemBlocos: Bloco[] = []
-    const MIN_CACHE_CHARS = 4000
-
-    function addBloco(text: string) {
-      const bloco: Bloco = { type: 'text', text }
-      if (text.length >= MIN_CACHE_CHARS) bloco.cache_control = { type: 'ephemeral' }
-      systemBlocos.push(bloco)
-    }
-
-    // Bloco 1: instruções fixas
-    addBloco(`Você é um assistente do síndico de um condomínio brasileiro chamado "${condoNome}".
+    // 4) Monta o system prompt como string única (sem prompt caching por enquanto
+    // — limites de bloco mínimo do Anthropic estavam quebrando em condomínios
+    // pequenos. Volta a ativar caching quando volume justificar refactor).
+    const partes: string[] = [
+      `Você é um assistente do síndico de um condomínio brasileiro chamado "${condoNome}".
 Analisa ocorrências e, com base nos artigos do regimento fornecidos, sugere se cabe multa.
 
 REGRAS:
@@ -156,25 +146,25 @@ REGRAS:
 - "valor_sugerido_reais" proporcional à gravidade (R$ 50 a R$ 2000 tipicamente).
 - "minuta": texto formal pra enviar ao morador, sucinto e respeitoso.
 
-Responda EXCLUSIVAMENTE em JSON válido, sem markdown.`)
+Responda EXCLUSIVAMENTE em JSON válido, sem markdown.`,
+    ]
 
-    // Bloco 2: regimento
     if (artigosList.length > 0) {
       const regimentoTexto = artigosList
         .map((a) => `[${a.numero ?? 's/n'}] ${a.titulo}\n${a.conteudo}`)
         .join('\n\n')
-      addBloco(`ARTIGOS DO REGIMENTO INTERNO RELEVANTES PARA O CASO:\n${regimentoTexto}`)
+      partes.push(`ARTIGOS DO REGIMENTO INTERNO RELEVANTES PARA O CASO:\n${regimentoTexto}`)
     }
 
-    // Bloco 3: padrão de escrita do condomínio
     if (modelosTexto) {
-      addBloco(`MODELOS DE NOTIFICAÇÃO/MULTA DESTE CONDOMÍNIO (use como guia de estilo, tom e formato da minuta; não copie literalmente):\n${modelosTexto}`)
+      partes.push(`MODELOS DE NOTIFICAÇÃO/MULTA DESTE CONDOMÍNIO (use como guia de estilo, tom e formato da minuta; não copie literalmente):\n${modelosTexto}`)
     }
 
-    // Bloco 4: instruções customizadas do síndico
     if (aiInstrucoes) {
-      addBloco(`INSTRUÇÕES ESPECÍFICAS DESTE CONDOMÍNIO:\n${aiInstrucoes}`)
+      partes.push(`INSTRUÇÕES ESPECÍFICAS DESTE CONDOMÍNIO:\n${aiInstrucoes}`)
     }
+
+    const systemPrompt = partes.join('\n\n---\n\n')
 
     const unidadeRel = (ocorrencia as { unidades?: { bloco: string | null; numero: string } | null }).unidades
     const unidadeStr = unidadeRel
@@ -200,7 +190,7 @@ Responda em JSON com EXATAMENTE este schema:
   "justificativa": string
 }`
 
-    // 5) Claude API com prompt caching ativado
+    // 5) Claude API (sem prompt caching por enquanto — system como string única)
     const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -211,15 +201,16 @@ Responda em JSON com EXATAMENTE este schema:
       body: JSON.stringify({
         model: CLAUDE_MODEL,
         max_tokens: 1024,
-        system: systemBlocos,
+        system: systemPrompt,
         messages: [{ role: 'user', content: userPrompt }],
       }),
     })
 
     if (!anthropicRes.ok) {
       const errText = await anthropicRes.text()
+      console.error('[analyze-ocorrencia] Claude API erro', anthropicRes.status, errText)
       return jsonResponse({
-        error: `Claude API ${anthropicRes.status}: ${errText.slice(0, 500)}`,
+        error: `Claude API ${anthropicRes.status}: ${errText.slice(0, 800)}`,
       }, 500)
     }
 
@@ -259,13 +250,11 @@ Responda em JSON com EXATAMENTE este schema:
         similarity: Number(a.similarity.toFixed(3)),
       })),
       modelo: CLAUDE_MODEL,
-      usou_modelo_redacao: !!modeloNotif,
+      usou_modelo_redacao: !!modelosTexto,
       usou_instrucoes_custom: !!aiInstrucoes,
       tokens: {
         input: anthropicData?.usage?.input_tokens ?? null,
         output: anthropicData?.usage?.output_tokens ?? null,
-        cache_read: anthropicData?.usage?.cache_read_input_tokens ?? null,
-        cache_write: anthropicData?.usage?.cache_creation_input_tokens ?? null,
       },
     })
   } catch (e) {
