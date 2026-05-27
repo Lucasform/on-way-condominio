@@ -66,9 +66,20 @@ export default function CondominioAnexosManager({
     const nome = novoNome.trim() || file.name.replace(/\.pdf$/i, '')
     setUploading(true); setError(null)
     try {
-      await createAnexo({ condominio_id, tipo, nome, file })
+      const novo = await createAnexo({ condominio_id, tipo, nome, file })
       setNovoNome('')
       await reload()
+      // Auto-extrai logo após o upload — não bloqueia o reload
+      setProcessandoId(novo.id)
+      try {
+        const res = await processarAnexoIa(novo.id)
+        if (!res.ok) throw new Error(res.error ?? 'Falha ao processar')
+        await reload()
+      } catch (e) {
+        setError(`Upload OK, mas falhou ao processar: ${e instanceof Error ? e.message : String(e)}. Clique em "${labelProcessar}" pra tentar de novo.`)
+      } finally {
+        setProcessandoId(null)
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Falha no upload.')
     } finally {

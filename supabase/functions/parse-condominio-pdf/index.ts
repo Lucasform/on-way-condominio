@@ -12,13 +12,10 @@
 // Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-// @ts-expect-error: legacy build do pdfjs roda em Deno sem worker
-import { getDocument, GlobalWorkerOptions } from 'npm:pdfjs-dist@4.7.76/legacy/build/pdf.mjs'
+// unpdf: lib feita pra ambientes serverless/edge (sem dependência de Worker).
+// extractText devolve { totalPages, text: string[] } com texto por página.
+import { extractText, getDocumentProxy } from 'npm:unpdf@0.12.1'
 import { corsHeaders, handleCors, jsonResponse } from '../_shared/cors.ts'
-
-// Desabilita worker (rodamos no main thread do Edge runtime).
-// @ts-expect-error: tipo do GlobalWorkerOptions
-GlobalWorkerOptions.workerSrc = ''
 
 // @ts-expect-error: Supabase.ai injetado pelo runtime
 const aiSession = new Supabase.ai.Session('gte-small')
@@ -186,27 +183,15 @@ async function extrairTextoDoPdf(url: string): Promise<string> {
   const buf = await resp.arrayBuffer()
   const data = new Uint8Array(buf)
 
-  const loadingTask = getDocument({ data, useWorker: false, disableFontFace: true, isEvalSupported: false })
-  const pdf = await loadingTask.promise
-  const partes: string[] = []
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i)
-    const content = await page.getTextContent()
-    const linhaAtual: string[] = []
-    let yPrev: number | null = null
-    for (const item of content.items as Array<{ str: string; transform?: number[] }>) {
-      const y = item.transform?.[5] ?? null
-      if (yPrev !== null && y !== null && Math.abs(y - yPrev) > 2) {
-        partes.push(linhaAtual.join(' '))
-        linhaAtual.length = 0
-      }
-      if (item.str) linhaAtual.push(item.str)
-      yPrev = y
-    }
-    if (linhaAtual.length) partes.push(linhaAtual.join(' '))
-    partes.push('') // separador de página
-  }
-  return partes.join('\n').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
+  const pdf = await getDocumentProxy(data)
+  const { text } = await extractText(pdf, { mergePages: false })
+  const paginas = Array.isArray(text) ? text : [text]
+  // Junta páginas com quebra dupla; normaliza whitespace excessivo.
+  return paginas
+    .join('\n\n')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 }
 
 interface ArtigoBruto {
