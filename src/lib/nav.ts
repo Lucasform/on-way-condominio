@@ -50,6 +50,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/multas', label: 'Multas' },
         { to: '/chamados', label: 'Chamados' },
         { to: '/encomendas', label: 'Serviços de Portaria' },
+        { to: '/servicos', label: 'Prestação de Serviços' },
       ],
     },
     {
@@ -70,7 +71,6 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/relatorios', label: 'Relatórios' },
         { to: '/auditoria', label: 'Auditorias' },
         { to: '/templates', label: 'Templates' },
-        { to: '/servicos', label: 'Serviços' },
       ],
     },
   ],
@@ -105,6 +105,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/multas', label: 'Multas' },
         { to: '/chamados', label: 'Chamados' },
         { to: '/encomendas', label: 'Serviços de Portaria' },
+        { to: '/servicos', label: 'Prestação de Serviços' },
       ],
     },
     {
@@ -123,7 +124,6 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/relatorios', label: 'Relatórios' },
         { to: '/auditoria', label: 'Auditoria' },
         { to: '/templates', label: 'Templates' },
-        { to: '/servicos', label: 'Serviços' },
       ],
     },
   ],
@@ -158,6 +158,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/multas', label: 'Multas' },
         { to: '/chamados', label: 'Chamados' },
         { to: '/encomendas', label: 'Serviços de Portaria' },
+        { to: '/servicos', label: 'Prestação de Serviços' },
       ],
     },
     {
@@ -176,7 +177,6 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/relatorios', label: 'Relatórios' },
         { to: '/auditoria', label: 'Auditoria' },
         { to: '/templates', label: 'Templates' },
-        { to: '/servicos', label: 'Serviços' },
       ],
     },
   ],
@@ -211,6 +211,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/multas', label: 'Multas' },
         { to: '/chamados', label: 'Chamados' },
         { to: '/encomendas', label: 'Serviços de Portaria' },
+        { to: '/servicos', label: 'Prestação de Serviços' },
       ],
     },
     {
@@ -229,7 +230,6 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/relatorios', label: 'Relatórios' },
         { to: '/auditoria', label: 'Auditoria' },
         { to: '/templates', label: 'Templates' },
-        { to: '/servicos', label: 'Serviços' },
       ],
     },
   ],

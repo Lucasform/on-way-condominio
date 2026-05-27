@@ -26,7 +26,8 @@ import {
 } from '../types/servico'
 import FornecedoresImport from '../components/FornecedoresImport'
 
-type Tab = 'em_curso' | 'historico' | 'prestadores'
+type Tab = 'servicos' | 'prestadores'
+type StatusFiltro = 'todos' | 'em_curso' | 'finalizados'
 
 const CATEGORIAS: CategoriaServico[] = [
   'eletrica',
@@ -47,7 +48,8 @@ export default function Servicos() {
   const canManage = !!perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico', 'portaria'].includes(perfil.role)
   const canDelete = isGestor(perfil?.role)
 
-  const [tab, setTab] = useState<Tab>('em_curso')
+  const [tab, setTab] = useState<Tab>('servicos')
+  const [statusFiltro, setStatusFiltro] = useState<StatusFiltro>('em_curso')
   const [prestadores, setPrestadores] = useState<Prestador[]>([])
   const [servicos, setServicos] = useState<Servico[]>([])
   const [loading, setLoading] = useState(true)
@@ -83,21 +85,29 @@ export default function Servicos() {
     () => servicos.filter((s) => s.status === 'concluido' || s.status === 'cancelado'),
     [servicos],
   )
+  const servicosFiltrados = useMemo(() => {
+    if (statusFiltro === 'em_curso') return servicosEmCurso
+    if (statusFiltro === 'finalizados') return servicosHistorico
+    return [...servicosEmCurso, ...servicosHistorico]
+  }, [statusFiltro, servicosEmCurso, servicosHistorico])
 
   return (
     <div className="px-8 py-10 max-w-5xl mx-auto">
       <PageHeader
-        title="Serviços"
+        title="Prestação de Serviços"
         subtitle="Prestadores cadastrados e serviços executados no condomínio."
         actions={
           canManage && (
             <div className="flex items-center gap-2">
-              <Button variant="secondary" onClick={() => setShowFormPrestador(true)}>
-                + Novo prestador
-              </Button>
-              <Button onClick={() => setShowFormServico(true)}>
-                + Adicionar serviço
-              </Button>
+              {tab === 'prestadores' ? (
+                <Button onClick={() => setShowFormPrestador(true)}>
+                  + Novo prestador
+                </Button>
+              ) : (
+                <Button onClick={() => setShowFormServico(true)}>
+                  + Novo serviço
+                </Button>
+              )}
             </div>
           )
         }
@@ -105,16 +115,41 @@ export default function Servicos() {
 
       {/* Tabs */}
       <div className="mb-5 border-b border-slate-200 dark:border-slate-800 flex gap-1">
-        <TabButton active={tab === 'em_curso'} onClick={() => setTab('em_curso')}>
-          Em curso <span className="ml-1.5 text-xs text-slate-400">({servicosEmCurso.length})</span>
-        </TabButton>
         <TabButton active={tab === 'prestadores'} onClick={() => setTab('prestadores')}>
-          Prestadores <span className="ml-1.5 text-xs text-slate-400">({prestadores.length})</span>
+          Prestadores de serviço <span className="ml-1.5 text-xs text-slate-400">({prestadores.length})</span>
         </TabButton>
-        <TabButton active={tab === 'historico'} onClick={() => setTab('historico')}>
-          Histórico <span className="ml-1.5 text-xs text-slate-400">({servicosHistorico.length})</span>
+        <TabButton active={tab === 'servicos'} onClick={() => setTab('servicos')}>
+          Serviços <span className="ml-1.5 text-xs text-slate-400">({servicos.length})</span>
         </TabButton>
       </div>
+
+      {/* Filtro de status interno da aba Serviços */}
+      {tab === 'servicos' && (
+        <div className="mb-4 flex flex-wrap gap-2">
+          {(['em_curso', 'finalizados', 'todos'] as StatusFiltro[]).map((f) => {
+            const count = f === 'em_curso' ? servicosEmCurso.length
+              : f === 'finalizados' ? servicosHistorico.length
+              : servicos.length
+            const label = f === 'em_curso' ? 'Em curso'
+              : f === 'finalizados' ? 'Finalizados'
+              : 'Todos'
+            return (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setStatusFiltro(f)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium border transition ${
+                  statusFiltro === f
+                    ? 'border-brand-500 bg-brand-500/10 text-brand-200'
+                    : 'border-slate-700 text-slate-300 hover:border-slate-600'
+                }`}
+              >
+                {label} <span className="opacity-60 ml-1">({count})</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-md px-3 py-2">
@@ -124,20 +159,17 @@ export default function Servicos() {
 
       {loading ? (
         <div className="text-slate-500 text-sm">Carregando...</div>
-      ) : tab === 'em_curso' ? (
+      ) : tab === 'servicos' ? (
         <ServicoList
-          servicos={servicosEmCurso}
+          servicos={servicosFiltrados}
           prestadores={prestadores}
-          empty="Nenhum serviço agendado ou em andamento."
-          canManage={canManage}
-          canDelete={canDelete}
-          onChange={reload}
-        />
-      ) : tab === 'historico' ? (
-        <ServicoList
-          servicos={servicosHistorico}
-          prestadores={prestadores}
-          empty="Nenhum serviço finalizado ainda."
+          empty={
+            statusFiltro === 'em_curso'
+              ? 'Nenhum serviço agendado ou em andamento.'
+              : statusFiltro === 'finalizados'
+                ? 'Nenhum serviço finalizado ainda.'
+                : 'Nenhum serviço cadastrado.'
+          }
           canManage={canManage}
           canDelete={canDelete}
           onChange={reload}
