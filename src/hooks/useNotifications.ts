@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { listMyNotifications, countUnread, markAsRead, markAllAsRead } from '../lib/notifications'
 import type { AppNotification } from '../types/notification'
@@ -30,16 +30,25 @@ export function useNotifications(userId: string | null) {
     }
   }, [userId])
 
+  // Ref pra reload — evita re-subscrever o canal quando o callback muda
+  const reloadRef = useRef(reload)
+  useEffect(() => { reloadRef.current = reload }, [reload])
+
   // Carrega inicial
   useEffect(() => {
     reload()
   }, [reload])
 
-  // Subscrição Realtime: qualquer INSERT/UPDATE em app_notifications do user atual
+  // Subscrição Realtime: qualquer INSERT/UPDATE em app_notifications do user atual.
+  // Depende SÓ de userId; nome de canal único por mount evita conflito com canal
+  // que ainda esteja sendo desmontado (React StrictMode dev, navegação rápida).
   useEffect(() => {
     if (!userId) return
+    const suffix = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2)
     const channel = supabase
-      .channel(`app_notifications:${userId}`)
+      .channel(`app_notifications:${userId}:${suffix}`)
       .on(
         'postgres_changes',
         {
@@ -48,15 +57,13 @@ export function useNotifications(userId: string | null) {
           table: 'app_notifications',
           filter: `user_id=eq.${userId}`,
         },
-        () => {
-          reload()
-        },
+        () => { reloadRef.current() },
       )
       .subscribe()
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [userId, reload])
+  }, [userId])
 
   const mark = useCallback(async (id: string) => {
     await markAsRead(id)
