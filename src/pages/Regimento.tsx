@@ -4,6 +4,7 @@ import {
   listRegimentoArtigos,
   setRegimentoArtigoAtivo,
 } from '../lib/regimento'
+import { regenerateEmbedding } from '../lib/iaAnalysis'
 import { listCondominios } from '../lib/condominios'
 import type { RegimentoArtigo } from '../types/regimento'
 import type { Condominio } from '../types/condominio'
@@ -45,6 +46,14 @@ export default function Regimento() {
         ativo: showInactive ? undefined : true,
       })
       setRows(data)
+      // Auto-regenera embedding em background pra artigos antigos que ficaram sem
+      const pendentes = data.filter((a) => a.ativo && !a.embedding_atualizado_em)
+      for (const p of pendentes) {
+        const texto = `${p.titulo}\n\n${p.conteudo}`
+        regenerateEmbedding(p.id, texto).catch((err) => {
+          console.warn('[regimento] falha em regenerar embedding:', err)
+        })
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar.')
     } finally {
@@ -152,11 +161,11 @@ export default function Regimento() {
                   <div className="mt-3 text-xs text-slate-600">
                     {art.embedding_atualizado_em ? (
                       <span className="text-emerald-500">
-                        ✓ embedding pronto (atualizado em {new Date(art.embedding_atualizado_em).toLocaleDateString('pt-BR')})
+                        ✓ IA indexou em {new Date(art.embedding_atualizado_em).toLocaleDateString('pt-BR')}
                       </span>
                     ) : (
-                      <span className="text-amber-500">
-                        ⚠ sem embedding — será gerado ao salvar (Edge Function da Fase 3 em implantação)
+                      <span className="text-slate-500 italic">
+                        IA indexando em background...
                       </span>
                     )}
                   </div>
