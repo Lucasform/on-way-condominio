@@ -8,9 +8,9 @@ import type {
 import { sendPush } from './push'
 
 export const ASSUNTO_LABEL: Record<AssuntoConversa, string> = {
-  multa: '💰 Sobre uma multa',
-  encomenda: '📦 Sobre encomenda',
-  manutencao: '🛠 Manutenção / problema',
+  multa: '💰 Multa',
+  encomenda: '📦 Encomenda',
+  manutencao: '🛠 Manutenção',
   sugestao: '💡 Sugestão',
   outro: '💬 Outro assunto',
 }
@@ -189,6 +189,12 @@ async function triggerBot(conversa_id: string): Promise<void> {
   // Aguarda 800ms (sensação de "digitando...")
   await new Promise((r) => setTimeout(r, 800))
   await supabase.functions.invoke('chat-bot', { body: { conversa_id } })
+}
+
+export async function deleteConversa(id: string): Promise<void> {
+  // mensagens.conversa_id tem ON DELETE CASCADE, entao a thread some junto.
+  const { error } = await supabase.from('conversas').delete().eq('id', id)
+  if (error) throw error
 }
 
 export async function mudarStatusConversa(id: string, status: StatusConversa, atribuida_para?: string | null): Promise<void> {

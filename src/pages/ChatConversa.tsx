@@ -1,18 +1,26 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   getConversa,
   listMensagens,
   enviarMensagem,
   mudarStatusConversa,
+  deleteConversa,
   ASSUNTO_LABEL,
   STATUS_LABEL,
 } from '../lib/chat'
 import { supabase } from '../lib/supabase'
 import type { Conversa, Mensagem, StatusConversa } from '../types/chat'
 import { useAuth } from '../components/AuthProvider'
+import { roleLabel } from '../lib/nav'
+import type { Role } from '../types/database'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+
+interface AutorInfo {
+  nome: string
+  sublabel: string  // "C-301" pra morador, "Síndico" pra staff
+}
 
 const STATUS_CLASS: Record<StatusConversa, string> = {
   aberta: 'bg-sky-500/10 text-sky-300 border-sky-500/30',
@@ -23,12 +31,14 @@ const STATUS_CLASS: Record<StatusConversa, string> = {
 
 export default function ChatConversa() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { user, perfil } = useAuth()
   const isMorador = perfil?.role === 'morador'
   const isStaff = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
 
   const [conversa, setConversa] = useState<Conversa | null>(null)
   const [mensagens, setMensagens] = useState<Mensagem[]>([])
+  const [autores, setAutores] = useState<Map<string, AutorInfo>>(new Map())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [novaMsg, setNovaMsg] = useState('')
@@ -58,6 +68,57 @@ export default function ChatConversa() {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  // Resolve autor_id -> { nome, sublabel (unidade ou cargo) }
+  // Inclui sempre o morador_user_id da conversa (mesmo que ele ainda nao tenha enviado mensagem).
+  useEffect(() => {
+    const setIds = new Set<string>()
+    if (conversa?.morador_user_id) setIds.add(conversa.morador_user_id)
+    for (const m of mensagens) {
+      if (m.autor_tipo !== 'bot' && m.autor_tipo !== 'sistema') setIds.add(m.autor_id)
+    }
+    const ids = Array.from(setIds)
+    const pendentes = ids.filter((i) => !autores.has(i))
+    if (pendentes.length === 0) return
+    ;(async () => {
+      const { data: perfis } = await supabase
+        .from('perfis')
+        .select('id, role, nome_exibicao, condominio_id')
+        .in('id', pendentes)
+      const moradorIds = (perfis ?? []).filter((p) => p.role === 'morador').map((p) => p.id)
+      const { data: pessoas } = moradorIds.length > 0
+        ? await supabase
+            .from('pessoas')
+            .select('user_id, nome, unidade_id, unidades:unidade_id(bloco, numero)')
+            .in('user_id', moradorIds)
+        : { data: [] as Array<{ user_id: string; nome: string; unidade_id: string | null; unidades: { bloco: string | null; numero: string } | null }> }
+      const pessoaPorUser = new Map<string, typeof pessoas[number]>()
+      for (const p of pessoas ?? []) pessoaPorUser.set(p.user_id, p)
+
+      setAutores((prev) => {
+        const novo = new Map(prev)
+        for (const pf of perfis ?? []) {
+          if (pf.role === 'morador') {
+            const ps = pessoaPorUser.get(pf.id)
+            const unidadeLbl = ps?.unidades
+              ? (ps.unidades.bloco ? `${ps.unidades.bloco}-${ps.unidades.numero}` : ps.unidades.numero)
+              : null
+            novo.set(pf.id, {
+              nome: ps?.nome ?? pf.nome_exibicao ?? 'Morador',
+              sublabel: unidadeLbl ? `Un. ${unidadeLbl}` : 'sem unidade',
+            })
+          } else {
+            novo.set(pf.id, {
+              nome: pf.nome_exibicao ?? 'Sem nome',
+              sublabel: roleLabel(pf.role as Role),
+            })
+          }
+        }
+        return novo
+      })
+    })().catch((e) => console.warn('[chat] falha ao resolver autores:', e))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mensagens, conversa?.morador_user_id])
 
   // Realtime: novas mensagens
   useEffect(() => {
@@ -123,6 +184,28 @@ export default function ChatConversa() {
     }
   }
 
+  // Apagar conversa: so depois de encerrada e so admin geral ou sindico
+  const podeApagarConversa =
+    !!conversa
+    && conversa.status === 'encerrada'
+    && (perfil?.role === 'admin_onway' || perfil?.role === 'sindico' || perfil?.role === 'subsindico')
+
+  async function handleApagarConversa() {
+    if (!id || !conversa) return
+    const ok = window.confirm(
+      'Apagar esta conversa DEFINITIVAMENTE? Todas as mensagens serão removidas. Esta ação não pode ser desfeita.',
+    )
+    if (!ok) return
+    const ok2 = window.confirm('Tem certeza? Confirme novamente para apagar.')
+    if (!ok2) return
+    try {
+      await deleteConversa(id)
+      navigate('/chat')
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao apagar.')
+    }
+  }
+
   if (loading) return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando...</div>
 
   if (error || !conversa) {
@@ -142,14 +225,24 @@ export default function ChatConversa() {
   const podeEnviar = conversa.status !== 'encerrada' && (isMorador || isStaff)
 
   return (
-    <div className="px-8 py-8 max-w-3xl flex flex-col h-[calc(100vh-3rem)]">
+    <div className="px-4 py-6 sm:px-8 sm:py-8 max-w-3xl mx-auto flex flex-col h-[calc(100vh-3rem)]">
       <PageHeader
         title={ASSUNTO_LABEL[conversa.assunto]}
+        subtitle={(() => {
+          const solicitante = autores.get(conversa.morador_user_id)
+          if (!solicitante) return undefined
+          return `Solicitado por ${solicitante.nome}${solicitante.sublabel ? ` · ${solicitante.sublabel}` : ''}`
+        })()}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className={`shrink-0 px-2 py-0.5 rounded text-xs border ${STATUS_CLASS[conversa.status]}`}>
               {STATUS_LABEL[conversa.status]}
             </span>
+            {podeApagarConversa && (
+              <Button variant="danger" onClick={handleApagarConversa}>
+                🗑 Apagar conversa
+              </Button>
+            )}
             <Link to="/chat">
               <Button variant="ghost">← Voltar</Button>
             </Link>
@@ -163,7 +256,12 @@ export default function ChatConversa() {
           <div className="text-center text-sm text-slate-500 py-8">Sem mensagens.</div>
         ) : (
           mensagens.map((m) => (
-            <MensagemBubble key={m.id} mensagem={m} eMeuLado={Boolean(m.autor_id === user?.id || (isMorador && m.autor_tipo === 'morador') || (isStaff && m.autor_tipo === 'staff'))} />
+            <MensagemBubble
+              key={m.id}
+              mensagem={m}
+              autor={autores.get(m.autor_id) ?? null}
+              eMeuLado={Boolean(m.autor_id === user?.id || (isMorador && m.autor_tipo === 'morador') || (isStaff && m.autor_tipo === 'staff'))}
+            />
           ))
         )}
         <div ref={bottomRef} />
@@ -204,7 +302,15 @@ export default function ChatConversa() {
 
 // ----------------------------------------------------------------
 
-function MensagemBubble({ mensagem: m, eMeuLado }: { mensagem: Mensagem; eMeuLado: boolean }) {
+function MensagemBubble({
+  mensagem: m,
+  autor,
+  eMeuLado,
+}: {
+  mensagem: Mensagem
+  autor: AutorInfo | null
+  eMeuLado: boolean
+}) {
   const isBot = m.autor_tipo === 'bot'
   const isSistema = m.autor_tipo === 'sistema'
 
@@ -222,13 +328,18 @@ function MensagemBubble({ mensagem: m, eMeuLado }: { mensagem: Mensagem; eMeuLad
     ? 'bg-purple-600/20 border border-purple-500/30 text-purple-50'
     : 'bg-slate-800 text-slate-100'
 
-  const tipoLabel = isBot ? '🤖 Bot' : m.autor_tipo === 'morador' ? '👤 Morador' : '🏢 Administração'
+  const emoji = isBot ? '🤖' : m.autor_tipo === 'morador' ? '👤' : '🏢'
+  // Fallback enquanto o autor ainda nao foi resolvido
+  const nome = autor?.nome ?? (isBot ? 'Bot' : m.autor_tipo === 'morador' ? 'Morador' : 'Administração')
+  const sublabel = autor?.sublabel ?? ''
 
   return (
     <div className={`flex ${eMeuLado ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[75%] rounded-lg px-3 py-2 ${bubbleCls}`}>
         <div className="text-[10px] uppercase tracking-wide opacity-70 mb-1">
-          {tipoLabel} · {new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+          {emoji} {nome}{sublabel ? ` · ${sublabel}` : ''}
+          {' · '}
+          {new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
         </div>
         <p className="text-sm whitespace-pre-wrap">{m.conteudo}</p>
       </div>
