@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listEncomendas } from '../lib/encomendas'
 import { listCondominios } from '../lib/condominios'
@@ -115,9 +115,12 @@ export default function Encomendas() {
         }
         actions={
           canRegister && (
-            <Link to="/encomendas/novo">
-              <Button>+ Registrar encomenda</Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <NovaEncomendaDropdown />
+              <Link to="/encomendas/novo?tipo=comida">
+                <Button variant="secondary">🍔 Entrega de comida</Button>
+              </Link>
+            </div>
           )
         }
       />
@@ -200,6 +203,49 @@ export default function Encomendas() {
                 </div>
               </div>
             </article>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================
+// Dropdown "+ Nova encomenda" com tipos não-comida
+// ============================================================
+function NovaEncomendaDropdown() {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  const opcoes: Array<{ tipo: TipoEncomenda; emoji: string; label: string }> = [
+    { tipo: 'encomenda', emoji: '📦', label: 'Pacote / Encomenda' },
+    { tipo: 'documento', emoji: '📄', label: 'Documento' },
+    { tipo: 'outro',     emoji: '📬', label: 'Outro' },
+  ]
+
+  return (
+    <div ref={ref} className="relative">
+      <Button onClick={() => setOpen((v) => !v)}>+ Nova encomenda ▾</Button>
+      {open && (
+        <div className="absolute right-0 mt-1 z-20 w-56 rounded-md border border-slate-700 bg-slate-900 shadow-lg py-1">
+          {opcoes.map((o) => (
+            <Link
+              key={o.tipo}
+              to={`/encomendas/novo?tipo=${o.tipo}`}
+              onClick={() => setOpen(false)}
+              className="block px-3 py-2 text-sm text-slate-200 hover:bg-slate-800 transition"
+            >
+              <span className="mr-2">{o.emoji}</span> {o.label}
+            </Link>
           ))}
         </div>
       )}
