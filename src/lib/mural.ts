@@ -8,13 +8,13 @@ const BUCKET = 'mural-imagens'
 // Publicacoes
 // ============================================================
 
-export async function listPublicacoes(opts: { condominio_id?: string } = {}): Promise<Publicacao[]> {
+export async function listPublicacoes(opts: { condominio_id?: string; apenas_ativas?: boolean } = {}): Promise<Publicacao[]> {
   let q = supabase
     .from('publicacoes')
     .select('*')
-    .eq('ativo', true)
     .order('fixado', { ascending: false })
     .order('created_at', { ascending: false })
+  if (opts.apenas_ativas !== false) q = q.eq('ativo', true)
   if (opts.condominio_id) q = q.eq('condominio_id', opts.condominio_id)
   const { data, error } = await q
   if (error) throw error
@@ -78,6 +78,16 @@ async function notifyMoradoresPublicacao(pub: Publicacao): Promise<void> {
 export async function deletePublicacao(id: string): Promise<void> {
   // soft delete via ativo=false
   const { error } = await supabase.from('publicacoes').update({ ativo: false }).eq('id', id)
+  if (error) throw error
+}
+
+export async function reativarPublicacao(id: string): Promise<void> {
+  const { error } = await supabase.from('publicacoes').update({ ativo: true }).eq('id', id)
+  if (error) throw error
+}
+
+export async function apagarPublicacaoDefinitivo(id: string): Promise<void> {
+  const { error } = await supabase.from('publicacoes').delete().eq('id', id)
   if (error) throw error
 }
 

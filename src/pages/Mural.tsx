@@ -7,6 +7,8 @@ import {
   removerReacao,
   getMuralImagemSignedUrl,
   deletePublicacao,
+  reativarPublicacao,
+  apagarPublicacaoDefinitivo,
 } from '../lib/mural'
 import { listCondominios } from '../lib/condominios'
 import type { Publicacao, Reacao } from '../types/mural'
@@ -29,6 +31,7 @@ export default function Mural() {
   const [thumbs, setThumbs] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [mostrarArquivadas, setMostrarArquivadas] = useState(false)
 
   useEffect(() => {
     if (isAdmin) {
@@ -46,7 +49,10 @@ export default function Mural() {
     setLoading(true)
     setError(null)
     try {
-      const pubs = await listPublicacoes({ condominio_id: isAdmin && scopeId ? scopeId : undefined })
+      const pubs = await listPublicacoes({
+        condominio_id: isAdmin && scopeId ? scopeId : undefined,
+        apenas_ativas: !(canModerate && mostrarArquivadas),
+      })
       setRows(pubs)
       // Carrega reações de todas as publicações
       const reacs = await listReacoes(pubs.map((p) => p.id))
@@ -68,7 +74,7 @@ export default function Mural() {
     if (isAdmin && !scopeId) return
     reload()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scopeId])
+  }, [scopeId, mostrarArquivadas])
 
   // Carrega thumbs sob demanda
   useEffect(() => {
@@ -111,6 +117,28 @@ export default function Mural() {
     }
   }
 
+  async function handleReativar(pub: Publicacao) {
+    if (!window.confirm('Reativar esta publicação? Ela volta a aparecer no mural pros moradores.')) return
+    try {
+      await reativarPublicacao(pub.id)
+      await reload()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro.')
+    }
+  }
+
+  async function handleApagarDefinitivo(pub: Publicacao) {
+    if (!window.confirm('Apagar DEFINITIVAMENTE esta publicação? Esta ação não pode ser desfeita.')) return
+    try {
+      await apagarPublicacaoDefinitivo(pub.id)
+      await reload()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro.')
+    }
+  }
+
+  const isAdminGeral = perfil?.role === 'admin_onway'
+
   return (
     <div className="px-8 py-10 max-w-2xl mx-auto">
       <PageHeader
@@ -118,9 +146,19 @@ export default function Mural() {
         subtitle="Publicações da administração e comunicados do condomínio."
         actions={
           canPost && (
-            <Link to="/mural/novo">
-              <Button>+ Nova publicação</Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              {canModerate && (
+                <Button
+                  variant="secondary"
+                  onClick={() => setMostrarArquivadas((v) => !v)}
+                >
+                  {mostrarArquivadas ? 'Ocultar arquivadas' : 'Mostrar arquivadas'}
+                </Button>
+              )}
+              <Link to="/mural/novo">
+                <Button>+ Nova publicação</Button>
+              </Link>
+            </div>
           )
         }
       />
@@ -170,10 +208,17 @@ export default function Mural() {
               <article
                 key={pub.id}
                 className={`rounded-lg border bg-slate-900/40 overflow-hidden ${
-                  pub.fixado ? 'border-amber-500/40' : 'border-slate-800'
+                  !pub.ativo
+                    ? 'border-slate-800 opacity-60'
+                    : pub.fixado ? 'border-amber-500/40' : 'border-slate-800'
                 }`}
               >
-                {pub.fixado && (
+                {!pub.ativo && (
+                  <div className="bg-slate-800/60 text-slate-400 text-xs px-4 py-1.5 border-b border-slate-700 flex items-center gap-1">
+                    🗄 Arquivada
+                  </div>
+                )}
+                {pub.ativo && pub.fixado && (
                   <div className="bg-amber-500/10 text-amber-300 text-xs px-4 py-1.5 border-b border-amber-500/30 flex items-center gap-1">
                     📌 Fixado
                   </div>
@@ -226,13 +271,31 @@ export default function Mural() {
                       {new Date(pub.created_at).toLocaleString('pt-BR')}
                     </span>
 
-                    {canModerate && (
+                    {canModerate && pub.ativo && (
                       <button
                         onClick={() => handleDelete(pub)}
                         className="text-xs text-slate-500 hover:text-red-400 transition"
                         title="Arquivar publicação"
                       >
                         🗑
+                      </button>
+                    )}
+                    {canModerate && !pub.ativo && (
+                      <button
+                        onClick={() => handleReativar(pub)}
+                        className="text-xs text-slate-500 hover:text-emerald-400 transition"
+                        title="Reativar"
+                      >
+                        ↺ Reativar
+                      </button>
+                    )}
+                    {isAdminGeral && !pub.ativo && (
+                      <button
+                        onClick={() => handleApagarDefinitivo(pub)}
+                        className="text-xs text-red-500/70 hover:text-red-400 transition"
+                        title="Apagar definitivo (não pode ser desfeito)"
+                      >
+                        ✕ Apagar definitivo
                       </button>
                     )}
                   </div>
