@@ -7,13 +7,15 @@ interface Props {
   campo: 'regimento_pdf_url' | 'modelo_notificacao_url'
   /** Subpasta dentro do bucket condominio-anexos. */
   subpasta: 'regimento' | 'modelo-notificacao'
+  /** Tipo enviado pra edge parse-condominio-pdf. */
+  tipoIa: 'regimento' | 'modelo'
   titulo: string
   emoji: string
   descricao: string
   current: string | null
   onChange: (url: string | null) => void
-  /** Mensagem extra exibida abaixo (ex.: "extração automática virá em breve"). */
-  hint?: string
+  /** Texto de status pós-processamento (ex.: "12 artigos cadastrados"). */
+  statusProcessamento?: string | null
 }
 
 const BUCKET = 'condominio-anexos'
@@ -23,16 +25,44 @@ export default function CondominioAnexoPdf({
   condominio_id,
   campo,
   subpasta,
+  tipoIa,
   titulo,
   emoji,
   descricao,
   current,
   onChange,
-  hint,
+  statusProcessamento,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
+  const [processando, setProcessando] = useState(false)
+  const [resultadoProc, setResultadoProc] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  async function handleProcessar() {
+    setProcessando(true)
+    setError(null)
+    setResultadoProc(null)
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke('parse-condominio-pdf', {
+        body: { condominio_id, tipo: tipoIa },
+      })
+      if (fnErr) throw fnErr
+      if (data?.error) throw new Error(data.error)
+      if (tipoIa === 'regimento') {
+        setResultadoProc(
+          `${data?.artigos_criados ?? 0} artigos novos extraídos` +
+            (data?.artigos_duplicados ? ` (${data.artigos_duplicados} já existiam)` : ''),
+        )
+      } else {
+        setResultadoProc(`Padrão de redação salvo (${data?.chars_salvos ?? 0} caracteres).`)
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Falha ao processar.')
+    } finally {
+      setProcessando(false)
+    }
+  }
 
   function extrairPath(url: string): string | null {
     const marker = `/${BUCKET}/`
@@ -154,8 +184,36 @@ export default function CondominioAnexoPdf({
         </div>
       )}
 
-      {hint && (
-        <p className="text-[11px] text-slate-500 italic">{hint}</p>
+      {current && (
+        <div className="border-t border-slate-800 pt-3 space-y-2">
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              type="button"
+              onClick={handleProcessar}
+              disabled={processando}
+              className="px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium disabled:opacity-50"
+            >
+              {processando
+                ? 'Processando...'
+                : tipoIa === 'regimento'
+                ? '🤖 Extrair artigos automaticamente'
+                : '🤖 Treinar estilo de redação'}
+            </button>
+            {statusProcessamento && !resultadoProc && (
+              <span className="text-[11px] text-slate-400 italic">{statusProcessamento}</span>
+            )}
+          </div>
+          {resultadoProc && (
+            <div className="text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-md px-3 py-2">
+              ✓ {resultadoProc}
+            </div>
+          )}
+          <p className="text-[11px] text-slate-500">
+            {tipoIa === 'regimento'
+              ? 'Lê o PDF, divide em artigos pelos padrões "Art. X" e gera embeddings vetoriais. A IA usa pra achar fundamento das ocorrências.'
+              : 'Lê o PDF, extrai o texto e usa como referência de tom/estilo quando a IA gerar uma minuta de multa ou notificação.'}
+          </p>
+        </div>
       )}
     </fieldset>
   )

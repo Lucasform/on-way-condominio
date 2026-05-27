@@ -32,6 +32,8 @@ const EMPTY: CondominioInput = {
   logo_url: null,
   regimento_pdf_url: null,
   modelo_notificacao_url: null,
+  modelo_notificacao_texto: null,
+  ai_instrucoes: null,
   plano: 'free',
 }
 
@@ -89,6 +91,8 @@ export default function CondominioForm() {
             logo_url: c.logo_url,
             regimento_pdf_url: c.regimento_pdf_url,
             modelo_notificacao_url: c.modelo_notificacao_url,
+            modelo_notificacao_texto: c.modelo_notificacao_texto,
+            ai_instrucoes: c.ai_instrucoes,
             plano: c.plano,
           })
         }
@@ -299,23 +303,23 @@ export default function CondominioForm() {
                 condominio_id={id}
                 campo="regimento_pdf_url"
                 subpasta="regimento"
+                tipoIa="regimento"
                 titulo="Anexar regimento (PDF)"
                 emoji="📑"
-                descricao="Suba o PDF oficial do regimento interno."
+                descricao="Suba o PDF oficial do regimento interno. Depois clique em Extrair artigos pra IA usar."
                 current={form.regimento_pdf_url}
                 onChange={(url) => update('regimento_pdf_url', url)}
-                hint="Por enquanto só guarda o PDF. Extração automática de artigos e embeddings pra IA virá em update futuro."
               />
               <CondominioAnexoPdf
                 condominio_id={id}
                 campo="modelo_notificacao_url"
                 subpasta="modelo-notificacao"
+                tipoIa="modelo"
                 titulo="Modelo de notificação (PDF)"
                 emoji="📄"
-                descricao="Anexe um modelo PDF de notificação/multa no padrão do seu condomínio."
+                descricao="Anexe um modelo PDF de notificação/multa no padrão do seu condomínio. Depois clique em Treinar estilo pra IA imitar a redação."
                 current={form.modelo_notificacao_url}
                 onChange={(url) => update('modelo_notificacao_url', url)}
-                hint="Por enquanto só guarda o modelo. Substituição do template padrão no Gerar PDF da multa virá em update futuro."
               />
             </div>
           </div>
@@ -328,7 +332,7 @@ export default function CondominioForm() {
               Importações em massa
             </h2>
             <p className="text-xs text-slate-400 mb-4">
-              Suba planilhas (XLSX/CSV). Os dados são normalizados (CPF/telefone só dígitos, valor com vírgula vira número) e validados antes de inserir.
+              Envie sua planilha em Excel ou CSV. A gente cuida da formatação (CPF e telefone só com números, valores aceitam vírgula brasileira) e checa duplicatas antes de cadastrar.
             </p>
 
             <div className="space-y-4">

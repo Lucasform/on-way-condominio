@@ -65,6 +65,8 @@ function normalize(input: CondominioInput): CondominioInput {
     logo_url: trimOrNull(input.logo_url),
     regimento_pdf_url: input.regimento_pdf_url ?? null,
     modelo_notificacao_url: input.modelo_notificacao_url ?? null,
+    modelo_notificacao_texto: input.modelo_notificacao_texto ?? null,
+    ai_instrucoes: input.ai_instrucoes ?? null,
     plano: input.plano,
   }
 }

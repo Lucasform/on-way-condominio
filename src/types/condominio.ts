@@ -13,6 +13,8 @@ export interface Condominio {
   logo_url: string | null
   regimento_pdf_url: string | null
   modelo_notificacao_url: string | null
+  modelo_notificacao_texto: string | null
+  ai_instrucoes: string | null
   plano: Plano
   ativo: boolean
   created_at: string

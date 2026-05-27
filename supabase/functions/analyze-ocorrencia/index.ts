@@ -71,6 +71,16 @@ Deno.serve(async (req: Request) => {
       }, 404)
     }
 
+    // 1.b) Busca padrões "treinados" do condomínio (modelo de notificação + instruções)
+    const { data: condoCtx } = await userClient
+      .from('condominios')
+      .select('nome, modelo_notificacao_texto, ai_instrucoes')
+      .eq('id', ocorrencia.condominio_id)
+      .maybeSingle()
+    const modeloNotif: string | null = (condoCtx?.modelo_notificacao_texto ?? '').trim() || null
+    const aiInstrucoes: string | null = (condoCtx?.ai_instrucoes ?? '').trim() || null
+    const condoNome: string = condoCtx?.nome ?? 'condomínio'
+
     // 2) Gera embedding da descrição (+ contexto da gestão se houver)
     const queryText = [
       ocorrencia.local ?? '',
@@ -100,41 +110,70 @@ Deno.serve(async (req: Request) => {
       similarity: number
     }>
 
-    // 4) Monta prompts
-    const systemPrompt = `Você é um assistente do síndico de um condomínio brasileiro.
+    // 4) Monta prompts — usando prompt caching do Claude pra economizar tokens.
+    // Blocos cacheados: instruções fixas + regimento + padrão do condomínio.
+    // Bloco "fresh" a cada requisição: dados da ocorrência específica.
+    const systemBlocos: Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> = []
+
+    // Bloco 1: instruções fixas (cacheable, muda muito raramente)
+    systemBlocos.push({
+      type: 'text',
+      text: `Você é um assistente do síndico de um condomínio brasileiro chamado "${condoNome}".
 Analisa ocorrências e, com base nos artigos do regimento fornecidos, sugere se cabe multa.
 
 REGRAS:
 - Você APENAS sugere. Quem decide é o síndico.
 - NÃO invente artigos fora da lista.
 - Se nenhum artigo se aplica, "cabe_multa" = false.
-- "confianca" = "alta" só quando a relação ocorrência↔artigo é direta.
+- "confianca" = "alta" só quando a relação ocorrência-artigo é direta.
 - "valor_sugerido_reais" proporcional à gravidade (R$ 50 a R$ 2000 tipicamente).
 - "minuta": texto formal pra enviar ao morador, sucinto e respeitoso.
 
-Responda EXCLUSIVAMENTE em JSON válido, sem markdown.`
+Responda EXCLUSIVAMENTE em JSON válido, sem markdown.`,
+    })
+
+    // Bloco 2: regimento (cacheable, muda quando admin adiciona artigos novos)
+    if (artigosList.length > 0) {
+      const regimentoTexto = artigosList
+        .map((a) => `[${a.numero ?? 's/n'}] ${a.titulo}\n${a.conteudo}`)
+        .join('\n\n')
+      systemBlocos.push({
+        type: 'text',
+        text: `ARTIGOS DO REGIMENTO INTERNO RELEVANTES PARA O CASO:\n${regimentoTexto}`,
+        cache_control: { type: 'ephemeral' },
+      })
+    }
+
+    // Bloco 3: padrão de escrita do condomínio (cacheable)
+    if (modeloNotif) {
+      systemBlocos.push({
+        type: 'text',
+        text: `PADRÃO DE REDAÇÃO DESTE CONDOMÍNIO (use como guia de estilo, tom e formato da minuta; não copie literalmente):\n${modeloNotif}`,
+        cache_control: { type: 'ephemeral' },
+      })
+    }
+
+    // Bloco 4: instruções customizadas do síndico (cacheable)
+    if (aiInstrucoes) {
+      systemBlocos.push({
+        type: 'text',
+        text: `INSTRUÇÕES ESPECÍFICAS DESTE CONDOMÍNIO:\n${aiInstrucoes}`,
+        cache_control: { type: 'ephemeral' },
+      })
+    }
 
     const unidadeRel = (ocorrencia as { unidades?: { bloco: string | null; numero: string } | null }).unidades
     const unidadeStr = unidadeRel
       ? (unidadeRel.bloco ? `${unidadeRel.bloco}-${unidadeRel.numero}` : unidadeRel.numero)
       : 'Área comum / não vinculada'
 
+    // Bloco "fresh": dados da ocorrência específica (NÃO cacheado, muda sempre)
     const userPrompt = `OCORRÊNCIA
 Unidade: ${unidadeStr}
 Local: ${ocorrencia.local ?? '(não especificado)'}
 Descrição: ${ocorrencia.descricao}
 ${ocorrencia.comentario_gestao ? `\nCOMENTÁRIO DA GESTÃO (contexto persistente):\n${ocorrencia.comentario_gestao}\n` : ''}${comentario_extra ? `\nINSTRUÇÃO ADICIONAL DESTA ANÁLISE:\n${comentario_extra}\n` : ''}
-ARTIGOS RELEVANTES${artigosList.length === 0 ? ' (nenhum encontrado)' : ''}:
-${
-      artigosList.length === 0
-        ? '(condomínio sem regimento cadastrado, ou nada bate)'
-        : artigosList
-          .map(
-            (a, i) =>
-              `${i + 1}. [${a.numero ?? 's/n'}] ${a.titulo}  (sim: ${a.similarity.toFixed(2)})\n${a.conteudo}`,
-          )
-          .join('\n\n')
-    }
+${artigosList.length === 0 ? '(condomínio sem regimento cadastrado, ou nada bate semanticamente)' : ''}
 
 Responda em JSON com EXATAMENTE este schema:
 {
@@ -147,7 +186,7 @@ Responda em JSON com EXATAMENTE este schema:
   "justificativa": string
 }`
 
-    // 5) Claude API
+    // 5) Claude API com prompt caching ativado
     const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -158,7 +197,7 @@ Responda em JSON com EXATAMENTE este schema:
       body: JSON.stringify({
         model: CLAUDE_MODEL,
         max_tokens: 1024,
-        system: systemPrompt,
+        system: systemBlocos,
         messages: [{ role: 'user', content: userPrompt }],
       }),
     })
@@ -206,9 +245,13 @@ Responda em JSON com EXATAMENTE este schema:
         similarity: Number(a.similarity.toFixed(3)),
       })),
       modelo: CLAUDE_MODEL,
+      usou_modelo_redacao: !!modeloNotif,
+      usou_instrucoes_custom: !!aiInstrucoes,
       tokens: {
         input: anthropicData?.usage?.input_tokens ?? null,
         output: anthropicData?.usage?.output_tokens ?? null,
+        cache_read: anthropicData?.usage?.cache_read_input_tokens ?? null,
+        cache_write: anthropicData?.usage?.cache_creation_input_tokens ?? null,
       },
     })
   } catch (e) {
