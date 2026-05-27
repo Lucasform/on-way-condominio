@@ -161,6 +161,8 @@ export default function CalendarioForm() {
               required
               value={form.data_inicio}
               onChange={(e) => update('data_inicio', e.target.value)}
+              onFocus={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+              onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
             />
           </Field>
           <Field label="Fim (opcional)">
@@ -168,6 +170,8 @@ export default function CalendarioForm() {
               type="datetime-local"
               value={form.data_fim ?? ''}
               onChange={(e) => update('data_fim', e.target.value || null)}
+              onFocus={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+              onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
             />
           </Field>
         </div>

@@ -171,6 +171,8 @@ export default function AssembleiaForm() {
             required
             value={form.data_assembleia}
             onChange={(e) => setForm({ ...form, data_assembleia: e.target.value })}
+            onFocus={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+            onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
           />
         </Field>
 
