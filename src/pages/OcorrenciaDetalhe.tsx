@@ -366,7 +366,7 @@ export default function OcorrenciaDetalhe() {
               </p>
             ) : (
               <p className="text-sm text-slate-500 italic">
-                Sem comentários. A IA usa este campo como contexto adicional ao analisar.
+                Sem comentários. O agente de análise usa este campo como contexto adicional ao analisar.
               </p>
             )
           ) : (

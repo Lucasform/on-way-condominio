@@ -131,15 +131,21 @@ Deno.serve(async (req: Request) => {
       similarity: number
     }>
 
-    // 4) Monta prompts — usando prompt caching do Claude pra economizar tokens.
-    // Blocos cacheados: instruções fixas + regimento + padrão do condomínio.
-    // Bloco "fresh" a cada requisição: dados da ocorrência específica.
-    const systemBlocos: Array<{ type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }> = []
+    // 4) Monta prompts. Prompt caching do Claude exige bloco com >= 1024 tokens
+    // (~4000 chars em PT-BR). Aplicamos cache_control só quando o bloco passa
+    // desse limiar; senão Anthropic rejeita a request inteira.
+    type Bloco = { type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }
+    const systemBlocos: Bloco[] = []
+    const MIN_CACHE_CHARS = 4000
 
-    // Bloco 1: instruções fixas (cacheable, muda muito raramente)
-    systemBlocos.push({
-      type: 'text',
-      text: `Você é um assistente do síndico de um condomínio brasileiro chamado "${condoNome}".
+    function addBloco(text: string) {
+      const bloco: Bloco = { type: 'text', text }
+      if (text.length >= MIN_CACHE_CHARS) bloco.cache_control = { type: 'ephemeral' }
+      systemBlocos.push(bloco)
+    }
+
+    // Bloco 1: instruções fixas
+    addBloco(`Você é um assistente do síndico de um condomínio brasileiro chamado "${condoNome}".
 Analisa ocorrências e, com base nos artigos do regimento fornecidos, sugere se cabe multa.
 
 REGRAS:
@@ -150,37 +156,24 @@ REGRAS:
 - "valor_sugerido_reais" proporcional à gravidade (R$ 50 a R$ 2000 tipicamente).
 - "minuta": texto formal pra enviar ao morador, sucinto e respeitoso.
 
-Responda EXCLUSIVAMENTE em JSON válido, sem markdown.`,
-    })
+Responda EXCLUSIVAMENTE em JSON válido, sem markdown.`)
 
-    // Bloco 2: regimento (cacheable, muda quando admin adiciona artigos novos)
+    // Bloco 2: regimento
     if (artigosList.length > 0) {
       const regimentoTexto = artigosList
         .map((a) => `[${a.numero ?? 's/n'}] ${a.titulo}\n${a.conteudo}`)
         .join('\n\n')
-      systemBlocos.push({
-        type: 'text',
-        text: `ARTIGOS DO REGIMENTO INTERNO RELEVANTES PARA O CASO:\n${regimentoTexto}`,
-        cache_control: { type: 'ephemeral' },
-      })
+      addBloco(`ARTIGOS DO REGIMENTO INTERNO RELEVANTES PARA O CASO:\n${regimentoTexto}`)
     }
 
-    // Bloco 3: padrão de escrita do condomínio (cacheable)
+    // Bloco 3: padrão de escrita do condomínio
     if (modelosTexto) {
-      systemBlocos.push({
-        type: 'text',
-        text: `MODELOS DE NOTIFICAÇÃO/MULTA DESTE CONDOMÍNIO (use como guia de estilo, tom e formato da minuta; não copie literalmente):\n${modelosTexto}`,
-        cache_control: { type: 'ephemeral' },
-      })
+      addBloco(`MODELOS DE NOTIFICAÇÃO/MULTA DESTE CONDOMÍNIO (use como guia de estilo, tom e formato da minuta; não copie literalmente):\n${modelosTexto}`)
     }
 
-    // Bloco 4: instruções customizadas do síndico (cacheable)
+    // Bloco 4: instruções customizadas do síndico
     if (aiInstrucoes) {
-      systemBlocos.push({
-        type: 'text',
-        text: `INSTRUÇÕES ESPECÍFICAS DESTE CONDOMÍNIO:\n${aiInstrucoes}`,
-        cache_control: { type: 'ephemeral' },
-      })
+      addBloco(`INSTRUÇÕES ESPECÍFICAS DESTE CONDOMÍNIO:\n${aiInstrucoes}`)
     }
 
     const unidadeRel = (ocorrencia as { unidades?: { bloco: string | null; numero: string } | null }).unidades
