@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
-import { listEmailLogs, type EmailLog } from '../lib/email'
+import { listEmailLogs, deleteEmailLog, deleteEmailLogs, type EmailLog } from '../lib/email'
 import { listCondominios } from '../lib/condominios'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
+import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
+import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
 
 const STATUS_CLASS = {
@@ -33,14 +35,55 @@ export default function EmailsLog() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin])
 
+  async function reload() {
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await listEmailLogs({ condominio_id: isAdmin && scopeId ? scopeId : undefined })
+      setRows(data)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (isAdmin && !scopeId) return
-    setLoading(true)
-    listEmailLogs({ condominio_id: isAdmin && scopeId ? scopeId : undefined })
-      .then(setRows)
-      .catch((e) => setError(e instanceof Error ? e.message : 'Erro.'))
-      .finally(() => setLoading(false))
+    reload()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scopeId, isAdmin])
+
+  const podeApagar = isGestor(perfil?.role)
+  const [busy, setBusy] = useState(false)
+
+  async function apagar(id: string) {
+    if (!window.confirm('Apagar este registro do log? Esta ação não pode ser desfeita.')) return
+    setBusy(true)
+    try {
+      await deleteEmailLog(id)
+      await reload()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function apagarTodos() {
+    if (rows.length === 0) return
+    if (!window.confirm(`Apagar TODOS os ${rows.length} registros visíveis? Esta ação não pode ser desfeita.`)) return
+    setBusy(true)
+    try {
+      const apagados = await deleteEmailLogs(rows.map((r) => r.id))
+      await reload()
+      alert(`${apagados} registro${apagados !== 1 ? 's' : ''} apagado${apagados !== 1 ? 's' : ''}.`)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro.')
+    } finally {
+      setBusy(false)
+    }
+  }
 
   const totals = {
     sent: rows.filter((r) => r.status === 'sent').length,
@@ -53,6 +96,13 @@ export default function EmailsLog() {
       <PageHeader
         title="Log de e-mails"
         subtitle="Histórico de e-mails enviados via Resend (status, destinatário, template)."
+        actions={
+          podeApagar && rows.length > 0 ? (
+            <Button variant="danger" onClick={apagarTodos} disabled={busy}>
+              Apagar todos visíveis
+            </Button>
+          ) : undefined
+        }
       />
 
       <div className="mb-4 grid grid-cols-3 gap-3 max-w-xl">
@@ -105,6 +155,7 @@ export default function EmailsLog() {
                 <th className="text-left px-4 py-3 font-medium text-slate-300 text-xs uppercase">Assunto</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-300 text-xs uppercase">Template</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-300 text-xs uppercase">Status</th>
+                {podeApagar && <th className="px-4 py-3"></th>}
               </tr>
             </thead>
             <tbody>
@@ -126,6 +177,19 @@ export default function EmailsLog() {
                       </div>
                     )}
                   </td>
+                  {podeApagar && (
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() => apagar(r.id)}
+                        disabled={busy}
+                        className="text-slate-500 hover:text-red-400 transition disabled:opacity-50"
+                        title="Apagar este registro"
+                      >
+                        🗑
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

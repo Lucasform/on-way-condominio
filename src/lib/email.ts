@@ -63,6 +63,21 @@ export interface EmailLog {
   sent_at: string | null
 }
 
+export async function deleteEmailLog(id: string): Promise<void> {
+  const { error } = await supabase.from('emails').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteEmailLogs(ids: string[]): Promise<number> {
+  if (ids.length === 0) return 0
+  const { error, count } = await supabase
+    .from('emails')
+    .delete({ count: 'exact' })
+    .in('id', ids)
+  if (error) throw error
+  return count ?? 0
+}
+
 export async function listEmailLogs(opts: { condominio_id?: string; limit?: number } = {}): Promise<EmailLog[]> {
   let q = supabase
     .from('emails')
