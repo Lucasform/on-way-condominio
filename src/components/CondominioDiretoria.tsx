@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthProvider'
 import { isGestor } from '../lib/permissions'
@@ -40,6 +40,35 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
   const [novoPerfilId, setNovoPerfilId] = useState<string>('')
   const [novoCargo, setNovoCargo] = useState<Role>('subsindico')
   const [busy, setBusy] = useState(false)
+  const [busca, setBusca] = useState('')
+  const [comboAberto, setComboAberto] = useState(false)
+  const comboRef = useRef<HTMLDivElement>(null)
+
+  const candidatosFiltrados = useMemo(() => {
+    const q = busca.trim().toLowerCase()
+    if (!q) return candidatos
+    return candidatos.filter((c) => {
+      const nome = (c.nome_exibicao ?? '').toLowerCase()
+      return nome.includes(q) || roleLabel(c.role).toLowerCase().includes(q)
+    })
+  }, [busca, candidatos])
+
+  const perfilSelecionado = useMemo(
+    () => candidatos.find((c) => c.id === novoPerfilId) ?? null,
+    [candidatos, novoPerfilId],
+  )
+
+  // Fecha o combo ao clicar fora
+  useEffect(() => {
+    if (!comboAberto) return
+    function handler(e: MouseEvent) {
+      if (comboRef.current && !comboRef.current.contains(e.target as Node)) {
+        setComboAberto(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [comboAberto])
 
   const podeGerenciar = isGestor(meuPerfil?.role)
 
@@ -167,16 +196,57 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
       {showAdd && (
         <div className="mb-4 rounded-lg border border-slate-700 bg-slate-900/60 p-4 space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-[1fr_180px_auto] gap-3 items-end">
-            <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1">Pessoa</label>
-              <Select value={novoPerfilId} onChange={(e) => setNovoPerfilId(e.target.value)}>
-                <option value="">Selecione...</option>
-                {candidatos.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome_exibicao ?? '(sem nome)'} — {roleLabel(c.role)}
-                  </option>
-                ))}
-              </Select>
+            <div ref={comboRef} className="relative">
+              <label className="block text-xs font-medium text-slate-400 mb-1">
+                Pessoa <span className="text-slate-600">({candidatos.length} elegíveis)</span>
+              </label>
+              <input
+                type="text"
+                value={
+                  perfilSelecionado && !comboAberto
+                    ? `${perfilSelecionado.nome_exibicao ?? '(sem nome)'} — ${roleLabel(perfilSelecionado.role)}`
+                    : busca
+                }
+                onChange={(e) => {
+                  setBusca(e.target.value)
+                  setComboAberto(true)
+                  if (novoPerfilId) setNovoPerfilId('')
+                }}
+                onFocus={() => setComboAberto(true)}
+                placeholder="Digite para buscar pelo nome..."
+                className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:border-brand-700 focus:outline-none"
+              />
+              {comboAberto && (
+                <div className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto rounded-md border border-slate-700 bg-slate-900 shadow-lg">
+                  {candidatosFiltrados.length === 0 ? (
+                    <div className="px-3 py-2 text-xs text-slate-500">
+                      {candidatos.length === 0
+                        ? 'Nenhuma pessoa cadastrada com acesso ao app ainda.'
+                        : 'Nenhum resultado para essa busca.'}
+                    </div>
+                  ) : (
+                    candidatosFiltrados.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => {
+                          setNovoPerfilId(c.id)
+                          setBusca('')
+                          setComboAberto(false)
+                        }}
+                        className="w-full text-left px-3 py-2 hover:bg-slate-800 transition flex items-center justify-between gap-3"
+                      >
+                        <span className="text-sm text-slate-100 truncate">
+                          {c.nome_exibicao ?? '(sem nome)'}
+                        </span>
+                        <span className="text-[10px] uppercase tracking-wide text-slate-500 shrink-0">
+                          {roleLabel(c.role)}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-400 mb-1">Cargo</label>
@@ -188,12 +258,12 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
             </div>
             <div className="flex gap-2">
               <Button onClick={atribuir} disabled={busy || !novoPerfilId}>Confirmar</Button>
-              <Button variant="secondary" onClick={() => { setShowAdd(false); setNovoPerfilId('') }}>Cancelar</Button>
+              <Button variant="secondary" onClick={() => { setShowAdd(false); setNovoPerfilId(''); setBusca('') }}>Cancelar</Button>
             </div>
           </div>
-          {candidatos.length === 0 && (
+          {candidatos.length === 0 && !loading && !error && (
             <div className="text-xs text-slate-500">
-              Não há pessoas elegíveis. Cadastre/convide moradores ou outros perfis ativos primeiro.
+              Nenhuma pessoa elegível. Convide moradores ou outros perfis pela seção <strong>Convites</strong> abaixo.
             </div>
           )}
         </div>
