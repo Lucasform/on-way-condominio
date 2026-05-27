@@ -25,7 +25,7 @@ function shell(corpo: string, condominio_nome?: string): string {
         </td></tr>
         <tr><td style="padding:28px;font-size:15px;line-height:1.55;">${corpo}</td></tr>
         <tr><td style="padding:18px 28px;background:#f9fafb;border-top:1px solid #e5e7eb;font-size:11px;color:#6b7280;">
-          E-mail automático enviado por OnWay Condomínio. Para falar com a administração, responda este e-mail ou entre no app.
+          E-mail automático enviado por OnWay Condomínio. Não responda este e-mail. Para falar com a administração, entre no app.
         </td></tr>
       </table>
     </td></tr>
@@ -41,6 +41,12 @@ function escape(s: string): string {
 
 function p(text: string): string {
   return `<p style="margin:0 0 14px;">${escape(text)}</p>`
+}
+
+// Variante que NAO escapa o conteudo — use quando intencionalmente
+// houver HTML inline (ex: <strong>). Variaveis devem ser pre-escapadas.
+function pRaw(html: string): string {
+  return `<p style="margin:0 0 14px;">${html}</p>`
 }
 
 function button(label: string, href: string): string {
@@ -96,9 +102,9 @@ export function renderTemplate(slug: TemplateSlug, vars: TemplateVars, custom?: 
         subject: `Multa registrada — ${BR(vars.valor)}`,
         html: shell(
           `${p(`Olá, ${escape(nome)}.`)}
-${p(`Foi registrada uma multa em seu nome${vars.artigo ? `, com base em <strong>${escape(vars.artigo)}</strong>` : ''}.`)}
-${p(`<strong>Valor:</strong> ${escape(BR(vars.valor))}`)}
-${vars.descricao ? p(`<strong>Descrição:</strong><br>${escape(vars.descricao)}`) : ''}
+${pRaw(`Foi registrada uma multa em seu nome${vars.artigo ? `, com base em <strong>${escape(vars.artigo)}</strong>` : ''}.`)}
+${pRaw(`<strong>Valor:</strong> ${escape(BR(vars.valor))}`)}
+${vars.descricao ? pRaw(`<strong>Descrição:</strong><br>${escape(vars.descricao)}`) : ''}
 ${p(`Você pode acessar o app pra ver detalhes, contestar ou acompanhar o status.`)}
 ${vars.link ? button('Ver multa no app', vars.link) : ''}
 ${p(`Caso tenha discordância, use a função "Contestar" no detalhe da multa.`)}`,
@@ -146,7 +152,7 @@ ${vars.link ? button('Ver no mural', vars.link) : ''}`,
           `${p(`Olá, ${escape(nome)}.`)}
 ${p(`Lembrete de evento no condomínio:`)}
 ${vars.evento_titulo ? `<h2 style="margin:0 0 10px;color:#0f172a;font-size:18px;">${escape(vars.evento_titulo)}</h2>` : ''}
-${vars.evento_data ? p(`<strong>Quando:</strong> ${escape(vars.evento_data)}`) : ''}
+${vars.evento_data ? p(`Quando: ${vars.evento_data}`) : ''}
 ${vars.descricao ? p(escape(vars.descricao)) : ''}
 ${vars.link ? button('Ver no calendário', vars.link) : ''}`,
           vars.condominio_nome,
@@ -159,8 +165,8 @@ ${vars.link ? button('Ver no calendário', vars.link) : ''}`,
         from: FROM_EMAIL,
         subject: `Bem-vindo ao OnWay Condomínio${vars.condominio_nome ? ` — ${vars.condominio_nome}` : ''}`,
         html: shell(
-          `${p(`Olá, <strong>${escape(nome)}</strong>! Boas-vindas ao OnWay Condomínio.`)}
-${p(`Sua conta foi criada com sucesso${vars.condominio_nome ? ` no <strong>${escape(vars.condominio_nome)}</strong>` : ''}. A partir de agora você pode:`)}
+          `${pRaw(`Olá, <strong>${escape(nome)}</strong>! Boas-vindas ao OnWay Condomínio.`)}
+${pRaw(`Sua conta foi criada com sucesso${vars.condominio_nome ? ` no <strong>${escape(vars.condominio_nome)}</strong>` : ''}. A partir de agora você pode:`)}
 <ul style="font-size:14px;color:#475569;line-height:1.7;padding-left:20px;margin:10px 0">
   <li>Acompanhar ocorrências, multas e chamados</li>
   <li>Ver encomendas e avisos do mural</li>
