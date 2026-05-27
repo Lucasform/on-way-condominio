@@ -305,24 +305,21 @@ export default function CondominioForm() {
                 tipo="regimento"
                 titulo="Regimento interno"
                 emoji="📑"
-                descricao="Anexe um ou mais PDFs de regimento (convenção, regulamento interno, normas de áreas comuns). A IA extrai artigos automaticamente."
-                labelProcessar="🤖 Extrair artigos"
+                descricao="Anexe um ou mais PDFs de regimento (convenção, regulamento interno, normas de áreas comuns). A IA extrai artigos automaticamente ao subir o arquivo."
               />
               <CondominioAnexosManager
                 condominio_id={id}
                 tipo="modelo_notificacao"
                 titulo="Modelos de notificação"
                 emoji="📄"
-                descricao="Anexe modelos de notificação/advertência usados pelo condomínio. A IA usa como referência de estilo ao gerar minutas."
-                labelProcessar="🤖 Treinar estilo"
+                descricao="Anexe modelos de notificação/advertência usados pelo condomínio. A IA usa como referência de estilo automaticamente."
               />
               <CondominioAnexosManager
                 condominio_id={id}
                 tipo="modelo_multa"
                 titulo="Modelos de multa"
                 emoji="💰"
-                descricao="Anexe modelos PDF de multa formal. A IA imita o tom desses documentos ao gerar minuta de multa."
-                labelProcessar="🤖 Treinar estilo"
+                descricao="Anexe modelos PDF de multa formal. A IA imita o tom desses documentos ao gerar minutas."
               />
             </div>
 

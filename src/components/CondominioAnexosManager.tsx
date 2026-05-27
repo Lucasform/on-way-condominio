@@ -17,8 +17,6 @@ interface Props {
   titulo: string
   emoji: string
   descricao: string
-  /** Texto do botão "processar" pra esse tipo. */
-  labelProcessar: string
 }
 
 const MAX_BYTES = 8 * 1024 * 1024
@@ -29,7 +27,6 @@ export default function CondominioAnexosManager({
   titulo,
   emoji,
   descricao,
-  labelProcessar,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [anexos, setAnexos] = useState<CondominioAnexo[]>([])
@@ -37,17 +34,44 @@ export default function CondominioAnexosManager({
   const [novoNome, setNovoNome] = useState('')
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [processandoId, setProcessandoId] = useState<string | null>(null)
+  const [processandoIds, setProcessandoIds] = useState<Set<string>>(new Set())
 
   async function reload() {
     setLoading(true)
     try {
       const data = await listAnexos(condominio_id, tipo)
       setAnexos(data)
+      // Retry automático em background pra anexos ativos sem processado_em
+      const pendentes = data.filter((a) => a.ativo && !a.processado_em)
+      for (const p of pendentes) {
+        processarSilenciosamente(p.id)
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao listar.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function processarSilenciosamente(anexo_id: string) {
+    if (processandoIds.has(anexo_id)) return
+    setProcessandoIds((s) => new Set(s).add(anexo_id))
+    try {
+      const res = await processarAnexoIa(anexo_id)
+      if (!res.ok) {
+        console.warn('[anexo] processamento falhou:', res.error)
+      }
+      // Atualiza só esse anexo em vez de recarregar lista toda
+      const novos = await listAnexos(condominio_id, tipo)
+      setAnexos(novos)
+    } catch (e) {
+      console.warn('[anexo] erro silencioso:', e)
+    } finally {
+      setProcessandoIds((s) => {
+        const next = new Set(s)
+        next.delete(anexo_id)
+        return next
+      })
     }
   }
 
@@ -69,35 +93,13 @@ export default function CondominioAnexosManager({
       const novo = await createAnexo({ condominio_id, tipo, nome, file })
       setNovoNome('')
       await reload()
-      // Auto-extrai logo após o upload — não bloqueia o reload
-      setProcessandoId(novo.id)
-      try {
-        const res = await processarAnexoIa(novo.id)
-        if (!res.ok) throw new Error(res.error ?? 'Falha ao processar')
-        await reload()
-      } catch (e) {
-        setError(`Upload OK, mas falhou ao processar: ${e instanceof Error ? e.message : String(e)}. Clique em "${labelProcessar}" pra tentar de novo.`)
-      } finally {
-        setProcessandoId(null)
-      }
+      // processarSilenciosamente já será chamado pelo reload (anexo novo sem processado_em)
+      processarSilenciosamente(novo.id)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Falha no upload.')
     } finally {
       setUploading(false)
       if (inputRef.current) inputRef.current.value = ''
-    }
-  }
-
-  async function handleProcessar(a: CondominioAnexo) {
-    setProcessandoId(a.id); setError(null)
-    try {
-      const res = await processarAnexoIa(a.id)
-      if (!res.ok) throw new Error(res.error ?? 'Falha ao processar')
-      await reload()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Falha no processamento.')
-    } finally {
-      setProcessandoId(null)
     }
   }
 
@@ -191,14 +193,9 @@ export default function CondominioAnexosManager({
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleProcessar(a)}
-                    disabled={processandoId === a.id}
-                    className="px-2.5 py-1 rounded text-[11px] font-medium bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
-                  >
-                    {processandoId === a.id ? 'Processando...' : labelProcessar}
-                  </button>
+                  {processandoIds.has(a.id) && (
+                    <span className="px-2 text-[11px] text-emerald-300 italic">processando...</span>
+                  )}
                   <button
                     type="button"
                     onClick={() => handleRenomear(a)}
