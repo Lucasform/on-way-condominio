@@ -28,3 +28,17 @@ export interface Reacao {
   tipo: TipoReacao
   created_at: string
 }
+
+export interface ComentarioPublicacao {
+  id: string
+  publicacao_id: string
+  user_id: string
+  conteudo: string
+  created_at: string
+}
+
+export interface PublicacaoLeitura {
+  publicacao_id: string
+  user_id: string
+  lida_em: string
+}

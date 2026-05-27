@@ -34,10 +34,20 @@ export default function AuditLog() {
   }
 
   function toggleSelecionarTodos() {
-    if (selecionados.size === rows.length) {
-      setSelecionados(new Set())
+    const visiveisIds = rowsFiltradas.map((r) => r.id)
+    const todosVisiveisSelecionados = visiveisIds.every((id) => selecionados.has(id))
+    if (todosVisiveisSelecionados) {
+      setSelecionados((prev) => {
+        const next = new Set(prev)
+        for (const id of visiveisIds) next.delete(id)
+        return next
+      })
     } else {
-      setSelecionados(new Set(rows.map((r) => r.id)))
+      setSelecionados((prev) => {
+        const next = new Set(prev)
+        for (const id of visiveisIds) next.add(id)
+        return next
+      })
     }
   }
 
@@ -46,6 +56,7 @@ export default function AuditLog() {
   const [acao, setAcao] = useState('')
   const [desde, setDesde] = useState('')
   const [ate, setAte] = useState('')
+  const [buscaAtor, setBuscaAtor] = useState('')
 
   const [rows, setRows] = useState<AuditEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -85,17 +96,51 @@ export default function AuditLog() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scopeId, acao, desde, ate])
 
+  const rowsFiltradas = useMemo(() => {
+    if (!buscaAtor.trim()) return rows
+    const q = buscaAtor.toLowerCase()
+    return rows.filter((r) =>
+      (r.ator_email ?? '').toLowerCase().includes(q) ||
+      (r.ator_role ?? '').toLowerCase().includes(q) ||
+      (r.ator_id ?? '').toLowerCase().includes(q),
+    )
+  }, [rows, buscaAtor])
+
   const totaisPorAcao = useMemo(() => {
     const m: Record<string, number> = {}
-    for (const r of rows) m[r.acao] = (m[r.acao] ?? 0) + 1
+    for (const r of rowsFiltradas) m[r.acao] = (m[r.acao] ?? 0) + 1
     return m
-  }, [rows])
+  }, [rowsFiltradas])
+
+  function exportarCSV() {
+    const header = ['quando', 'ator_email', 'ator_role', 'ator_id', 'acao', 'alvo_tipo', 'alvo_id', 'detalhes']
+    const linhas = rowsFiltradas.map((r) => [
+      r.created_at,
+      r.ator_email ?? '',
+      r.ator_role ?? '',
+      r.ator_id ?? '',
+      r.acao,
+      r.alvo_tipo ?? '',
+      r.alvo_id ?? '',
+      JSON.stringify(r.detalhes ?? {}),
+    ])
+    const csv = [header, ...linhas]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `auditoria-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(a); a.click(); document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-7xl mx-auto">
       <PageHeader
         title="Log de auditoria"
-        subtitle={`Últimas ${rows.length} ações sensíveis registradas.`}
+        subtitle={`${rowsFiltradas.length} de ${rows.length} ações sensíveis ${buscaAtor ? '(filtrado por ator)' : 'registradas'}.`}
         actions={
           podeApagar && selecionados.size > 0 ? (
             <Button variant="danger" disabled={busy} onClick={async () => {
@@ -157,6 +202,22 @@ export default function AuditLog() {
         </Field>
       </div>
 
+      <div className="flex flex-wrap items-end gap-3 mb-4">
+        <div className="flex-1 min-w-[240px]">
+          <Field label="Buscar por ator" hint="Nome, e-mail, role ou ID do usuário">
+            <TextInput
+              type="search"
+              value={buscaAtor}
+              onChange={(e) => setBuscaAtor(e.target.value)}
+              placeholder="Ex: lucas@... ou sindico"
+            />
+          </Field>
+        </div>
+        <Button variant="secondary" onClick={exportarCSV} disabled={rowsFiltradas.length === 0}>
+          ⬇ Exportar CSV
+        </Button>
+      </div>
+
       {Object.keys(totaisPorAcao).length > 0 && (
         <div className="flex flex-wrap gap-2 mb-5">
           {Object.entries(totaisPorAcao).map(([a, n]) => (
@@ -181,7 +242,7 @@ export default function AuditLog() {
                 <th className="px-3 py-2 w-8">
                   <input
                     type="checkbox"
-                    checked={rows.length > 0 && selecionados.size === rows.length}
+                    checked={rowsFiltradas.length > 0 && rowsFiltradas.every((r) => selecionados.has(r.id))}
                     onChange={toggleSelecionarTodos}
                     className="rounded border-slate-700 bg-slate-950 text-brand-700 focus:ring-brand-700"
                     title="Selecionar todos visíveis"
@@ -200,10 +261,10 @@ export default function AuditLog() {
             {loading && (
               <tr><td colSpan={podeApagar ? 7 : 6} className="text-center py-6 text-slate-500">Carregando...</td></tr>
             )}
-            {!loading && rows.length === 0 && (
+            {!loading && rowsFiltradas.length === 0 && (
               <tr><td colSpan={podeApagar ? 7 : 6} className="text-center py-6 text-slate-500">Nada registrado nesse filtro.</td></tr>
             )}
-            {rows.map((r) => {
+            {rowsFiltradas.map((r) => {
               const checked = selecionados.has(r.id)
               return (
                 <tr

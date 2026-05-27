@@ -1,5 +1,8 @@
 import { supabase } from './supabase'
-import type { Publicacao, PublicacaoInput, Reacao, TipoReacao } from '../types/mural'
+import type {
+  Publicacao, PublicacaoInput, Reacao, TipoReacao,
+  ComentarioPublicacao, PublicacaoLeitura,
+} from '../types/mural'
 import { sendEmail } from './email'
 
 const BUCKET = 'mural-imagens'
@@ -151,5 +154,61 @@ export async function removerReacao(publicacao_id: string, user_id: string, tipo
     .eq('publicacao_id', publicacao_id)
     .eq('user_id', user_id)
     .eq('tipo', tipo)
+  if (error) throw error
+}
+
+// ============================================================
+// Comentarios
+// ============================================================
+
+export async function listComentarios(publicacoesIds: string[]): Promise<ComentarioPublicacao[]> {
+  if (publicacoesIds.length === 0) return []
+  const { data, error } = await supabase
+    .from('comentarios_publicacao')
+    .select('*')
+    .in('publicacao_id', publicacoesIds)
+    .order('created_at')
+  if (error) throw error
+  return (data ?? []) as ComentarioPublicacao[]
+}
+
+export async function createComentario(publicacao_id: string, user_id: string, conteudo: string): Promise<ComentarioPublicacao> {
+  const trimmed = conteudo.trim()
+  if (!trimmed) throw new Error('Comentário vazio.')
+  if (trimmed.length > 2000) throw new Error('Comentário muito longo (máx 2000 caracteres).')
+  const { data, error } = await supabase
+    .from('comentarios_publicacao')
+    .insert({ publicacao_id, user_id, conteudo: trimmed })
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as ComentarioPublicacao
+}
+
+export async function deleteComentario(id: string): Promise<void> {
+  const { error } = await supabase.from('comentarios_publicacao').delete().eq('id', id)
+  if (error) throw error
+}
+
+// ============================================================
+// Leituras
+// ============================================================
+
+export async function listMinhasLeituras(user_id: string): Promise<PublicacaoLeitura[]> {
+  const { data, error } = await supabase
+    .from('publicacao_leituras')
+    .select('*')
+    .eq('user_id', user_id)
+  if (error) throw error
+  return (data ?? []) as PublicacaoLeitura[]
+}
+
+export async function marcarPublicacaoLida(publicacao_id: string, user_id: string): Promise<void> {
+  const { error } = await supabase
+    .from('publicacao_leituras')
+    .upsert(
+      { publicacao_id, user_id, lida_em: new Date().toISOString() },
+      { onConflict: 'publicacao_id,user_id' },
+    )
   if (error) throw error
 }
