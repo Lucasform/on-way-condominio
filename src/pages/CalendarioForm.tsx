@@ -1,14 +1,27 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { createEvento, getEvento, updateEvento, enviarLembreteEvento } from '../lib/eventos'
+import { createEvento, deleteEvento, getEvento, updateEvento, enviarLembreteEvento } from '../lib/eventos'
 import { listCondominios } from '../lib/condominios'
 import type { EventoInput, TipoEvento } from '../types/evento'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import DeleteButton from '../components/ui/DeleteButton'
 import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
 import { traduzErro } from '../lib/errorMessages'
+
+// Quem pode apagar:
+// - eventos futuros: admin_onway + sindico + subsindico + administradora
+// - eventos passados: somente admin_onway + sindico
+function canDeleteEvento(role: string | undefined, dataInicio: string): boolean {
+  if (!role) return false
+  const ehFuturo = new Date(dataInicio).getTime() > Date.now()
+  if (ehFuturo) {
+    return ['admin_onway', 'sindico', 'subsindico', 'administradora'].includes(role)
+  }
+  return ['admin_onway', 'sindico'].includes(role)
+}
 
 const EMPTY: EventoInput = {
   condominio_id: '',
@@ -107,14 +120,36 @@ export default function CalendarioForm() {
 
   if (loading) return <div className="px-8 py-10 text-slate-400">Carregando...</div>
 
+  const podeApagar = !isNew && canDeleteEvento(perfil?.role, form.data_inicio)
+
+  async function handleDelete() {
+    if (!podeApagar || !id) return
+    const ehFuturo = new Date(form.data_inicio).getTime() > Date.now()
+    const aviso = ehFuturo
+      ? 'Apagar este evento? Os moradores deixam de vê-lo no calendário.'
+      : 'Este evento já passou. Tem certeza que quer apagar? Histórico do calendário será alterado.'
+    if (!window.confirm(aviso)) return
+    setSaving(true)
+    try {
+      await deleteEvento(id)
+      navigate('/calendario')
+    } catch (e) {
+      setError(traduzErro(e))
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="px-8 py-10 max-w-2xl mx-auto">
       <PageHeader
         title={isNew ? 'Novo evento' : 'Editar evento'}
         actions={
-          <Link to="/calendario">
-            <Button variant="ghost">← Voltar</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            {podeApagar && <DeleteButton onClick={handleDelete} disabled={saving} />}
+            <Link to="/calendario">
+              <Button variant="ghost">← Voltar</Button>
+            </Link>
+          </div>
         }
       />
 
