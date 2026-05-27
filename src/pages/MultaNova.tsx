@@ -18,6 +18,7 @@ interface FormState {
   artigo_regimento: string
   descricao: string
   observacoes: string
+  vencimento_em: string  // 'YYYY-MM-DD'
 }
 
 const EMPTY: FormState = {
@@ -25,6 +26,14 @@ const EMPTY: FormState = {
   artigo_regimento: '',
   descricao: '',
   observacoes: '',
+  vencimento_em: defaultVencimento(),
+}
+
+function defaultVencimento(): string {
+  // Default = hoje + 30 dias (boleto subsequente)
+  const d = new Date()
+  d.setDate(d.getDate() + 30)
+  return d.toISOString().slice(0, 10)
 }
 
 export default function MultaNova() {
@@ -136,6 +145,7 @@ export default function MultaNova() {
           artigo_regimento: form.artigo_regimento,
           descricao: form.descricao,
           observacoes: form.observacoes,
+          vencimento_em: form.vencimento_em || null,
         },
         user.id,
       )
@@ -214,6 +224,16 @@ export default function MultaNova() {
           <TextInput
             value={form.artigo_regimento}
             onChange={(e) => update('artigo_regimento', e.target.value)}
+          />
+        </Field>
+
+        <Field label="Vencimento" hint="Data limite pra quitação. Lembrete automatico 3 dias antes.">
+          <TextInput
+            type="date"
+            value={form.vencimento_em}
+            onChange={(e) => update('vencimento_em', e.target.value)}
+            onFocus={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+            onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
           />
         </Field>
 

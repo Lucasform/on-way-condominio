@@ -18,6 +18,7 @@ const EMPTY: VotacaoInput = {
   descricao: null,
   data_inicio: new Date().toISOString().slice(0, 16), // datetime-local format
   data_fim: null,
+  quorum_minimo: null,
   opcoes: ['Sim', 'Não'],
 }
 
@@ -168,6 +169,16 @@ export default function VotacaoNova() {
             />
           </Field>
         </div>
+
+        <Field label="Quórum mínimo (opcional)" hint="Número mínimo de votos para validar a apuração. Em branco = sem quórum.">
+          <TextInput
+            type="number"
+            min={0}
+            value={form.quorum_minimo ?? ''}
+            onChange={(e) => setForm({ ...form, quorum_minimo: e.target.value === '' ? null : Number(e.target.value) })}
+            placeholder="ex: 30"
+          />
+        </Field>
 
         <div>
           <label className="block text-sm font-medium text-slate-300 mb-2">Opções de voto</label>

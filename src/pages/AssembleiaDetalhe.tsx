@@ -6,7 +6,12 @@ import {
   uploadAta,
   getAtaSignedUrl,
   removeAta,
+  listPresencas,
+  confirmarPresenca,
+  cancelarPresenca,
+  marcarPresente,
 } from '../lib/assembleias'
+import type { AssembleiaPresenca } from '../types/assembleia'
 import { listVotacoes } from '../lib/votacoes'
 import { supabase } from '../lib/supabase'
 import type { Assembleia, StatusAssembleia, TipoAssembleia } from '../types/assembleia'
@@ -43,10 +48,11 @@ const VOT_STATUS_LABEL: Record<string, string> = {
 export default function AssembleiaDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { perfil } = useAuth()
+  const { user, perfil } = useAuth()
 
   const [assembleia, setAssembleia] = useState<Assembleia | null>(null)
   const [votacoes, setVotacoes] = useState<Votacao[]>([])
+  const [presencas, setPresencas] = useState<AssembleiaPresenca[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -66,8 +72,12 @@ export default function AssembleiaDetalhe() {
         return
       }
       setAssembleia(a)
-      const vs = await listVotacoes({ assembleia_id: a.id })
+      const [vs, ps] = await Promise.all([
+        listVotacoes({ assembleia_id: a.id }),
+        listPresencas(a.id).catch(() => [] as AssembleiaPresenca[]),
+      ])
       setVotacoes(vs)
+      setPresencas(ps)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar.')
     } finally {
@@ -135,6 +145,33 @@ export default function AssembleiaDetalhe() {
     }
   }
 
+  async function handleTogglePresenca() {
+    if (!assembleia || !user) return
+    setBusy(true)
+    try {
+      const ja = presencas.some((p) => p.user_id === user.id)
+      if (ja) await cancelarPresenca(assembleia.id, user.id)
+      else await confirmarPresenca(assembleia.id, user.id)
+      await load()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleCheckIn(presenca_id: string) {
+    setBusy(true)
+    try {
+      await marcarPresente(presenca_id)
+      await load()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   if (loading) return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando...</div>
 
   if (error || !assembleia) {
@@ -199,6 +236,16 @@ export default function AssembleiaDetalhe() {
         )}
       </div>
 
+      {/* Presenças */}
+      <PresencasCard
+        presencas={presencas}
+        userId={user?.id ?? null}
+        canManage={canEdit}
+        onToggle={handleTogglePresenca}
+        onCheckIn={handleCheckIn}
+        busy={busy}
+      />
+
       {/* Ata */}
       <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-6 mb-6">
         <div className="flex items-center justify-between mb-3">
@@ -247,7 +294,7 @@ export default function AssembleiaDetalhe() {
         )}
       </div>
 
-      {/* Votações relacionadas */}
+      {/* Votacoes relacionadas */}
       <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-6">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-slate-100">Votações desta assembleia</h3>
@@ -288,6 +335,75 @@ export default function AssembleiaDetalhe() {
           </ul>
         )}
       </div>
+    </div>
+  )
+}
+
+function PresencasCard({
+  presencas, userId, canManage, onToggle, onCheckIn, busy,
+}: {
+  presencas: AssembleiaPresenca[]
+  userId: string | null
+  canManage: boolean
+  onToggle: () => void
+  onCheckIn: (id: string) => void
+  busy: boolean
+}) {
+  const confirmadas = presencas.length
+  const presentes = presencas.filter((p) => p.presente_em).length
+  const minhaPresenca = userId ? presencas.find((p) => p.user_id === userId) : null
+
+  return (
+    <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-6 mb-6">
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <h3 className="text-sm font-semibold text-slate-100">Presença</h3>
+        <span className="text-xs text-slate-400">
+          {confirmadas} confirmada{confirmadas !== 1 ? 's' : ''}
+          {canManage && presentes > 0 && ` · ${presentes} presente${presentes !== 1 ? 's' : ''}`}
+        </span>
+      </div>
+
+      {userId && (
+        <button
+          onClick={onToggle}
+          disabled={busy}
+          className={`w-full px-3 py-2 rounded-md text-sm font-medium transition ${
+            minhaPresenca
+              ? 'bg-emerald-500/15 border border-emerald-500/40 text-emerald-100'
+              : 'bg-brand-700 hover:bg-brand-800 text-white'
+          } disabled:opacity-50`}
+        >
+          {minhaPresenca ? '✓ Vou comparecer · clique para cancelar' : 'Confirmar presença'}
+        </button>
+      )}
+
+      {canManage && presencas.length > 0 && (
+        <div className="mt-4 border-t border-slate-800 pt-3">
+          <div className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">
+            Lista de confirmados (check-in)
+          </div>
+          <ul className="space-y-1.5">
+            {presencas.map((p) => (
+              <li key={p.id} className="flex items-center justify-between text-sm gap-2">
+                <span className="text-slate-300 font-mono text-xs">{p.user_id.slice(0, 8)}…</span>
+                {p.presente_em ? (
+                  <span className="text-emerald-400 text-xs">
+                    ✓ presente em {new Date(p.presente_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => onCheckIn(p.id)}
+                    disabled={busy}
+                    className="text-xs text-brand-400 hover:underline"
+                  >
+                    marcar presente
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }

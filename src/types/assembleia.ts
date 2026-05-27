@@ -28,3 +28,11 @@ export interface AssembleiaInput {
   pauta?: string | null
   observacoes?: string | null
 }
+
+export interface AssembleiaPresenca {
+  id: string
+  assembleia_id: string
+  user_id: string
+  confirmou_em: string
+  presente_em: string | null
+}

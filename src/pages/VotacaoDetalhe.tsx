@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { deleteVotacao, getVotacao, votar, encerrarVotacao, cancelarVotacao } from '../lib/votacoes'
+import { getCondominio } from '../lib/condominios'
+import type { Condominio } from '../types/condominio'
+import { gerarPdfAtaVotacao } from '../lib/votacaoPdf'
 import type { Votacao, VotacaoOpcao, Voto, StatusVotacao } from '../types/votacao'
 import { useAuth } from '../components/AuthProvider'
 import { isGestor } from '../lib/permissions'
@@ -29,6 +32,7 @@ export default function VotacaoDetalhe() {
   const [votacao, setVotacao] = useState<Votacao | null>(null)
   const [opcoes, setOpcoes] = useState<VotacaoOpcao[]>([])
   const [votos, setVotos] = useState<Voto[]>([])
+  const [condominio, setCondominio] = useState<Condominio | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -45,6 +49,10 @@ export default function VotacaoDetalhe() {
         setVotacao(result.votacao)
         setOpcoes(result.opcoes)
         setVotos(result.votos)
+        try {
+          const co = await getCondominio(result.votacao.condominio_id)
+          setCondominio(co)
+        } catch { /* noop */ }
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar.')
@@ -100,12 +108,36 @@ export default function VotacaoDetalhe() {
 
   async function handleEncerrar() {
     if (!votacao) return
+    if (votacao.quorum_minimo != null && votos.length < votacao.quorum_minimo) {
+      alert(
+        `Quórum mínimo de ${votacao.quorum_minimo} voto(s) não atingido. ` +
+        `Apenas ${votos.length} voto(s) registrado(s). Cancele ou aguarde mais participação.`,
+      )
+      return
+    }
     if (!window.confirm('Encerrar votação? Não poderá mais receber votos.')) return
     try {
       await encerrarVotacao(votacao.id)
       await load()
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Erro.')
+    }
+  }
+
+  async function handleExportarAta() {
+    if (!votacao) return
+    try {
+      await gerarPdfAtaVotacao({
+        votacao,
+        opcoes,
+        votos,
+        condominio,
+        quorumMinimo: votacao.quorum_minimo,
+        assinaturaUrl: perfil?.assinatura_url ?? null,
+        emissorNome: perfil?.nome_exibicao ?? null,
+      })
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao gerar PDF.')
     }
   }
 
@@ -156,6 +188,9 @@ export default function VotacaoDetalhe() {
             {canDelete && (
               <DeleteButton onClick={handleDelete} />
             )}
+            <Button variant="secondary" onClick={handleExportarAta} disabled={!condominio}>
+              📄 Exportar ata (PDF)
+            </Button>
             <Link to="/votacoes"><Button variant="ghost">← Voltar</Button></Link>
           </div>
         }
@@ -176,6 +211,14 @@ export default function VotacaoDetalhe() {
           {votacao.data_fim && ` · Fim: ${new Date(votacao.data_fim).toLocaleString('pt-BR')}`}
           {' · '}
           <strong className="text-slate-300">{totalVotos} voto(s)</strong>
+          {votacao.quorum_minimo != null && (
+            <>
+              {' · '}
+              <span className={totalVotos >= votacao.quorum_minimo ? 'text-emerald-400' : 'text-amber-300'}>
+                Quórum {totalVotos}/{votacao.quorum_minimo}
+              </span>
+            </>
+          )}
         </div>
 
         <div className="space-y-3">

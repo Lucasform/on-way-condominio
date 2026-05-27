@@ -43,6 +43,7 @@ export async function createVotacao(input: VotacaoInput): Promise<Votacao> {
       descricao: input.descricao?.trim() || null,
       data_inicio: input.data_inicio,
       data_fim: input.data_fim || null,
+      quorum_minimo: input.quorum_minimo ?? null,
     })
     .select('*')
     .single()
@@ -60,6 +61,15 @@ export async function createVotacao(input: VotacaoInput): Promise<Votacao> {
 }
 
 export async function encerrarVotacao(id: string): Promise<void> {
+  // Cliente valida o quorum, mas garantimos uma checagem extra
+  const result = await getVotacao(id)
+  if (!result) throw new Error('Votação não encontrada.')
+  const { votacao, votos } = result
+  if (votacao.quorum_minimo != null && votos.length < votacao.quorum_minimo) {
+    throw new Error(
+      `Quórum mínimo de ${votacao.quorum_minimo} voto(s) não atingido. Apenas ${votos.length} voto(s) registrado(s).`,
+    )
+  }
   const { error } = await supabase.from('votacoes').update({ status: 'encerrada' }).eq('id', id)
   if (error) throw error
 }

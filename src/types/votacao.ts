@@ -11,6 +11,7 @@ export interface Votacao {
   data_fim: string | null
   status: StatusVotacao
   ativo: boolean
+  quorum_minimo: number | null
   created_at: string
   updated_at: string
 }
@@ -38,5 +39,6 @@ export interface VotacaoInput {
   descricao: string | null
   data_inicio: string
   data_fim: string | null
+  quorum_minimo?: number | null
   opcoes: string[]  // texto de cada opção, ordem = posição no array
 }

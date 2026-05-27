@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Multa, MultaInput, StatusMulta } from '../types/multa'
+import type { Multa, MultaInput, MultaStatusLog, StatusMulta } from '../types/multa'
 import { sendEmail } from './email'
 import { sendPush } from './push'
 import { sendWhatsApp } from './whatsapp'
@@ -52,6 +52,7 @@ export async function createMulta(input: MultaInput, aplicada_por: string): Prom
       artigo_regimento: input.artigo_regimento?.trim() || null,
       descricao: input.descricao.trim(),
       observacoes: input.observacoes?.trim() || null,
+      vencimento_em: input.vencimento_em ?? null,
       status: 'em_analise',
       aplicada_por,
     })
@@ -59,6 +60,21 @@ export async function createMulta(input: MultaInput, aplicada_por: string): Prom
     .single()
   if (error) throw error
   return data as Multa
+}
+
+export async function updateMultaVencimento(id: string, vencimento_em: string | null): Promise<void> {
+  const { error } = await supabase.from('multas').update({ vencimento_em }).eq('id', id)
+  if (error) throw error
+}
+
+export async function listMultaStatusLog(multa_id: string): Promise<MultaStatusLog[]> {
+  const { data, error } = await supabase
+    .from('multa_status_log')
+    .select('*')
+    .eq('multa_id', multa_id)
+    .order('created_at')
+  if (error) throw error
+  return (data ?? []) as MultaStatusLog[]
 }
 
 /**

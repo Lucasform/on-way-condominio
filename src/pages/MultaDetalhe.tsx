@@ -4,13 +4,15 @@ import {
   getMulta,
   changeMultaStatus,
   deleteMulta,
+  listMultaStatusLog,
+  updateMultaVencimento,
   MULTA_STATUS_TRANSITIONS,
   MULTA_STATUS_LABEL,
 } from '../lib/multas'
 import { getUnidade } from '../lib/unidades'
 import { getPessoa } from '../lib/pessoas'
 import { getCondominio } from '../lib/condominios'
-import type { Multa, StatusMulta } from '../types/multa'
+import type { Multa, MultaStatusLog, StatusMulta } from '../types/multa'
 import type { Unidade } from '../types/unidade'
 import type { Pessoa } from '../types/pessoa'
 import type { Condominio } from '../types/condominio'
@@ -21,6 +23,7 @@ import Button from '../components/ui/Button'
 import ContestacaoThread from '../components/ContestacaoThread'
 import DeleteButton from '../components/ui/DeleteButton'
 import { gerarPdfNotificacao } from '../lib/multaPdf'
+import { gerarPdfRecibo } from '../lib/multaReciboPdf'
 
 const STATUS_CLASS: Record<StatusMulta, string> = {
   em_analise: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
@@ -42,8 +45,11 @@ export default function MultaDetalhe() {
   const [unidade, setUnidade] = useState<Unidade | null>(null)
   const [pessoa, setPessoa] = useState<Pessoa | null>(null)
   const [condominio, setCondominio] = useState<Condominio | null>(null)
+  const [timeline, setTimeline] = useState<MultaStatusLog[]>([])
   const [loading, setLoading] = useState(true)
   const [changing, setChanging] = useState(false)
+  const [editVenc, setEditVenc] = useState(false)
+  const [vencInput, setVencInput] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   async function load() {
@@ -58,14 +64,17 @@ export default function MultaDetalhe() {
         return
       }
       setMulta(m)
-      const [un, pe, co] = await Promise.all([
+      setVencInput(m.vencimento_em ?? '')
+      const [un, pe, co, log] = await Promise.all([
         getUnidade(m.unidade_id),
         m.pessoa_id ? getPessoa(m.pessoa_id) : Promise.resolve(null),
         getCondominio(m.condominio_id),
+        listMultaStatusLog(m.id).catch(() => [] as MultaStatusLog[]),
       ])
       setUnidade(un)
       setPessoa(pe)
       setCondominio(co)
+      setTimeline(log)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar.')
     } finally {
@@ -101,8 +110,37 @@ export default function MultaDetalhe() {
     try {
       await changeMultaStatus(multa.id, newStatus)
       await load()
+      // Ao quitar, oferece o recibo na hora
+      if (newStatus === 'paga' && condominio) {
+        try {
+          await gerarPdfRecibo({
+            multa: { ...multa, status: 'paga', data_pagamento: new Date().toISOString().slice(0, 10) },
+            unidade,
+            pessoa,
+            condominio,
+            assinaturaUrl: perfil?.assinatura_url ?? null,
+            emissorNome: perfil?.nome_exibicao ?? null,
+          })
+        } catch (e) {
+          console.warn('Recibo falhou:', e)
+        }
+      }
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Erro ao mudar status.')
+    } finally {
+      setChanging(false)
+    }
+  }
+
+  async function handleSalvarVencimento() {
+    if (!multa) return
+    setChanging(true)
+    try {
+      await updateMultaVencimento(multa.id, vencInput || null)
+      setEditVenc(false)
+      await load()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao salvar.')
     } finally {
       setChanging(false)
     }
@@ -150,8 +188,25 @@ export default function MultaDetalhe() {
               disabled={!condominio}
               title="Gerar PDF de notificação"
             >
-              📄 Gerar PDF
+              📄 Notificação
             </Button>
+            {multa.status === 'paga' && (
+              <Button
+                variant="secondary"
+                onClick={() => condominio && gerarPdfRecibo({
+                  multa,
+                  unidade,
+                  pessoa,
+                  condominio,
+                  assinaturaUrl: perfil?.assinatura_url ?? null,
+                  emissorNome: perfil?.nome_exibicao ?? null,
+                }).catch((e) => alert(e.message))}
+                disabled={!condominio}
+                title="Recibo de quitação"
+              >
+                ✓ Recibo
+              </Button>
+            )}
             <Link to="/multas"><Button variant="ghost">← Voltar</Button></Link>
           </div>
         }
@@ -214,6 +269,35 @@ export default function MultaDetalhe() {
             </>
           )}
 
+          <dt className="text-slate-500">Vencimento</dt>
+          <dd className="text-slate-200">
+            {editVenc ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={vencInput}
+                  onChange={(e) => setVencInput(e.target.value)}
+                  onFocus={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+                  className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-sm text-slate-100"
+                />
+                <Button size="sm" onClick={handleSalvarVencimento} disabled={changing}>Salvar</Button>
+                <Button size="sm" variant="ghost" onClick={() => { setEditVenc(false); setVencInput(multa.vencimento_em ?? '') }}>cancelar</Button>
+              </div>
+            ) : (
+              <span className={vencimentoClass(multa.vencimento_em, multa.status)}>
+                {multa.vencimento_em ? new Date(multa.vencimento_em + 'T00:00:00').toLocaleDateString('pt-BR') : 'não definido'}
+                {canChange && (
+                  <button
+                    onClick={() => setEditVenc(true)}
+                    className="ml-3 text-xs text-slate-500 hover:text-slate-200"
+                  >
+                    ✎ editar
+                  </button>
+                )}
+              </span>
+            )}
+          </dd>
+
           {multa.ocorrencia_id && (
             <>
               <dt className="text-slate-500">Ocorrência</dt>
@@ -265,6 +349,29 @@ export default function MultaDetalhe() {
         </div>
       )}
 
+      {timeline.length > 0 && (
+        <section className="mt-6 rounded-lg border border-slate-800 bg-slate-900/40 p-5">
+          <h3 className="text-sm font-semibold text-slate-100 mb-3">Histórico de status</h3>
+          <ol className="space-y-2">
+            {timeline.map((t) => (
+              <li key={t.id} className="flex items-start gap-3 text-sm">
+                <span className="mt-1 inline-block w-2 h-2 rounded-full bg-brand-600 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-slate-200">
+                    {t.status_anterior
+                      ? <>{MULTA_STATUS_LABEL[t.status_anterior]} → <strong>{MULTA_STATUS_LABEL[t.status_novo]}</strong></>
+                      : <>Criada como <strong>{MULTA_STATUS_LABEL[t.status_novo]}</strong></>}
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    {new Date(t.created_at).toLocaleString('pt-BR')}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
+
       <ContestacaoThread
         multaId={multa.id}
         pessoaUserId={pessoa?.user_id ?? null}
@@ -272,4 +379,15 @@ export default function MultaDetalhe() {
 
     </div>
   )
+}
+
+function vencimentoClass(venc: string | null, status: StatusMulta): string {
+  if (!venc) return 'text-slate-500'
+  if (status === 'paga' || status === 'cancelada' || status === 'arquivada') return 'text-slate-200'
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const d = new Date(venc + 'T00:00:00')
+  const diff = (d.getTime() - today.getTime()) / 86400_000
+  if (diff < 0) return 'text-red-400 font-medium'
+  if (diff <= 3) return 'text-amber-300 font-medium'
+  return 'text-slate-200'
 }
