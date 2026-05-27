@@ -21,7 +21,7 @@ function parseTipo(raw: string | null): Tipo {
 const COPY_POR_TIPO: Record<NonNullable<Tipo>, { title: string; subtitle: string }> = {
   admin: {
     title: 'Entrar como Administração',
-    subtitle: 'Síndico, subsíndico, conselheiro, administradora, portaria ou ronda.',
+    subtitle: 'Síndico, subsíndico, conselheiro, portaria ou ronda.',
   },
   morador: {
     title: 'Entrar como Morador',
