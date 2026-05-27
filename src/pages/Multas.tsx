@@ -90,7 +90,7 @@ export default function Multas() {
   const total = rows.reduce((sum, m) => sum + Number(m.valor), 0)
 
   return (
-    <div className="px-8 py-10 max-w-5xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
       <PageHeader
         title={isMorador ? 'Minhas multas' : `Multas${rows.length > 0 ? ` (${rows.length})` : ''}`}
         subtitle={

@@ -72,7 +72,7 @@ export default function AuditLog() {
   }, [rows])
 
   return (
-    <div className="px-8 py-10 max-w-7xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-7xl mx-auto">
       <PageHeader
         title="Log de auditoria"
         subtitle={`Últimas ${rows.length} ações sensíveis registradas.`}

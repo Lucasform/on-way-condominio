@@ -102,7 +102,7 @@ export default function Unidades() {
   })
 
   return (
-    <div className="px-8 py-10 max-w-6xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-6xl mx-auto">
       <PageHeader
         title={`Unidades (${rows.length})`}
         subtitle="Apartamentos, casas, salas e lojas do condomínio."

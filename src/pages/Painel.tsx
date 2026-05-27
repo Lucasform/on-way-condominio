@@ -323,7 +323,7 @@ export default function Painel() {
   const [hoverCol, setHoverCol] = useState<ColumnKey | null>(null)
 
   return (
-    <div className="px-6 py-8 max-w-[1600px]">
+    <div className="px-4 py-6 sm:px-6 sm:py-8 max-w-[1600px]">
       <PageHeader
         title="Painel de trabalho"
         subtitle="Pipeline de ocorrências, multas e chamados. Use as colunas pra ver onde está o trabalho."

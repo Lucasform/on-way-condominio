@@ -118,7 +118,7 @@ export default function CalendarioForm() {
     }
   }
 
-  if (loading) return <div className="px-8 py-10 text-slate-400">Carregando...</div>
+  if (loading) return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando...</div>
 
   const podeApagar = !isNew && canDeleteEvento(perfil?.role, form.data_inicio)
 
@@ -140,7 +140,7 @@ export default function CalendarioForm() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-2xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
       <PageHeader
         title={isNew ? 'Novo evento' : 'Editar evento'}
         actions={
@@ -191,7 +191,7 @@ export default function CalendarioForm() {
           </Select>
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="Início" required>
             <TextInput
               type="datetime-local"

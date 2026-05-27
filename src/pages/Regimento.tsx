@@ -116,7 +116,7 @@ export default function Regimento() {
   const temInativos = rows.some((r) => !r.ativo)
 
   return (
-    <div className="px-8 py-10 max-w-5xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
       <PageHeader
         title={`Regimento interno${rows.length > 0 ? ` (${rows.length} artigos)` : ''}`}
         subtitle="Artigos do regimento usados como base para análise de ocorrências pela IA."

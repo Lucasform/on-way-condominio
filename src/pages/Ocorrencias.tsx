@@ -106,7 +106,7 @@ export default function Ocorrencias() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-5xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
       <PageHeader
         title={`Ocorrências${rows.length > 0 ? ` (${rows.length})` : ''}`}
         subtitle="Registros de incidentes e relatos no condomínio."

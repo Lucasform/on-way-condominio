@@ -147,11 +147,11 @@ export default function MultaNova() {
     }
   }
 
-  if (loading) return <div className="px-8 py-10 text-slate-400">Carregando...</div>
+  if (loading) return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando...</div>
 
   if (!perfil || !['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)) {
     return (
-      <div className="px-8 py-10 max-w-2xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
         <PageHeader title="Gerar multa" actions={<Link to="/ocorrencias"><Button variant="ghost">← Voltar</Button></Link>} />
         <div className="text-sm text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-md px-3 py-2">
           Apenas admin OnWay, administradora e síndico podem gerar multas.
@@ -162,7 +162,7 @@ export default function MultaNova() {
 
   if (error && !ocorrencia) {
     return (
-      <div className="px-8 py-10 max-w-2xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
         <PageHeader title="Gerar multa" actions={<Link to="/ocorrencias"><Button variant="ghost">← Voltar</Button></Link>} />
         <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
           {error}
@@ -174,7 +174,7 @@ export default function MultaNova() {
   if (!ocorrencia) return null
 
   return (
-    <div className="px-8 py-10 max-w-2xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
       {usouIA && (
         <div className="mb-4 rounded-md border border-sky-500/30 bg-sky-500/5 px-4 py-3 text-sm text-sky-100">
           🤖 <strong>Pré-preenchido pela IA</strong> a partir da análise da ocorrência. Revise e ajuste se necessário antes de gerar.

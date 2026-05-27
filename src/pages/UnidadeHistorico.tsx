@@ -85,11 +85,11 @@ export default function UnidadeHistorico() {
     }
   }, [id])
 
-  if (loading) return <div className="px-8 py-10 text-slate-400">Carregando...</div>
+  if (loading) return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando...</div>
 
   if (error || !unidade) {
     return (
-      <div className="px-8 py-10 max-w-2xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
         <PageHeader
           title="Histórico"
           actions={<Link to="/unidades"><Button variant="ghost">← Voltar</Button></Link>}
@@ -109,7 +109,7 @@ export default function UnidadeHistorico() {
     .reduce((sum, i) => sum + Number(i.data.valor), 0)
 
   return (
-    <div className="px-8 py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
       <PageHeader
         title={`Histórico — ${unidadeLabel}`}
         subtitle={`${condominio?.nome ?? '—'} · ${unidade.tipo}`}

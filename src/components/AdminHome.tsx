@@ -68,7 +68,7 @@ export default function AdminHome() {
   const emViewAs = !!perfil?.condominio_id
 
   return (
-    <div className="px-8 py-10 max-w-6xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-6xl mx-auto">
       <div className="relative mb-8 text-center">
         <h1 className="text-3xl font-bold text-brand-700 dark:text-brand-400">
           Administrador OnWay

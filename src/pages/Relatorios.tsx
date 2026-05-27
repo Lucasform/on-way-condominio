@@ -181,7 +181,7 @@ export default function Relatorios() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-2xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
       <PageHeader
         title="Relatórios"
         subtitle="Gere relatórios em PDF do período escolhido."
@@ -207,7 +207,7 @@ export default function Relatorios() {
           </Field>
         )}
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="De" required>
             <TextInput
               type="date"

@@ -281,14 +281,14 @@ export default function MeuPerfil() {
   }
 
   if (!perfil || !user) {
-    return <div className="px-8 py-10 text-slate-500 dark:text-slate-400">Carregando seu perfil...</div>
+    return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-500 dark:text-slate-400">Carregando seu perfil...</div>
   }
 
   const iniciais = (perfil.nome_exibicao ?? user.email ?? '?').slice(0, 1).toUpperCase()
   const emailMudou = (novoEmail.trim().toLowerCase() !== (user.email ?? '').toLowerCase()) && novoEmail.trim().length > 0
 
   return (
-    <div className="px-8 py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
       <PageHeader title="Meu perfil" subtitle="Seus dados, contato e segurança." />
 
       {feedback && (

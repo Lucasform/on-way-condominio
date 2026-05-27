@@ -197,12 +197,12 @@ export default function OcorrenciaDetalhe() {
   }
 
   if (loading) {
-    return <div className="px-8 py-10 text-slate-400">Carregando...</div>
+    return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando...</div>
   }
 
   if (error || !ocorrencia) {
     return (
-      <div className="px-8 py-10 max-w-2xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
         <PageHeader
           title="Ocorrência"
           actions={
@@ -223,7 +223,7 @@ export default function OcorrenciaDetalhe() {
   const transitions = ALLOWED_TRANSITIONS[ocorrencia.status]
 
   return (
-    <div className="px-8 py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
       <PageHeader
         title="Ocorrência"
         actions={

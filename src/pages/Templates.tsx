@@ -171,7 +171,7 @@ export default function Templates() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-4xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-4xl mx-auto">
       <PageHeader
         title="Templates de mensagem"
         subtitle="Modelos reutilizáveis pra chat e e-mail. Disponíveis pra portaria e demais perfis ao compor mensagem."

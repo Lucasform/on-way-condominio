@@ -43,8 +43,8 @@ export default function DataTable<T>({
   }
 
   return (
-    <div className="rounded-lg border border-slate-800 overflow-hidden">
-      <table className="w-full text-sm">
+    <div className="rounded-lg border border-slate-800 overflow-x-auto">
+      <table className="w-full text-sm min-w-[640px]">
         <thead className="bg-slate-900/60 border-b border-slate-800">
           <tr>
             {columns.map((c) => (

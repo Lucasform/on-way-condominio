@@ -111,7 +111,7 @@ export default function Servicos() {
   }, [statusFiltro, servicosEmCurso, servicosHistorico])
 
   return (
-    <div className="px-8 py-10 max-w-5xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
       <PageHeader
         title="Prestação de Serviços"
         subtitle="Prestadores cadastrados e serviços executados no condomínio."
@@ -505,7 +505,7 @@ function PrestadorForm({
             {CATEGORIAS.map((c) => <option key={c} value={c}>{CATEGORIA_LABEL[c]}</option>)}
           </Select>
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Telefone">
             <TextInput value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
           </Field>
@@ -513,7 +513,7 @@ function PrestadorForm({
             <TextInput type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </Field>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="CPF/CNPJ">
             <TextInput value={form.documento} onChange={(e) => setForm({ ...form, documento: e.target.value })} />
           </Field>
@@ -597,7 +597,7 @@ function ServicoForm({
         <Field label="Título" required hint="Ex.: Manutenção do elevador social">
           <TextInput required value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} />
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Categoria" required>
             <Select value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value as CategoriaServico })}>
               {CATEGORIAS.map((c) => <option key={c} value={c}>{CATEGORIA_LABEL[c]}</option>)}
@@ -617,7 +617,7 @@ function ServicoForm({
             ))}
           </Select>
         </Field>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Field label="Início">
             <TextInput
               type="datetime-local"

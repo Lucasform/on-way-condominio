@@ -212,10 +212,10 @@ export default function PessoaForm() {
     }
   }
 
-  if (loading) return <div className="px-8 py-10 text-slate-400">Carregando...</div>
+  if (loading) return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando...</div>
 
   return (
-    <div className="px-8 py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
       <PageHeader
         title={isNew ? 'Nova pessoa' : 'Editar pessoa'}
         actions={
@@ -257,7 +257,7 @@ export default function PessoaForm() {
           />
         </Field>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="CPF" hint="11 dígitos">
             <TextInput
               value={form.cpf ?? ''}
@@ -275,7 +275,7 @@ export default function PessoaForm() {
           </Field>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Field label="E-mail">
             <TextInput
               type="email"
@@ -317,7 +317,7 @@ export default function PessoaForm() {
               )}
             </Field>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label="Tipo de vínculo">
                 <Select
                   value={form.tipo_vinculo}

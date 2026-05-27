@@ -92,7 +92,7 @@ export default function EmailsLog() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-6xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-6xl mx-auto">
       <PageHeader
         title="Controle de e-mails"
         subtitle="Histórico de e-mails enviados (status, destinatário, template)."

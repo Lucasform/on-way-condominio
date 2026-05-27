@@ -125,7 +125,7 @@ export default function OcorrenciaNova() {
   }
 
   return (
-    <div className="px-8 py-10 max-w-2xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
       <PageHeader
         title="Registrar ocorrência"
         subtitle="Descreva o que aconteceu. Adicione foto se possível."

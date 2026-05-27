@@ -99,10 +99,10 @@ export default function NotificacaoDetalhe() {
     }
   }
 
-  if (loading) return <div className="px-8 py-10 text-slate-400">Carregando...</div>
+  if (loading) return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando...</div>
   if (!notificacao) {
     return (
-      <div className="px-8 py-10">
+      <div className="px-4 py-6 sm:px-8 sm:py-10">
         <div className="text-red-400">{error ?? 'Não encontrada.'}</div>
       </div>
     )
@@ -113,7 +113,7 @@ export default function NotificacaoDetalhe() {
   const transitions = NOTIFICACAO_STATUS_TRANSITIONS[notificacao.status]
 
   return (
-    <div className="px-8 py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
       <PageHeader
         title="Notificação"
         actions={

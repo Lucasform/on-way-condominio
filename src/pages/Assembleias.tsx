@@ -62,7 +62,7 @@ export default function Assembleias() {
   }, [scopeId, isAdmin])
 
   return (
-    <div className="px-8 py-10 max-w-5xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
       <PageHeader
         title="Assembleias"
         subtitle="Histórico de assembleias, atas e votações deliberadas."
