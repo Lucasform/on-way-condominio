@@ -9,6 +9,7 @@ import {
   deletePublicacao,
   reativarPublicacao,
   apagarPublicacaoDefinitivo,
+  setPublicacaoFixado,
 } from '../lib/mural'
 import { listCondominios } from '../lib/condominios'
 import type { Publicacao, Reacao } from '../types/mural'
@@ -111,6 +112,15 @@ export default function Mural() {
     if (!window.confirm('Remover esta publicação? Ela será arquivada.')) return
     try {
       await deletePublicacao(pub.id)
+      await reload()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro.')
+    }
+  }
+
+  async function handleToggleFixado(pub: Publicacao) {
+    try {
+      await setPublicacaoFixado(pub.id, !pub.fixado)
       await reload()
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Erro.')
@@ -271,6 +281,19 @@ export default function Mural() {
                       {new Date(pub.created_at).toLocaleString('pt-BR')}
                     </span>
 
+                    {canModerate && pub.ativo && (
+                      <button
+                        onClick={() => handleToggleFixado(pub)}
+                        className={`text-xs transition ${
+                          pub.fixado
+                            ? 'text-amber-400 hover:text-amber-300'
+                            : 'text-slate-500 hover:text-amber-400'
+                        }`}
+                        title={pub.fixado ? 'Desafixar do topo' : 'Fixar no topo'}
+                      >
+                        📌
+                      </button>
+                    )}
                     {canModerate && pub.ativo && (
                       <button
                         onClick={() => handleDelete(pub)}

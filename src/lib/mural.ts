@@ -86,6 +86,11 @@ export async function deletePublicacao(id: string): Promise<void> {
   if (error) throw error
 }
 
+export async function setPublicacaoFixado(id: string, fixado: boolean): Promise<void> {
+  const { error } = await supabase.from('publicacoes').update({ fixado }).eq('id', id)
+  if (error) throw error
+}
+
 export async function reativarPublicacao(id: string): Promise<void> {
   const { error } = await supabase.from('publicacoes').update({ ativo: true }).eq('id', id)
   if (error) throw error
