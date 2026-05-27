@@ -1,4 +1,4 @@
-export type TipoReacao = 'curtir' | 'amei' | 'aplaudir'
+export type TipoReacao = 'like' | 'dislike' | 'curtir' | 'amei' | 'aplaudir'
 
 export interface Publicacao {
   id: string

@@ -80,15 +80,20 @@ export default function Mural() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows])
 
-  async function handleToggleCurtir(pub: Publicacao) {
+  async function handleToggleReacao(pub: Publicacao, tipo: 'like' | 'dislike') {
     if (!user) return
     const reacoes = reacoesByPub.get(pub.id) ?? []
-    const meuLike = reacoes.find((r) => r.user_id === user.id && r.tipo === 'curtir')
+    const minhaDesseTipo = reacoes.find((r) => r.user_id === user.id && r.tipo === tipo)
+    const oposto: 'like' | 'dislike' = tipo === 'like' ? 'dislike' : 'like'
+    const minhaDoOposto = reacoes.find((r) => r.user_id === user.id && r.tipo === oposto)
     try {
-      if (meuLike) {
-        await removerReacao(pub.id, user.id, 'curtir')
+      // se ja tinha o mesmo tipo, remove (toggle off)
+      if (minhaDesseTipo) {
+        await removerReacao(pub.id, user.id, tipo)
       } else {
-        await adicionarReacao(pub.id, user.id, 'curtir')
+        // remove o oposto se existir (exclusao mutua) e adiciona o novo
+        if (minhaDoOposto) await removerReacao(pub.id, user.id, oposto)
+        await adicionarReacao(pub.id, user.id, tipo)
       }
       await reload()
     } catch (e) {
@@ -156,8 +161,11 @@ export default function Mural() {
         <div className="space-y-4">
           {rows.map((pub) => {
             const reacoes = reacoesByPub.get(pub.id) ?? []
-            const curtidas = reacoes.filter((r) => r.tipo === 'curtir')
-            const meuLike = user ? curtidas.some((r) => r.user_id === user.id) : false
+            // mantem retrocompat: legacy 'curtir' conta como like
+            const likes = reacoes.filter((r) => r.tipo === 'like' || r.tipo === 'curtir' || r.tipo === 'amei' || r.tipo === 'aplaudir')
+            const dislikes = reacoes.filter((r) => r.tipo === 'dislike')
+            const meuLike = user ? likes.some((r) => r.user_id === user.id) : false
+            const meuDislike = user ? dislikes.some((r) => r.user_id === user.id) : false
             return (
               <article
                 key={pub.id}
@@ -189,15 +197,29 @@ export default function Mural() {
 
                   <div className="mt-4 pt-3 border-t border-slate-800 flex items-center gap-4 text-sm">
                     <button
-                      onClick={() => handleToggleCurtir(pub)}
+                      onClick={() => handleToggleReacao(pub, 'like')}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition ${
                         meuLike
+                          ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                          : 'bg-slate-800/60 text-slate-300 border border-slate-700 hover:border-slate-600'
+                      }`}
+                      title="Like"
+                    >
+                      <span>👍</span>
+                      <span>{likes.length > 0 ? likes.length : 'Like'}</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleToggleReacao(pub, 'dislike')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs transition ${
+                        meuDislike
                           ? 'bg-red-500/10 text-red-300 border border-red-500/30'
                           : 'bg-slate-800/60 text-slate-300 border border-slate-700 hover:border-slate-600'
                       }`}
+                      title="Dislike"
                     >
-                      <span>{meuLike ? '❤️' : '🤍'}</span>
-                      <span>{curtidas.length > 0 ? curtidas.length : 'Curtir'}</span>
+                      <span>👎</span>
+                      <span>{dislikes.length > 0 ? dislikes.length : 'Dislike'}</span>
                     </button>
 
                     <span className="text-xs text-slate-500 ml-auto">
