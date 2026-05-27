@@ -221,7 +221,7 @@ export default function App() {
             <Route
               path="/ocorrencias/novo"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico', 'portaria', 'ronda']}>
                   <OcorrenciaNova />
                 </ProtectedRoute>
               }
@@ -440,7 +440,11 @@ export default function App() {
             />
             <Route
               path="/chamados/novo"
-              element={<ProtectedRoute><ChamadoNovo /></ProtectedRoute>}
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico', 'portaria', 'ronda']}>
+                  <ChamadoNovo />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/chamados/:id"

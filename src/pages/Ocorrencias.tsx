@@ -105,15 +105,19 @@ export default function Ocorrencias() {
     return u.bloco ? `${u.bloco}-${u.numero}` : u.numero
   }
 
+  const podeRegistrar = perfil?.role !== 'morador'
+
   return (
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
       <PageHeader
         title={`Ocorrências${rows.length > 0 ? ` (${rows.length})` : ''}`}
         subtitle="Registros de incidentes e relatos no condomínio."
         actions={
-          <Link to="/ocorrencias/novo">
-            <Button>+ Nova ocorrência</Button>
-          </Link>
+          podeRegistrar ? (
+            <Link to="/ocorrencias/novo">
+              <Button>+ Nova ocorrência</Button>
+            </Link>
+          ) : undefined
         }
       />
 

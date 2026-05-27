@@ -87,14 +87,18 @@ export default function Chamados() {
       .finally(() => setLoading(false))
   }, [scopeId, statusFilter, isAdmin])
 
+  const podeAbrir = perfil?.role !== 'morador'
+
   return (
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
       <PageHeader
         title="Chamados de manutenção"
         actions={
-          <Link to="/chamados/novo">
-            <Button>+ Novo chamado</Button>
-          </Link>
+          podeAbrir ? (
+            <Link to="/chamados/novo">
+              <Button>+ Novo chamado</Button>
+            </Link>
+          ) : undefined
         }
       />
 

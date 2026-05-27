@@ -58,8 +58,18 @@ export default function VotacaoDetalhe() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
-  async function handleVotar(opcaoId: string) {
+  async function handleVotar(opcaoId: string, textoOpcao: string) {
     if (!user || !votacao) return
+    // Se ja votou, nao permite trocar
+    const jaVotou = votos.some((v) => v.user_id === user.id)
+    if (jaVotou) {
+      alert('Você já votou nesta votação. O voto é definitivo e não pode ser alterado.')
+      return
+    }
+    // Confirmacao com aviso de irreversibilidade
+    if (!window.confirm(
+      `Confirmar voto em "${textoOpcao}"?\n\nIMPORTANTE: o voto é definitivo e não poderá ser alterado depois.`,
+    )) return
     setSubmitting(true)
     try {
       await votar(votacao.id, opcaoId, user.id)
@@ -122,7 +132,8 @@ export default function VotacaoDetalhe() {
 
   const totalVotos = votos.length
   const meuVoto = user ? votos.find((v) => v.user_id === user.id) : null
-  const podeVotar = votacao.status === 'aberta' && (!votacao.data_fim || new Date(votacao.data_fim) > new Date())
+  const votacaoAtiva = votacao.status === 'aberta' && (!votacao.data_fim || new Date(votacao.data_fim) > new Date())
+  const podeVotar = votacaoAtiva && !meuVoto  // bloqueia se ja votou
   const canManage = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
 
   const votosPorOpcao = opcoes.map((o) => ({
@@ -171,7 +182,7 @@ export default function VotacaoDetalhe() {
                   <div className="flex items-center gap-2 flex-1">
                     {podeVotar ? (
                       <button
-                        onClick={() => handleVotar(opcao.id)}
+                        onClick={() => handleVotar(opcao.id, opcao.texto)}
                         disabled={submitting}
                         className={`flex-1 text-left px-3 py-2 rounded-md border transition ${
                           meuVotoNessaOpcao
@@ -205,10 +216,16 @@ export default function VotacaoDetalhe() {
         </div>
 
         {!podeVotar && (
-          <div className="mt-4 text-xs text-slate-500 italic">
-            {votacao.status === 'aberta'
-              ? 'Período de votação encerrado.'
-              : `Votação ${STATUS_LABEL[votacao.status].toLowerCase()}.`}
+          <div className="mt-4 text-xs italic">
+            {meuVoto && votacaoAtiva ? (
+              <span className="text-emerald-400">
+                ✓ Seu voto foi registrado. Voto definitivo, não pode ser alterado.
+              </span>
+            ) : votacao.status === 'aberta' ? (
+              <span className="text-slate-500">Período de votação encerrado.</span>
+            ) : (
+              <span className="text-slate-500">Votação {STATUS_LABEL[votacao.status].toLowerCase()}.</span>
+            )}
           </div>
         )}
       </div>
