@@ -149,6 +149,8 @@ export default function VotacaoNova() {
               required
               value={form.data_inicio}
               onChange={(e) => setForm({ ...form, data_inicio: e.target.value })}
+              onFocus={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+              onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
             />
           </Field>
           <Field label="Fim (opcional)">
@@ -156,6 +158,8 @@ export default function VotacaoNova() {
               type="datetime-local"
               value={form.data_fim ?? ''}
               onChange={(e) => setForm({ ...form, data_fim: e.target.value || null })}
+              onFocus={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+              onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
             />
           </Field>
         </div>

@@ -269,6 +269,8 @@ export default function PessoaForm() {
               type="date"
               value={form.data_nascimento ?? ''}
               onChange={(e) => update('data_nascimento', e.target.value || null)}
+              onFocus={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+              onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
             />
           </Field>
         </div>

@@ -214,6 +214,8 @@ export default function Relatorios() {
               required
               value={desde}
               onChange={(e) => setDesde(e.target.value)}
+              onFocus={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+              onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
             />
           </Field>
           <Field label="Até" required>
@@ -222,6 +224,8 @@ export default function Relatorios() {
               required
               value={ate}
               onChange={(e) => setAte(e.target.value)}
+              onFocus={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+              onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
             />
           </Field>
         </div>

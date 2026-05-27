@@ -619,10 +619,22 @@ function ServicoForm({
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Início">
-            <TextInput type="datetime-local" value={form.data_inicio} onChange={(e) => setForm({ ...form, data_inicio: e.target.value })} />
+            <TextInput
+              type="datetime-local"
+              value={form.data_inicio}
+              onChange={(e) => setForm({ ...form, data_inicio: e.target.value })}
+              onFocus={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+              onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+            />
           </Field>
           <Field label="Fim previsto">
-            <TextInput type="datetime-local" value={form.data_fim} onChange={(e) => setForm({ ...form, data_fim: e.target.value })} />
+            <TextInput
+              type="datetime-local"
+              value={form.data_fim}
+              onChange={(e) => setForm({ ...form, data_fim: e.target.value })}
+              onFocus={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+              onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+            />
           </Field>
         </div>
         <Field label="Valor (R$)">
