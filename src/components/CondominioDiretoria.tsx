@@ -16,10 +16,19 @@ interface PerfilLinha {
 }
 
 interface Props {
-  condominio_id: string
+  condominio_id?: string
 }
 
 const CARGOS_DIRETORIA: Role[] = ['sindico', 'subsindico', 'conselheiro']
+
+function msgErro(e: unknown): string {
+  if (!e) return 'Erro desconhecido.'
+  if (e instanceof Error) return e.message
+  if (typeof e === 'object' && e !== null && 'message' in e) {
+    return String((e as { message: unknown }).message)
+  }
+  return JSON.stringify(e).slice(0, 200)
+}
 
 export default function CondominioDiretoria({ condominio_id }: Props) {
   const { perfil: meuPerfil } = useAuth()
@@ -35,6 +44,11 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
   const podeGerenciar = isGestor(meuPerfil?.role)
 
   async function carregar() {
+    if (!condominio_id) {
+      setError('Salve o condomínio antes de gerenciar a diretoria.')
+      setLoading(false)
+      return
+    }
     setLoading(true)
     setError(null)
     try {
@@ -48,10 +62,10 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
       if (e1) throw e1
       const linhas = (data ?? []) as PerfilLinha[]
       setDiretoria(linhas.filter((p) => CARGOS_DIRETORIA.includes(p.role)))
-      // candidatos: perfis ativos do condo que NÃO estão na diretoria (moradores, portaria etc.)
       setCandidatos(linhas.filter((p) => !CARGOS_DIRETORIA.includes(p.role) && p.role !== 'admin_onway'))
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao carregar.')
+      console.warn('[diretoria] erro ao carregar:', e)
+      setError(msgErro(e))
     } finally {
       setLoading(false)
     }
