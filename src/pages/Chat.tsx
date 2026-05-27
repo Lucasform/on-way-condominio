@@ -1,9 +1,19 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { listConversas, createConversa, ASSUNTO_LABEL, STATUS_LABEL } from '../lib/chat'
+import {
+  listConversas,
+  createConversa,
+  createConversasUnidadeProprietarios,
+  ASSUNTO_LABEL,
+  STATUS_LABEL,
+} from '../lib/chat'
 import type { AssuntoConversa, Conversa, StatusConversa } from '../types/chat'
 import { listCondominios } from '../lib/condominios'
+import { listUnidades } from '../lib/unidades'
+import { listPessoas } from '../lib/pessoas'
 import type { Condominio } from '../types/condominio'
+import type { Unidade } from '../types/unidade'
+import type { Pessoa } from '../types/pessoa'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
@@ -35,6 +45,60 @@ export default function Chat() {
   const [novaAssunto, setNovaAssunto] = useState<AssuntoConversa>('outro')
   const [novaMsg, setNovaMsg] = useState('')
   const [criando, setCriando] = useState(false)
+
+  // Form de nova conversa iniciada pelo staff
+  const [showStaffNova, setShowStaffNova] = useState(false)
+  const [destinoTipo, setDestinoTipo] = useState<'pessoa' | 'unidade'>('pessoa')
+  const [unidades, setUnidades] = useState<Unidade[]>([])
+  const [proprietarios, setProprietarios] = useState<Array<Pessoa & { unidade_label: string }>>([])
+  const [buscaPessoa, setBuscaPessoa] = useState('')
+  const [comboAberto, setComboAberto] = useState(false)
+  const [pessoaSelecionada, setPessoaSelecionada] = useState<Pessoa | null>(null)
+  const [unidadeSelecionada, setUnidadeSelecionada] = useState<string>('')
+  const [staffAssunto, setStaffAssunto] = useState<AssuntoConversa>('outro')
+  const [staffMsg, setStaffMsg] = useState('')
+  const comboRef = useRef<HTMLDivElement>(null)
+  const [staffError, setStaffError] = useState<string | null>(null)
+
+  // fecha combo ao clicar fora
+  useEffect(() => {
+    if (!comboAberto) return
+    function handler(e: MouseEvent) {
+      if (comboRef.current && !comboRef.current.contains(e.target as Node)) setComboAberto(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [comboAberto])
+
+  // carrega proprietarios e unidades quando staff abre o form
+  useEffect(() => {
+    if (!showStaffNova || !perfil?.condominio_id) return
+    const cid = isAdmin && scopeId ? scopeId : perfil.condominio_id
+    Promise.all([
+      listUnidades({ condominio_id: cid, ativo: true }),
+      listPessoas({ condominio_id: cid, ativo: true }),
+    ])
+      .then(([us, ps]) => {
+        setUnidades(us)
+        const propsList = ps
+          .filter((p) => p.relacao_unidade === 'proprietario' && !!p.user_id)
+          .map((p) => {
+            const u = us.find((x) => x.id === p.unidade_id)
+            const label = u ? (u.bloco ? `${u.bloco}-${u.numero}` : u.numero) : '—'
+            return { ...p, unidade_label: label }
+          })
+        setProprietarios(propsList)
+      })
+      .catch(() => {})
+  }, [showStaffNova, perfil?.condominio_id, isAdmin, scopeId])
+
+  const proprietariosFiltrados = useMemo(() => {
+    const q = buscaPessoa.trim().toLowerCase()
+    if (!q) return proprietarios
+    return proprietarios.filter((p) =>
+      p.nome.toLowerCase().includes(q) || p.unidade_label.toLowerCase().includes(q),
+    )
+  }, [proprietarios, buscaPessoa])
 
   useEffect(() => {
     if (isAdmin) {
@@ -70,6 +134,56 @@ export default function Chat() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scopeId, statusFilter])
 
+  async function handleStaffEnviar(e: FormEvent) {
+    e.preventDefault()
+    if (!user || !perfil?.condominio_id) return
+    if (!staffMsg.trim()) { setStaffError('Escreva a mensagem.'); return }
+    setStaffError(null)
+    setCriando(true)
+    try {
+      if (destinoTipo === 'pessoa') {
+        if (!pessoaSelecionada || !pessoaSelecionada.user_id) {
+          setStaffError('Selecione um proprietário com acesso ao app.'); return
+        }
+        const conv = await createConversa({
+          condominio_id: perfil.condominio_id,
+          morador_user_id: pessoaSelecionada.user_id,
+          assunto: staffAssunto,
+          primeira_mensagem: staffMsg,
+          autor_tipo: 'staff',
+          autor_id: user.id,
+          skip_bot: true,
+        })
+        navigate(`/chat/${conv.id}`)
+      } else {
+        if (!unidadeSelecionada) { setStaffError('Selecione a unidade.'); return }
+        const { criadas, sem_acesso } = await createConversasUnidadeProprietarios({
+          condominio_id: perfil.condominio_id,
+          unidade_id: unidadeSelecionada,
+          assunto: staffAssunto,
+          mensagem: staffMsg,
+          staff_user_id: user.id,
+        })
+        if (criadas.length === 0) {
+          setStaffError('Nenhum proprietário com acesso ao app encontrado nessa unidade.')
+          return
+        }
+        const msg = `${criadas.length} conversa${criadas.length > 1 ? 's' : ''} criada${criadas.length > 1 ? 's' : ''}.` +
+          (sem_acesso > 0 ? ` ${sem_acesso} sem acesso ao app foram puladas.` : '')
+        alert(msg)
+        setShowStaffNova(false)
+        setStaffMsg('')
+        setUnidadeSelecionada('')
+        setPessoaSelecionada(null)
+        await reload()
+      }
+    } catch (e) {
+      setStaffError(e instanceof Error ? e.message : 'Erro ao enviar.')
+    } finally {
+      setCriando(false)
+    }
+  }
+
   async function handleCriar(e: FormEvent) {
     e.preventDefault()
     if (!user || !perfil?.condominio_id) return
@@ -100,12 +214,176 @@ export default function Chat() {
             : 'Conversas dos moradores. Atenda em ordem de chegada.'
         }
         actions={
-          isMorador &&
-          !showNova && (
+          isMorador && !showNova ? (
             <Button onClick={() => setShowNova(true)}>+ Nova conversa</Button>
-          )
+          ) : isStaff && !showStaffNova ? (
+            <Button onClick={() => setShowStaffNova(true)}>+ Nova conversa</Button>
+          ) : null
         }
       />
+
+      {/* Nova conversa (staff inicia) */}
+      {isStaff && showStaffNova && (
+        <form
+          onSubmit={handleStaffEnviar}
+          className="mb-6 rounded-lg border border-sky-500/30 bg-sky-500/5 p-5 space-y-4"
+        >
+          <div className="text-sm font-medium text-sky-200">Enviar mensagem</div>
+
+          <Field label="Destino">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setDestinoTipo('pessoa')}
+                className={`px-3 py-1.5 rounded-md text-sm border transition ${
+                  destinoTipo === 'pessoa'
+                    ? 'border-sky-500 bg-sky-500/10 text-sky-200'
+                    : 'border-slate-700 text-slate-300 hover:border-slate-600'
+                }`}
+              >
+                Pessoa específica
+              </button>
+              <button
+                type="button"
+                onClick={() => setDestinoTipo('unidade')}
+                className={`px-3 py-1.5 rounded-md text-sm border transition ${
+                  destinoTipo === 'unidade'
+                    ? 'border-sky-500 bg-sky-500/10 text-sky-200'
+                    : 'border-slate-700 text-slate-300 hover:border-slate-600'
+                }`}
+              >
+                Unidade (todos os proprietários)
+              </button>
+            </div>
+          </Field>
+
+          {destinoTipo === 'pessoa' ? (
+            <Field label={`Proprietário (${proprietarios.length} com acesso)`}>
+              <div ref={comboRef} className="relative">
+                <input
+                  type="text"
+                  value={
+                    pessoaSelecionada && !comboAberto
+                      ? `${pessoaSelecionada.nome} — un. ${
+                          (pessoaSelecionada as unknown as { unidade_label?: string }).unidade_label ?? '—'
+                        }`
+                      : buscaPessoa
+                  }
+                  onChange={(e) => {
+                    setBuscaPessoa(e.target.value)
+                    setComboAberto(true)
+                    if (pessoaSelecionada) setPessoaSelecionada(null)
+                  }}
+                  onFocus={() => setComboAberto(true)}
+                  placeholder="Digite o nome ou número da unidade..."
+                  className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:border-sky-500 focus:outline-none"
+                />
+                {comboAberto && (
+                  <div className="absolute z-20 mt-1 w-full max-h-64 overflow-y-auto rounded-md border border-slate-700 bg-slate-900 shadow-lg">
+                    {proprietariosFiltrados.length === 0 ? (
+                      <div className="px-3 py-2 text-xs text-slate-500">
+                        {proprietarios.length === 0
+                          ? 'Nenhum proprietário cadastrado com acesso ao app.'
+                          : 'Sem resultados pra essa busca.'}
+                      </div>
+                    ) : (
+                      proprietariosFiltrados.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => {
+                            setPessoaSelecionada(p)
+                            setBuscaPessoa('')
+                            setComboAberto(false)
+                          }}
+                          className="w-full text-left px-3 py-2 hover:bg-slate-800 transition flex items-center justify-between gap-3"
+                        >
+                          <span className="text-sm text-slate-100 truncate">{p.nome}</span>
+                          <span className="text-[10px] uppercase tracking-wide text-slate-500 shrink-0">
+                            un. {p.unidade_label}
+                          </span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            </Field>
+          ) : (
+            <Field label="Unidade">
+              <Select
+                value={unidadeSelecionada}
+                onChange={(e) => setUnidadeSelecionada(e.target.value)}
+              >
+                <option value="">Selecione...</option>
+                {unidades.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.bloco ? `${u.bloco}-${u.numero}` : u.numero}
+                  </option>
+                ))}
+              </Select>
+              <div className="mt-1 text-xs text-slate-500">
+                Manda mensagem só pros proprietários cadastrados que já tenham acesso ao app.
+              </div>
+            </Field>
+          )}
+
+          <Field label="Sobre o quê?" required>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {(Object.keys(ASSUNTO_LABEL) as AssuntoConversa[]).map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => setStaffAssunto(a)}
+                  className={`px-3 py-2 rounded-md text-sm border text-left transition ${
+                    staffAssunto === a
+                      ? 'border-sky-500 bg-sky-500/10 text-sky-200'
+                      : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600'
+                  }`}
+                >
+                  {ASSUNTO_LABEL[a]}
+                </button>
+              ))}
+            </div>
+          </Field>
+
+          <Field label="Mensagem" required>
+            <TextArea
+              required
+              rows={4}
+              value={staffMsg}
+              onChange={(e) => setStaffMsg(e.target.value)}
+              placeholder="Escreva a mensagem que será enviada."
+            />
+          </Field>
+
+          {staffError && (
+            <div className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
+              {staffError}
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <Button type="submit" disabled={criando}>
+              {criando ? 'Enviando...' : 'Enviar mensagem'}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => {
+                setShowStaffNova(false)
+                setStaffMsg('')
+                setUnidadeSelecionada('')
+                setPessoaSelecionada(null)
+                setBuscaPessoa('')
+                setStaffError(null)
+              }}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </form>
+      )}
 
       {/* Nova conversa (só morador) */}
       {isMorador && showNova && (

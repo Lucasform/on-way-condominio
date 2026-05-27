@@ -55,36 +55,90 @@ export async function createConversa(input: {
   morador_user_id: string
   assunto: AssuntoConversa
   primeira_mensagem: string
+  autor_tipo?: 'morador' | 'staff'   // default 'morador'
+  autor_id?: string                   // default = morador_user_id
+  skip_bot?: boolean                  // staff-initiated nao dispara o bot
+  status?: StatusConversa             // default 'aberta'
 }): Promise<Conversa> {
+  const autor_tipo = input.autor_tipo ?? 'morador'
+  const status: StatusConversa = input.status ?? (autor_tipo === 'staff' ? 'em_atendimento' : 'aberta')
   const { data: conv, error: cErr } = await supabase
     .from('conversas')
     .insert({
       condominio_id: input.condominio_id,
       morador_user_id: input.morador_user_id,
       assunto: input.assunto,
-      status: 'aberta',
+      status,
     })
     .select('*')
     .single()
   if (cErr) throw cErr
 
-  // Primeira mensagem do morador
   const conversa = conv as Conversa
   await supabase.from('mensagens').insert({
     conversa_id: conversa.id,
-    autor_id: input.morador_user_id,
-    autor_tipo: 'morador',
+    autor_id: input.autor_id ?? input.morador_user_id,
+    autor_tipo,
     conteudo: input.primeira_mensagem.trim(),
   })
 
-  // Dispara bot pra primeira resposta (fire-and-forget)
-  setTimeout(() => {
-    supabase.functions
-      .invoke('chat-bot', { body: { conversa_id: conversa.id } })
-      .catch(() => {})
-  }, 800)
+  if (!input.skip_bot && autor_tipo === 'morador') {
+    setTimeout(() => {
+      supabase.functions
+        .invoke('chat-bot', { body: { conversa_id: conversa.id } })
+        .catch(() => {})
+    }, 800)
+  }
+
+  // Se staff iniciou, manda push pro morador como em respostas
+  if (autor_tipo === 'staff') {
+    notifyMoradorChatPush(conversa.id, input.primeira_mensagem).catch(() => {})
+  }
 
   return conversa
+}
+
+/**
+ * Envia mensagem pra todos os proprietarios ativos de uma unidade que tenham
+ * acesso ao app (user_id != null). Cria uma conversa pra cada um.
+ * Retorna lista de conversas criadas e a contagem de pessoas elegiveis.
+ */
+export async function createConversasUnidadeProprietarios(input: {
+  condominio_id: string
+  unidade_id: string
+  assunto: AssuntoConversa
+  mensagem: string
+  staff_user_id: string
+}): Promise<{ criadas: Conversa[]; sem_acesso: number }> {
+  const { data: pessoas, error: pErr } = await supabase
+    .from('pessoas')
+    .select('id, nome, user_id, relacao_unidade, ativo')
+    .eq('condominio_id', input.condominio_id)
+    .eq('unidade_id', input.unidade_id)
+    .eq('ativo', true)
+    .eq('relacao_unidade', 'proprietario')
+  if (pErr) throw pErr
+
+  const elegiveis = (pessoas ?? []).filter((p) => !!p.user_id)
+  const sem_acesso = (pessoas ?? []).length - elegiveis.length
+  const criadas: Conversa[] = []
+  for (const p of elegiveis) {
+    try {
+      const c = await createConversa({
+        condominio_id: input.condominio_id,
+        morador_user_id: p.user_id as string,
+        assunto: input.assunto,
+        primeira_mensagem: input.mensagem,
+        autor_tipo: 'staff',
+        autor_id: input.staff_user_id,
+        skip_bot: true,
+      })
+      criadas.push(c)
+    } catch (e) {
+      console.warn('[chat] falha ao criar conversa pra', p.nome, e)
+    }
+  }
+  return { criadas, sem_acesso }
 }
 
 export async function enviarMensagem(input: {
