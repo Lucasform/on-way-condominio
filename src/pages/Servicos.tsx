@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../components/AuthProvider'
 import { isGestor } from '../lib/permissions'
+import { listCondominios } from '../lib/condominios'
+import type { Condominio } from '../types/condominio'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -44,9 +46,13 @@ const STATUSES: StatusServico[] = ['agendado', 'em_andamento', 'concluido', 'can
 
 export default function Servicos() {
   const { perfil } = useAuth()
-  const condominioId = perfil?.condominio_id ?? null
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const canManage = !!perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico', 'portaria'].includes(perfil.role)
   const canDelete = isGestor(perfil?.role)
+
+  const [condos, setCondos] = useState<Condominio[]>([])
+  const [scopeId, setScopeId] = useState<string | null>(null)
+  const condominioId = isAdmin ? scopeId : (perfil?.condominio_id ?? null)
 
   const [tab, setTab] = useState<Tab>('servicos')
   const [statusFiltro, setStatusFiltro] = useState<StatusFiltro>('em_curso')
@@ -58,13 +64,26 @@ export default function Servicos() {
   const [showFormServico, setShowFormServico] = useState(false)
   const [showFormPrestador, setShowFormPrestador] = useState(false)
 
+  useEffect(() => {
+    if (isAdmin) {
+      listCondominios()
+        .then((cs) => {
+          setCondos(cs)
+          if (cs.length && !scopeId) setScopeId(cs[0].id)
+        })
+        .catch(() => {})
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin])
+
   async function reload() {
+    if (!condominioId) { setLoading(false); return }
     setLoading(true)
     setError(null)
     try {
       const [ps, ss] = await Promise.all([
-        listPrestadores({ condominio_id: condominioId ?? undefined }),
-        listServicos({ condominio_id: condominioId ?? undefined }),
+        listPrestadores({ condominio_id: condominioId }),
+        listServicos({ condominio_id: condominioId }),
       ])
       setPrestadores(ps)
       setServicos(ss)
@@ -112,6 +131,17 @@ export default function Servicos() {
           )
         }
       />
+
+      {isAdmin && condos.length > 0 && (
+        <div className="mb-4 max-w-xs">
+          <label className="block text-xs font-medium text-slate-400 mb-1">Condomínio</label>
+          <Select value={scopeId ?? ''} onChange={(e) => setScopeId(e.target.value)}>
+            {condos.map((c) => (
+              <option key={c.id} value={c.id}>{c.nome}</option>
+            ))}
+          </Select>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="mb-5 border-b border-slate-200 dark:border-slate-800 flex gap-1">
