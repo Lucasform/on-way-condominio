@@ -86,7 +86,9 @@ export default function Dashboard() {
 
   const stats = useMemo(() => {
     const ocorrAbertas = ocorrencias.filter((o) => o.status === 'aberta' || o.status === 'em_analise').length
-    const multasPendentes = multas.filter((m) => m.status === 'em_analise' || m.status === 'aplicada').length
+    const multasPendentes = multas.filter((m) =>
+      m.status === 'em_analise' || m.status === 'aplicada' || m.status === 'contestada'
+    ).length
     const multasPagas = multas.filter((m) => m.status === 'paga').length
     const totalMultas = multas.reduce((s, m) => s + Number(m.valor), 0)
     const arrecadado = multas.filter((m) => m.status === 'paga').reduce((s, m) => s + Number(m.valor), 0)
