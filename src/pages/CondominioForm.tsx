@@ -269,7 +269,7 @@ export default function CondominioForm() {
                 <div className="text-sm font-semibold text-slate-100">📜 Regimento interno</div>
                 <p className="text-xs text-slate-400 mt-1">
                   Cadastre artigos manualmente ou anexe o PDF do regimento.
-                  A IA usa esse conteúdo pra sugerir multas em ocorrências.
+                  O agente utiliza para as análises.
                 </p>
                 <span className="text-xs text-brand-400 mt-2 inline-block">Gerenciar artigos →</span>
               </Link>
@@ -280,7 +280,7 @@ export default function CondominioForm() {
               >
                 <div className="text-sm font-semibold text-slate-100">💬 WhatsApp</div>
                 <p className="text-xs text-slate-400 mt-1">
-                  Configurar provider Z-API ou Evolution pra envio automático.
+                  Configurar o WhatsApp business.
                 </p>
                 <span className="text-xs text-brand-400 mt-2 inline-block">Configurar →</span>
               </Link>
