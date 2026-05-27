@@ -540,6 +540,18 @@ export default function MeuPerfil() {
       </Section>
 
       {/* ============================================================ */}
+      {/* Aviso: morador sem unidade */}
+      {/* ============================================================ */}
+      {perfil.role === 'morador' && (!pessoa || !pessoa.unidade_id) && (
+        <div className="mb-6 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-200">
+          <div className="font-semibold mb-1">⚠ Você ainda não está vinculado a uma unidade.</div>
+          <div className="text-amber-100/90">
+            Perfis de morador precisam estar associados a uma unidade do condomínio. Procure a administração e peça pra vincular seu cadastro à sua unidade.
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
       {/* Vínculo com unidade (se houver pessoa) */}
       {/* ============================================================ */}
       {pessoa && (

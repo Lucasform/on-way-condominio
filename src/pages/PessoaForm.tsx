@@ -185,10 +185,18 @@ export default function PessoaForm() {
     setForm((f) => ({ ...f, [key]: value }))
   }
 
+  // Vinculos residenciais exigem unidade. Funcionario e outro nao.
+  const VINCULOS_RESIDENCIAIS = ['titular', 'conjuge', 'filho', 'dependente', 'inquilino', 'morador']
+  const vinculoExigeUnidade = VINCULOS_RESIDENCIAIS.includes(form.tipo_vinculo)
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!form.condominio_id) {
       setError('Selecione o condomínio.')
+      return
+    }
+    if (vinculoExigeUnidade && !form.unidade_id) {
+      setError('Selecione a unidade. Moradores, dependentes, inquilinos e titulares precisam estar vinculados a uma unidade.')
       return
     }
     setSaving(true)
@@ -286,19 +294,25 @@ export default function PessoaForm() {
           <legend className="text-sm font-semibold text-slate-300 mb-3 px-2 -ml-2">Vínculo</legend>
 
           <div className="space-y-5">
-            <Field label="Unidade">
+            <Field label={vinculoExigeUnidade ? 'Unidade' : 'Unidade (opcional)'} required={vinculoExigeUnidade}>
               <Select
+                required={vinculoExigeUnidade}
                 value={form.unidade_id ?? ''}
                 onChange={(e) => update('unidade_id', e.target.value || null)}
                 disabled={!form.condominio_id}
               >
-                <option value="">Sem unidade vinculada</option>
+                <option value="">{vinculoExigeUnidade ? 'Selecione a unidade...' : 'Sem unidade vinculada'}</option>
                 {unidades.map((u) => (
                   <option key={u.id} value={u.id}>
                     {u.bloco ? `${u.bloco}-${u.numero}` : u.numero}
                   </option>
                 ))}
               </Select>
+              {vinculoExigeUnidade && (
+                <div className="mt-1 text-[11px] text-amber-400">
+                  Obrigatório para titular, cônjuge, filho, dependente, inquilino e morador.
+                </div>
+              )}
             </Field>
 
             <div className="grid grid-cols-2 gap-4">

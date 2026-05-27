@@ -94,8 +94,8 @@ export default function EmailsLog() {
   return (
     <div className="px-8 py-10 max-w-6xl mx-auto">
       <PageHeader
-        title="Log de e-mails"
-        subtitle="Histórico de e-mails enviados via Resend (status, destinatário, template)."
+        title="Controle de e-mails"
+        subtitle="Histórico de e-mails enviados (status, destinatário, template)."
         actions={
           podeApagar && rows.length > 0 ? (
             <Button variant="danger" onClick={apagarTodos} disabled={busy}>
@@ -198,8 +198,7 @@ export default function EmailsLog() {
       )}
 
       <p className="mt-4 text-xs text-slate-600">
-        Envios feitos via Resend ({rows[0]?.condominio_id ? 'condomínio' : 'sistema'}). Log local
-        + ID retornado pelo Resend. Status atualizado em tempo da chamada.
+        Status atualizado no momento do envio.
       </p>
     </div>
   )
