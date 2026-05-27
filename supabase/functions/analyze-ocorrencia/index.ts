@@ -303,6 +303,7 @@ Responda em JSON com EXATAMENTE este schema:
       id: a.id,
       numero: a.numero,
       titulo: a.titulo,
+      conteudo: a.conteudo,
       similarity: Number(a.similarity.toFixed(3)),
     }))
 

@@ -17,6 +17,7 @@ export interface IAResult {
     id: string
     numero: string | null
     titulo: string
+    conteudo?: string
     similarity: number
   }>
   modelo: string

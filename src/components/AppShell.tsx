@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
 import { signOut } from '../lib/auth'
 import { menuFor, roleLabel, isGroup } from '../lib/nav'
@@ -12,13 +12,35 @@ import { prefetchRoutes } from '../lib/prefetchRoutes'
 export default function AppShell() {
   const { perfil, user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const items = perfil ? menuFor(perfil.role) : []
   const [condoLogo, setCondoLogo] = useState<string | null>(null)
   const [condoNome, setCondoNome] = useState<string | null>(null)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
     prefetchRoutes()
   }, [])
+
+  // Fecha o drawer ao navegar
+  useEffect(() => { setMobileOpen(false) }, [location.pathname])
+
+  // Bloqueia scroll do body quando o drawer está aberto (mobile)
+  useEffect(() => {
+    if (mobileOpen) {
+      const prev = document.body.style.overflow
+      document.body.style.overflow = 'hidden'
+      return () => { document.body.style.overflow = prev }
+    }
+  }, [mobileOpen])
+
+  // ESC fecha o drawer
+  useEffect(() => {
+    if (!mobileOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [mobileOpen])
 
   useEffect(() => {
     if (!perfil?.condominio_id) { setCondoLogo(null); setCondoNome(null); return }
@@ -42,7 +64,25 @@ export default function AppShell() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors">
-      <aside className="w-60 shrink-0 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 flex flex-col">
+      {/* Backdrop (mobile only) */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`
+          w-72 md:w-60 shrink-0 border-r border-slate-200 dark:border-slate-800
+          bg-white dark:bg-slate-900 md:dark:bg-slate-900/40 flex flex-col
+          fixed md:static inset-y-0 left-0 z-50
+          transform transition-transform duration-200 ease-out
+          ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        `}
+        aria-label="Navegação principal"
+      >
         <div className="px-4 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2.5">
           {condoLogo ? (
             <img src={condoLogo} alt={condoNome ?? ''} className="w-9 h-9 object-contain rounded" />
@@ -141,7 +181,30 @@ export default function AppShell() {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {/* Topbar mobile (hamburger + nome + sino) */}
+        <header className="md:hidden h-12 shrink-0 border-b border-slate-800 bg-slate-900/60 flex items-center px-2 gap-2">
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="p-2 -ml-1 rounded-md text-slate-300 hover:bg-slate-800 active:bg-slate-700 transition"
+            aria-label="Abrir menu"
+            aria-expanded={mobileOpen}
+          >
+            <MenuIcon />
+          </button>
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {condoLogo ? (
+              <img src={condoLogo} alt="" className="w-7 h-7 object-contain rounded shrink-0" />
+            ) : (
+              <Logo size={28} />
+            )}
+            <div className="text-sm font-bold text-slate-100 truncate">
+              {condoNome ?? 'OnWay'}
+            </div>
+          </div>
+          <NotificationBell />
+        </header>
+
         {emViewAs && (
           <div className="shrink-0 bg-amber-500/10 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between gap-3 text-xs">
             <span className="text-amber-700 dark:text-amber-300">
@@ -155,14 +218,37 @@ export default function AppShell() {
             </button>
           </div>
         )}
-        <header className="h-12 shrink-0 border-b border-slate-800 bg-slate-900/30 flex items-center justify-end px-4 gap-1">
+
+        {/* Header desktop (sino à direita) */}
+        <header className="hidden md:flex h-12 shrink-0 border-b border-slate-800 bg-slate-900/30 items-center justify-end px-4 gap-1">
           <NotificationBell />
         </header>
+
         <main className="flex-1 overflow-y-auto bg-slate-950">
           <Outlet />
         </main>
       </div>
     </div>
+  )
+}
+
+function MenuIcon() {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="18" x2="21" y2="18" />
+    </svg>
   )
 }
 

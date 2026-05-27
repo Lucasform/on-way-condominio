@@ -327,21 +327,43 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
             </div>
           )}
 
-          {result.artigos_consultados.length > 0 && (
-            <div className="border-t border-sky-500/20 pt-3">
-              <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
-                Artigos consultados
+          {(() => {
+            const textoAnalise = [
+              result.analysis.artigo_aplicavel ?? '',
+              result.analysis.justificativa ?? '',
+              result.analysis.minuta ?? '',
+            ].join(' ').toLowerCase()
+            const citados = result.artigos_consultados.filter((a) => {
+              if (!a.numero) return false
+              const num = String(a.numero).toLowerCase().replace(/[º°o]/g, '').trim()
+              if (!num) return false
+              const re = new RegExp(`\\bart(?:igo)?\\.?\\s*${num}[ºo°]?\\b`, 'i')
+              return re.test(textoAnalise)
+            })
+            if (citados.length === 0) return null
+            return (
+              <div className="border-t border-sky-500/20 pt-3">
+                <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
+                  Artigos citados
+                </div>
+                <ul className="space-y-3">
+                  {citados.map((a) => (
+                    <li key={a.id} className="text-xs">
+                      <div className="text-slate-400">
+                        <span className="font-mono text-slate-500">[{a.numero ?? 's/n'}]</span>{' '}
+                        <span className="text-slate-300">{a.titulo}</span>
+                      </div>
+                      {a.conteudo && (
+                        <p className="mt-1 text-slate-400 whitespace-pre-wrap leading-relaxed">
+                          {a.conteudo}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="space-y-1">
-                {result.artigos_consultados.map((a) => (
-                  <li key={a.id} className="text-xs text-slate-400">
-                    <span className="font-mono text-slate-500">[{a.numero ?? 's/n'}]</span>{' '}
-                    {a.titulo}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+            )
+          })()}
 
           {result.analysis.cabe_multa && canGenerateMulta && (
             <div className="border-t border-sky-500/20 pt-4 flex items-center gap-3 flex-wrap">
