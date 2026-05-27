@@ -38,3 +38,18 @@ export async function listAudit(filter: AuditFilter = {}): Promise<AuditEntry[]>
   if (error) throw error
   return (data ?? []) as AuditEntry[]
 }
+
+export async function deleteAuditEntry(id: number): Promise<void> {
+  const { error } = await supabase.from('audit_log').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteAuditEntries(ids: number[]): Promise<number> {
+  if (ids.length === 0) return 0
+  const { error, count } = await supabase
+    .from('audit_log')
+    .delete({ count: 'exact' })
+    .in('id', ids)
+  if (error) throw error
+  return count ?? 0
+}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { listAudit, type AuditEntry } from '../lib/auditLog'
+import { listAudit, deleteAuditEntry, deleteAuditEntries, type AuditEntry } from '../lib/auditLog'
 import { listCondominios } from '../lib/condominios'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
@@ -20,6 +20,8 @@ const ACOES = [
 export default function AuditLog() {
   const { perfil } = useAuth()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
+  const podeApagar = perfil?.role === 'admin_onway'
+  const [busy, setBusy] = useState(false)
 
   const [condos, setCondos] = useState<Condominio[]>([])
   const [scopeId, setScopeId] = useState<string>('')
@@ -76,6 +78,25 @@ export default function AuditLog() {
       <PageHeader
         title="Log de auditoria"
         subtitle={`Últimas ${rows.length} ações sensíveis registradas.`}
+        actions={
+          podeApagar && rows.length > 0 ? (
+            <Button variant="danger" disabled={busy} onClick={async () => {
+              if (!window.confirm(`Apagar todos os ${rows.length} registros visíveis? Esta ação não pode ser desfeita.`)) return
+              setBusy(true)
+              try {
+                const n = await deleteAuditEntries(rows.map((r) => r.id))
+                await reload()
+                alert(`${n} registro${n !== 1 ? 's' : ''} apagado${n !== 1 ? 's' : ''}.`)
+              } catch (e) {
+                alert(e instanceof Error ? e.message : 'Erro.')
+              } finally {
+                setBusy(false)
+              }
+            }}>
+              Apagar todos visíveis
+            </Button>
+          ) : undefined
+        }
       />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-5">
@@ -142,14 +163,15 @@ export default function AuditLog() {
               <th className="text-left px-3 py-2">Ação</th>
               <th className="text-left px-3 py-2">Alvo</th>
               <th className="text-left px-3 py-2">Detalhes</th>
+              {podeApagar && <th className="px-3 py-2" />}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
             {loading && (
-              <tr><td colSpan={6} className="text-center py-6 text-slate-500">Carregando...</td></tr>
+              <tr><td colSpan={podeApagar ? 7 : 6} className="text-center py-6 text-slate-500">Carregando...</td></tr>
             )}
             {!loading && rows.length === 0 && (
-              <tr><td colSpan={6} className="text-center py-6 text-slate-500">Nada registrado nesse filtro.</td></tr>
+              <tr><td colSpan={podeApagar ? 7 : 6} className="text-center py-6 text-slate-500">Nada registrado nesse filtro.</td></tr>
             )}
             {rows.map((r) => (
               <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/30">
@@ -161,6 +183,30 @@ export default function AuditLog() {
                 <td className="px-3 py-2 text-xs text-slate-500 max-w-md truncate" title={JSON.stringify(r.detalhes)}>
                   {fmtDetalhes(r.detalhes)}
                 </td>
+                {podeApagar && (
+                  <td className="px-3 py-2 text-right">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={async () => {
+                        if (!window.confirm('Apagar este registro do log de auditoria? Esta ação não pode ser desfeita.')) return
+                        setBusy(true)
+                        try {
+                          await deleteAuditEntry(r.id)
+                          await reload()
+                        } catch (e) {
+                          alert(e instanceof Error ? e.message : 'Erro.')
+                        } finally {
+                          setBusy(false)
+                        }
+                      }}
+                      className="text-slate-500 hover:text-red-400 transition disabled:opacity-50"
+                      title="Apagar este registro"
+                    >
+                      🗑
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

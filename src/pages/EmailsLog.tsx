@@ -53,7 +53,8 @@ export default function EmailsLog() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scopeId, isAdmin])
 
-  const podeApagar = perfil?.role === 'admin_onway'
+  // admin geral + sindico/subsindico
+  const podeApagar = perfil?.role === 'admin_onway' || perfil?.role === 'sindico' || perfil?.role === 'subsindico'
   const [busy, setBusy] = useState(false)
 
   async function apagar(id: string) {
