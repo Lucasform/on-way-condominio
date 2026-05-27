@@ -3,7 +3,6 @@ import { listEmailLogs, deleteEmailLog, deleteEmailLogs, type EmailLog } from '.
 import { listCondominios } from '../lib/condominios'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
-import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
@@ -54,7 +53,7 @@ export default function EmailsLog() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scopeId, isAdmin])
 
-  const podeApagar = isGestor(perfil?.role)
+  const podeApagar = perfil?.role === 'admin_onway'
   const [busy, setBusy] = useState(false)
 
   async function apagar(id: string) {
