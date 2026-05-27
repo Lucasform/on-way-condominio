@@ -9,7 +9,8 @@
 // Secrets: ANTHROPIC_API_KEY
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { corsHeaders, handleCors, jsonResponse } from '../_shared/cors.ts'
+import { handleCors, jsonResponse } from '../_shared/cors.ts'
+import { consumeIaRateLimit } from '../_shared/rate-limit.ts'
 
 // @ts-expect-error: Supabase.ai injetado pelo runtime
 const session = new Supabase.ai.Session('gte-small')
@@ -33,6 +34,14 @@ Deno.serve(async (req: Request) => {
   try {
     const auth = req.headers.get('Authorization')
     if (!auth) return jsonResponse({ error: 'Authorization header obrigatório.' }, 401)
+
+    const rl = await consumeIaRateLimit(auth)
+    if (!rl.allowed) {
+      return jsonResponse({
+        error: `Rate limit atingido (30 análises IA/hora). Tente novamente após ${rl.reset_at ?? 'em breve'}.`,
+        rate_limit: rl,
+      }, 429)
+    }
 
     const body = await req.json()
     const ocorrencia_id = body?.ocorrencia_id

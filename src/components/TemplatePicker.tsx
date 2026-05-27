@@ -50,11 +50,11 @@ export default function TemplatePicker({ condominio_id, tipo, onSelect, label = 
 
       {open && (
         <div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-16 px-4"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-8 sm:pt-16 px-3 sm:px-4"
           onClick={() => setOpen(false)}
         >
           <div
-            className="bg-slate-900 border border-slate-700 rounded-lg shadow-2xl w-full max-w-xl max-h-[80vh] flex flex-col"
+            className="bg-slate-900 border border-slate-700 rounded-lg shadow-2xl w-[90vw] sm:w-full max-w-xl max-h-[80vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-4 py-3 border-b border-slate-800 flex items-center gap-3">

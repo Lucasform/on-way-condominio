@@ -6,6 +6,9 @@ import {
   enviarMensagem,
   mudarStatusConversa,
   deleteConversa,
+  atribuirConversa,
+  marcarMensagensLidas,
+  listStaffCondominio,
   ASSUNTO_LABEL,
   STATUS_LABEL,
 } from '../lib/chat'
@@ -16,6 +19,7 @@ import { roleLabel } from '../lib/nav'
 import type { Role } from '../types/database'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import TemplatePicker from '../components/TemplatePicker'
 
 interface AutorInfo {
   nome: string
@@ -43,8 +47,28 @@ export default function ChatConversa() {
   const [error, setError] = useState<string | null>(null)
   const [novaMsg, setNovaMsg] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [sugerindo, setSugerindo] = useState(false)
+  const [sugestaoErr, setSugestaoErr] = useState<string | null>(null)
 
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  async function sugerirResposta() {
+    if (!id) return
+    setSugerindo(true)
+    setSugestaoErr(null)
+    try {
+      const { data, error: e } = await supabase.functions.invoke('suggest-chat-reply', {
+        body: { conversa_id: id },
+      })
+      if (e) throw e
+      if (data?.error) throw new Error(data.error)
+      if (typeof data?.sugestao === 'string') setNovaMsg(data.sugestao)
+    } catch (e) {
+      setSugestaoErr(e instanceof Error ? e.message : 'Erro ao sugerir resposta.')
+    } finally {
+      setSugerindo(false)
+    }
+  }
 
   async function load() {
     if (!id) return
@@ -56,11 +80,32 @@ export default function ChatConversa() {
       } else {
         setConversa(c)
         setMensagens(m)
+        // Marca como lidas em background (não bloqueia o render)
+        if (user?.id) {
+          marcarMensagensLidas(id, user.id).catch(() => {})
+        }
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Staff list for assignee
+  const [staffList, setStaffList] = useState<Array<{ id: string; nome_exibicao: string | null; role: string }>>([])
+  useEffect(() => {
+    if (!conversa?.condominio_id || !isStaff) return
+    listStaffCondominio(conversa.condominio_id).then(setStaffList).catch(() => {})
+  }, [conversa?.condominio_id, isStaff])
+
+  async function handleAtribuir(novoUserId: string | null) {
+    if (!id) return
+    try {
+      await atribuirConversa(id, novoUserId)
+      await load()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro.')
     }
   }
 
@@ -245,13 +290,41 @@ export default function ChatConversa() {
         subtitle={(() => {
           const solicitante = autores.get(conversa.morador_user_id)
           if (!solicitante) return undefined
-          return `Solicitado por ${solicitante.nome}${solicitante.sublabel ? ` · ${solicitante.sublabel}` : ''}`
+          const assignee = conversa.atribuida_para
+            ? (staffList.find((s) => s.id === conversa.atribuida_para)?.nome_exibicao ?? null)
+            : null
+          const base = `Solicitado por ${solicitante.nome}${solicitante.sublabel ? ` · ${solicitante.sublabel}` : ''}`
+          return assignee ? `${base} · atribuída a ${assignee}` : base
         })()}
         actions={
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`shrink-0 px-2 py-0.5 rounded text-xs border ${STATUS_CLASS[conversa.status]}`}>
               {STATUS_LABEL[conversa.status]}
             </span>
+            {isStaff && conversa.status !== 'encerrada' && (
+              <div className="flex items-center gap-1">
+                {conversa.atribuida_para !== user?.id && (
+                  <Button size="sm" variant="secondary" onClick={() => handleAtribuir(user?.id ?? null)}>
+                    Pegar pra mim
+                  </Button>
+                )}
+                {staffList.length > 0 && (
+                  <select
+                    value={conversa.atribuida_para ?? ''}
+                    onChange={(e) => handleAtribuir(e.target.value || null)}
+                    className="px-2 py-1 text-xs rounded-md bg-slate-900 border border-slate-700 text-slate-200"
+                    title="Atribuir conversa"
+                  >
+                    <option value="">— sem assignee —</option>
+                    {staffList.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.nome_exibicao ?? 'Sem nome'} ({s.role})
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
             {podeApagarConversa && (
               <Button variant="danger" onClick={handleApagarConversa}>
                 🗑 Apagar conversa
@@ -283,28 +356,52 @@ export default function ChatConversa() {
 
       {/* Input ou status terminal */}
       {podeEnviar ? (
-        <form onSubmit={handleEnviar} className="mt-3 flex gap-2">
-          <textarea
-            value={novaMsg}
-            onChange={(e) => setNovaMsg(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleEnviar(e as unknown as FormEvent)
-            }}
-            rows={2}
-            placeholder="Digite sua mensagem... (Ctrl+Enter pra enviar)"
-            className="flex-1 px-3 py-2 rounded-md bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:outline-none text-sm text-slate-100 resize-none"
-          />
-          <div className="flex flex-col gap-2">
-            <Button type="submit" disabled={enviando || !novaMsg.trim()}>
-              {enviando ? '...' : '➤'}
-            </Button>
-            {(isMorador || isStaff) && (
-              <Button type="button" variant="ghost" onClick={handleEncerrar}>
-                Encerrar
+        <div className="mt-3 space-y-2">
+          {isStaff && (
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={sugerirResposta}
+                disabled={sugerindo}
+                className="px-3 py-1.5 rounded-md text-xs font-medium bg-violet-700/20 text-violet-200 border border-violet-500/40 hover:bg-violet-700/30 disabled:opacity-50 transition"
+              >
+                {sugerindo ? '✨ Pensando...' : '✨ Sugerir resposta'}
+              </button>
+              {conversa.condominio_id && (
+                <TemplatePicker
+                  condominio_id={conversa.condominio_id}
+                  tipo="chat"
+                  onSelect={(t) => setNovaMsg(t.corpo)}
+                />
+              )}
+              {sugestaoErr && (
+                <span className="text-[11px] text-red-300">{sugestaoErr}</span>
+              )}
+            </div>
+          )}
+          <form onSubmit={handleEnviar} className="flex gap-2">
+            <textarea
+              value={novaMsg}
+              onChange={(e) => setNovaMsg(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleEnviar(e as unknown as FormEvent)
+              }}
+              rows={2}
+              placeholder="Digite sua mensagem... (Ctrl+Enter pra enviar)"
+              className="flex-1 px-3 py-2 rounded-md bg-slate-950 border border-slate-700 focus:border-emerald-500 focus:outline-none text-sm text-slate-100 resize-none"
+            />
+            <div className="flex flex-col gap-2">
+              <Button type="submit" disabled={enviando || !novaMsg.trim()}>
+                {enviando ? '...' : '➤'}
               </Button>
-            )}
-          </div>
-        </form>
+              {(isMorador || isStaff) && (
+                <Button type="button" variant="ghost" onClick={handleEncerrar}>
+                  Encerrar
+                </Button>
+              )}
+            </div>
+          </form>
+        </div>
       ) : (
         <div className="mt-3 text-xs text-slate-500 italic text-center py-3 border-t border-slate-800">
           Conversa encerrada. {isMorador && 'Abra uma nova se precisar.'}

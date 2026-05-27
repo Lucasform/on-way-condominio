@@ -92,7 +92,7 @@ export async function createConversa(input: {
 
   // Se staff iniciou, manda push pro morador como em respostas
   if (autor_tipo === 'staff') {
-    notifyMoradorChatPush(conversa.id, input.primeira_mensagem).catch(() => {})
+    notifyMoradorChatPush(conversa.id, input.primeira_mensagem, input.autor_id).catch(() => {})
   }
 
   return conversa
@@ -164,22 +164,35 @@ export async function enviarMensagem(input: {
 
   // Se foi staff escrevendo, dispara push pro morador (etapa 78)
   if (input.autor_tipo === 'staff') {
-    notifyMoradorChatPush(input.conversa_id, input.conteudo).catch((e) =>
+    notifyMoradorChatPush(input.conversa_id, input.conteudo, input.autor_id).catch((e) =>
       console.warn('[chat] push falhou:', e.message),
     )
   }
 }
 
-async function notifyMoradorChatPush(conversa_id: string, conteudo: string): Promise<void> {
+async function notifyMoradorChatPush(conversa_id: string, conteudo: string, autor_id?: string): Promise<void> {
   const { data: conv } = await supabase
     .from('conversas')
     .select('morador_user_id')
     .eq('id', conversa_id)
     .maybeSingle()
   if (!conv?.morador_user_id) return
+
+  // Resolve nome do staff que respondeu pra personalizar o título.
+  let titulo = '💬 Resposta da administração'
+  if (autor_id) {
+    const { data: p } = await supabase
+      .from('perfis')
+      .select('nome_exibicao')
+      .eq('id', autor_id)
+      .maybeSingle()
+    const nome = p?.nome_exibicao?.trim()
+    if (nome) titulo = `💬 ${nome} respondeu`
+  }
+
   await sendPush({
     user_ids: [conv.morador_user_id],
-    titulo: '💬 Resposta da administração',
+    titulo,
     corpo: conteudo.slice(0, 140),
     link: `/chat/${conversa_id}`,
   })
@@ -202,4 +215,36 @@ export async function mudarStatusConversa(id: string, status: StatusConversa, at
   if (atribuida_para !== undefined) patch.atribuida_para = atribuida_para
   const { error } = await supabase.from('conversas').update(patch).eq('id', id)
   if (error) throw error
+}
+
+export async function atribuirConversa(id: string, user_id: string | null): Promise<void> {
+  const { error } = await supabase.from('conversas').update({ atribuida_para: user_id }).eq('id', id)
+  if (error) throw error
+}
+
+/**
+ * Marca mensagens não-próprias da conversa como lidas. Idempotente.
+ */
+export async function marcarMensagensLidas(conversa_id: string, current_user_id: string): Promise<void> {
+  await supabase
+    .from('mensagens')
+    .update({ lida_em: new Date().toISOString() })
+    .eq('conversa_id', conversa_id)
+    .is('lida_em', null)
+    .neq('autor_id', current_user_id)
+}
+
+/**
+ * Lista usuários staff de um condomínio (pra select de assignee).
+ */
+export async function listStaffCondominio(condominio_id: string): Promise<Array<{ id: string; nome_exibicao: string | null; role: string }>> {
+  const { data, error } = await supabase
+    .from('perfis')
+    .select('id, nome_exibicao, role')
+    .eq('condominio_id', condominio_id)
+    .eq('ativo', true)
+    .in('role', ['administradora', 'sindico', 'subsindico', 'conselheiro', 'portaria', 'ronda'])
+    .order('nome_exibicao')
+  if (error) throw error
+  return (data ?? []) as Array<{ id: string; nome_exibicao: string | null; role: string }>
 }

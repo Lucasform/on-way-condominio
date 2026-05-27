@@ -4,7 +4,7 @@
 // Auth: JWT válido (user logado OU service_role pra triggers internas).
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
-import { corsHeaders, handleCors, jsonResponse } from '../_shared/cors.ts'
+import { handleCors, jsonResponse } from '../_shared/cors.ts'
 import {
   renderTemplate,
   type TemplateSlug,
@@ -35,13 +35,39 @@ Deno.serve(async (req: Request) => {
     if (recipients.length === 0) return jsonResponse({ error: 'to vazio.' }, 400)
     if (!body.template) return jsonResponse({ error: 'template obrigatório.' }, 400)
 
-    const rendered = renderTemplate(body.template, body.vars ?? {}, body.custom)
-
     // Service role pra inserir/atualizar em emails (bypass RLS)
     const admin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
+
+    // Resolve quem está enviando: pega o user via JWT do header e o nome_exibicao
+    // do perfil. Se body.vars.sender_name vier preenchido, respeita.
+    let senderName: string | null = body.vars?.sender_name ?? null
+    let senderUserId: string | null = null
+    try {
+      const userClient = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: auth } } },
+      )
+      const { data: who } = await userClient.auth.getUser()
+      const uid = who?.user?.id ?? null
+      senderUserId = uid
+      if (uid && !senderName) {
+        const { data: p } = await admin
+          .from('perfis')
+          .select('nome_exibicao')
+          .eq('id', uid)
+          .maybeSingle()
+        if (p?.nome_exibicao) senderName = p.nome_exibicao
+      }
+    } catch (_) {
+      // ignora — segue com fallback
+    }
+
+    const finalVars: TemplateVars = { ...(body.vars ?? {}), sender_name: senderName }
+    const rendered = renderTemplate(body.template, finalVars, body.custom)
 
     const results: Array<{ to: string; ok: boolean; id?: string; error?: string }> = []
 
@@ -57,6 +83,7 @@ Deno.serve(async (req: Request) => {
           texto: rendered.text,
           template_slug: body.template,
           status: 'pending',
+          enviado_por: senderUserId,
         })
         .select('id')
         .single()

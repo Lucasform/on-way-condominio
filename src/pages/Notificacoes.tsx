@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { listNotificacoes, NOTIFICACAO_STATUS_LABEL } from '../lib/notificacoes'
+import { listNotificacoes, NOTIFICACAO_STATUS_LABEL, changeNotificacaoStatus } from '../lib/notificacoes'
 import { listUnidades } from '../lib/unidades'
 import { listCondominios } from '../lib/condominios'
 import type { Notificacao, StatusNotificacao } from '../types/notificacao'
@@ -32,6 +32,12 @@ export default function Notificacoes() {
   const [status, setStatus] = useState<'' | StatusNotificacao>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [dataDe, setDataDe] = useState('')
+  const [dataAte, setDataAte] = useState('')
+  const dataDeRef = useRef<HTMLInputElement>(null)
+  const dataAteRef = useRef<HTMLInputElement>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkBusy, setBulkBusy] = useState(false)
 
   async function reload() {
     setLoading(true)
@@ -76,11 +82,59 @@ export default function Notificacoes() {
     return u ? (u.bloco ? `${u.bloco}-${u.numero}` : u.numero) : '—'
   }
 
-  const condoNome = (id: string) => condos.find((c) => c.id === id)?.nome ?? '—'
+  const condoNome = (id: string) => condos.find((c) => c.id === id)?.nome ?? '-'
 
   const podeCriar = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
+  const podeBulk = podeCriar
+
+  const filteredRows = useMemo(() => {
+    const de = dataDe ? new Date(dataDe + 'T00:00:00').getTime() : null
+    const ate = dataAte ? new Date(dataAte + 'T23:59:59').getTime() : null
+    if (de === null && ate === null) return rows
+    return rows.filter((r) => {
+      const t = new Date(r.created_at).getTime()
+      if (de !== null && t < de) return false
+      if (ate !== null && t > ate) return false
+      return true
+    })
+  }, [rows, dataDe, dataAte])
+
+  const arquivaveis = filteredRows.filter((r) => r.status !== 'arquivada' && r.status !== 'cancelada').map((r) => r.id)
+  const todosSelecionados = arquivaveis.length > 0 && arquivaveis.every((id) => selected.has(id))
+  function toggleSelected(id: string) {
+    setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  }
+  async function arquivarSelecionadas() {
+    if (selected.size === 0) return
+    if (!window.confirm(`Arquivar ${selected.size} notificação(ões)?`)) return
+    setBulkBusy(true)
+    try {
+      for (const id of Array.from(selected)) {
+        try { await changeNotificacaoStatus(id, 'arquivada') } catch (e) { console.warn(e) }
+      }
+      setSelected(new Set())
+      await reload()
+    } finally {
+      setBulkBusy(false)
+    }
+  }
 
   const columns: Column<Notificacao>[] = [
+    ...(podeBulk ? [{
+      key: 'select',
+      header: '',
+      className: 'w-8',
+      render: (r: Notificacao) => (
+        <input
+          type="checkbox"
+          checked={selected.has(r.id)}
+          disabled={r.status === 'arquivada' || r.status === 'cancelada'}
+          onChange={() => toggleSelected(r.id)}
+          onClick={(e) => e.stopPropagation()}
+          aria-label="Selecionar"
+        />
+      ),
+    } as Column<Notificacao>] : []),
     {
       key: 'assunto',
       header: 'Assunto',
@@ -142,7 +196,36 @@ export default function Notificacoes() {
             ))}
           </Select>
         </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-400 mb-1">De</label>
+          <input ref={dataDeRef} type="date" value={dataDe} onChange={(e) => setDataDe(e.target.value)} onClick={() => dataDeRef.current?.showPicker?.()} className="px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-400 mb-1">Até</label>
+          <input ref={dataAteRef} type="date" value={dataAte} onChange={(e) => setDataAte(e.target.value)} onClick={() => dataAteRef.current?.showPicker?.()} className="px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm" />
+        </div>
+        {(dataDe || dataAte) && (
+          <Button size="sm" variant="ghost" onClick={() => { setDataDe(''); setDataAte('') }}>Limpar datas</Button>
+        )}
       </div>
+
+      {podeBulk && (
+        <div className="mb-3 flex items-center gap-2">
+          {arquivaveis.length > 0 && (
+            <Button size="sm" variant="secondary" onClick={() => setSelected(todosSelecionados ? new Set() : new Set(arquivaveis))}>
+              {todosSelecionados ? 'Desmarcar todos' : 'Selecionar visíveis'}
+            </Button>
+          )}
+          {selected.size > 0 && (
+            <>
+              <span className="text-sm text-amber-200">{selected.size} selecionada(s)</span>
+              <Button size="sm" onClick={arquivarSelecionadas} disabled={bulkBusy}>
+                {bulkBusy ? 'Arquivando...' : `Arquivar ${selected.size}`}
+              </Button>
+            </>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
@@ -152,7 +235,7 @@ export default function Notificacoes() {
 
       <DataTable
         columns={columns}
-        rows={rows}
+        rows={filteredRows}
         rowKey={(r) => r.id}
         loading={loading}
         onRowClick={(r) => navigate(`/notificacoes/${r.id}`)}

@@ -12,6 +12,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { handleCors, jsonResponse } from '../_shared/cors.ts'
+import { consumeIaRateLimit } from '../_shared/rate-limit.ts'
 
 const MODEL = 'claude-haiku-4-5-20251001'
 
@@ -22,6 +23,14 @@ Deno.serve(async (req: Request) => {
   try {
     const auth = req.headers.get('Authorization')
     if (!auth) return jsonResponse({ error: 'Authorization obrigatório.' }, 401)
+
+    const rl = await consumeIaRateLimit(auth)
+    if (!rl.allowed) {
+      return jsonResponse({
+        error: `Rate limit atingido (30 chamadas IA/hora). Tente novamente após ${rl.reset_at ?? 'em breve'}.`,
+        rate_limit: rl,
+      }, 429)
+    }
 
     const body = await req.json()
     const tipo: 'chat' | 'email' = body?.tipo === 'email' ? 'email' : 'chat'

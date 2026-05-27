@@ -10,6 +10,7 @@ import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
+import { CardListSkeleton } from '../components/ui/Skeleton'
 
 const STATUS_OPTS: { value: '' | StatusOcorrencia; label: string }[] = [
   { value: '', label: 'Todos os status' },
@@ -152,9 +153,7 @@ export default function Ocorrencias() {
       )}
 
       {loading ? (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-400 text-sm">
-          Carregando...
-        </div>
+        <CardListSkeleton rows={5} />
       ) : rows.length === 0 ? (
         <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
           Nenhuma ocorrência encontrada com os filtros atuais.
@@ -184,11 +183,19 @@ export default function Ocorrencias() {
                     <span className="text-slate-400">{unidadeLabel(o.unidade_id)}</span>
                     {o.local && <span className="text-slate-400"> · {o.local}</span>}
                   </div>
-                  <span
-                    className={`shrink-0 px-2 py-0.5 rounded text-xs border ${STATUS_CLASS[o.status]}`}
-                  >
-                    {STATUS_LABEL[o.status]}
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {o.ia_analysis != null && (
+                      <span
+                        className="px-2 py-0.5 rounded text-[10px] border border-violet-500/40 bg-violet-500/10 text-violet-200"
+                        title="Análise IA disponível"
+                      >
+                        ✓ analisada
+                      </span>
+                    )}
+                    <span className={`px-2 py-0.5 rounded text-xs border ${STATUS_CLASS[o.status]}`}>
+                      {STATUS_LABEL[o.status]}
+                    </span>
+                  </div>
                 </div>
                 <p className="mt-2 text-slate-200 line-clamp-3 whitespace-pre-wrap">{o.descricao}</p>
               </div>

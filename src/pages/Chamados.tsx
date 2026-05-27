@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { listChamados } from '../lib/chamados'
+import { listChamados, updateChamadoStatus } from '../lib/chamados'
 import { listCondominios } from '../lib/condominios'
 import type { Chamado, StatusChamado, PrioridadeChamado } from '../types/chamado'
 import type { Condominio } from '../types/condominio'
@@ -8,6 +8,7 @@ import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
+import { CardListSkeleton } from '../components/ui/Skeleton'
 
 const STATUS_OPTS: { value: '' | StatusChamado; label: string }[] = [
   { value: '', label: 'Todos os status' },
@@ -62,6 +63,28 @@ export default function Chamados() {
   const [rows, setRows] = useState<Chamado[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [dataDe, setDataDe] = useState('')
+  const [dataAte, setDataAte] = useState('')
+  const dataDeRef = useRef<HTMLInputElement>(null)
+  const dataAteRef = useRef<HTMLInputElement>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkBusy, setBulkBusy] = useState(false)
+
+  async function reload() {
+    if (isAdmin && !scopeId) return
+    setLoading(true)
+    try {
+      const data = await listChamados({
+        condominio_id: isAdmin && scopeId ? scopeId : undefined,
+        status: statusFilter || undefined,
+      })
+      setRows(data)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao carregar.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   useEffect(() => {
     if (isAdmin) {
@@ -76,18 +99,44 @@ export default function Chamados() {
   }, [isAdmin])
 
   useEffect(() => {
-    if (isAdmin && !scopeId) return
-    setLoading(true)
-    listChamados({
-      condominio_id: isAdmin && scopeId ? scopeId : undefined,
-      status: statusFilter || undefined,
-    })
-      .then(setRows)
-      .catch((e) => setError(e instanceof Error ? e.message : 'Erro ao carregar.'))
-      .finally(() => setLoading(false))
+    reload()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scopeId, statusFilter, isAdmin])
 
   const podeAbrir = perfil?.role !== 'morador'
+  const podeBulk = perfil?.role !== 'morador'
+
+  const filteredRows = useMemo(() => {
+    const de = dataDe ? new Date(dataDe + 'T00:00:00').getTime() : null
+    const ate = dataAte ? new Date(dataAte + 'T23:59:59').getTime() : null
+    if (de === null && ate === null) return rows
+    return rows.filter((r) => {
+      const t = new Date(r.created_at).getTime()
+      if (de !== null && t < de) return false
+      if (ate !== null && t > ate) return false
+      return true
+    })
+  }, [rows, dataDe, dataAte])
+
+  const arquivaveis = filteredRows.filter((c) => c.status !== 'cancelado' && c.status !== 'finalizado').map((c) => c.id)
+  const todosSelecionados = arquivaveis.length > 0 && arquivaveis.every((id) => selected.has(id))
+  function toggleSelected(id: string) {
+    setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  }
+  async function arquivarSelecionados() {
+    if (selected.size === 0) return
+    if (!window.confirm(`Cancelar ${selected.size} chamado(s)?`)) return
+    setBulkBusy(true)
+    try {
+      for (const id of Array.from(selected)) {
+        try { await updateChamadoStatus(id, 'cancelado') } catch (e) { console.warn(e) }
+      }
+      setSelected(new Set())
+      await reload()
+    } finally {
+      setBulkBusy(false)
+    }
+  }
 
   return (
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
@@ -124,7 +173,36 @@ export default function Chamados() {
             ))}
           </Select>
         </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-400 mb-1">De</label>
+          <input ref={dataDeRef} type="date" value={dataDe} onChange={(e) => setDataDe(e.target.value)} onClick={() => dataDeRef.current?.showPicker?.()} className="px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-400 mb-1">Até</label>
+          <input ref={dataAteRef} type="date" value={dataAte} onChange={(e) => setDataAte(e.target.value)} onClick={() => dataAteRef.current?.showPicker?.()} className="px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm" />
+        </div>
+        {(dataDe || dataAte) && (
+          <Button size="sm" variant="ghost" onClick={() => { setDataDe(''); setDataAte('') }}>Limpar datas</Button>
+        )}
       </div>
+
+      {podeBulk && (
+        <div className="mb-3 flex items-center gap-2 flex-wrap">
+          {arquivaveis.length > 0 && (
+            <Button size="sm" variant="secondary" onClick={() => setSelected(todosSelecionados ? new Set() : new Set(arquivaveis))}>
+              {todosSelecionados ? 'Desmarcar todos' : 'Selecionar visíveis'}
+            </Button>
+          )}
+          {selected.size > 0 && (
+            <>
+              <span className="text-sm text-amber-200">{selected.size} selecionado(s)</span>
+              <Button size="sm" onClick={arquivarSelecionados} disabled={bulkBusy}>
+                {bulkBusy ? 'Cancelando...' : `Cancelar ${selected.size}`}
+              </Button>
+            </>
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
@@ -133,22 +211,34 @@ export default function Chamados() {
       )}
 
       {loading ? (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-400 text-sm">
-          Carregando...
-        </div>
-      ) : rows.length === 0 ? (
+        <CardListSkeleton rows={5} />
+      ) : filteredRows.length === 0 ? (
         <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
           Nenhum chamado encontrado.
         </div>
       ) : (
         <div className="space-y-2">
-          {rows.map((c) => (
+          {filteredRows.map((c) => (
             <article
               key={c.id}
-              onClick={() => navigate(`/chamados/${c.id}`)}
+              onClick={(e) => {
+                if ((e.target as HTMLElement).tagName === 'INPUT') return
+                navigate(`/chamados/${c.id}`)
+              }}
               className="rounded-lg border border-slate-800 bg-slate-900/40 p-4 cursor-pointer hover:border-slate-700 hover:bg-slate-900/70 transition"
             >
               <div className="flex items-start gap-3">
+                {podeBulk && (
+                  <input
+                    type="checkbox"
+                    checked={selected.has(c.id)}
+                    disabled={c.status === 'cancelado' || c.status === 'finalizado'}
+                    onChange={() => toggleSelected(c.id)}
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Selecionar"
+                    className="mt-1"
+                  />
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2 flex-wrap">
                     <span className="text-xs font-medium text-slate-100">{c.titulo}</span>

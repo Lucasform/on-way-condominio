@@ -43,7 +43,16 @@ export async function createOcorrencia(input: OcorrenciaInput, reportado_por: st
     .select('*')
     .single()
   if (error) throw error
-  return data as Ocorrencia
+  const ocorrencia = data as Ocorrencia
+
+  // Análise IA em background — não bloqueia o INSERT. A edge persiste em
+  // ia_analysis. Falhas silenciosas (sem regimento, sem ANTHROPIC_API_KEY etc.)
+  // só ficam no console.
+  supabase.functions
+    .invoke('analyze-ocorrencia', { body: { ocorrencia_id: ocorrencia.id } })
+    .catch((e) => console.warn('[createOcorrencia] analyze-ocorrencia falhou:', e))
+
+  return ocorrencia
 }
 
 export async function updateOcorrenciaStatus(id: string, status: StatusOcorrencia): Promise<void> {

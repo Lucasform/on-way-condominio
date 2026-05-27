@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listEncomendas, darBaixaEncomenda } from '../lib/encomendas'
 import { listCondominios } from '../lib/condominios'
@@ -10,6 +10,7 @@ import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
+import { CardListSkeleton } from '../components/ui/Skeleton'
 
 const STATUS_CLASS: Record<StatusEncomenda, string> = {
   aguardando: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
@@ -50,16 +51,32 @@ export default function Encomendas() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [tab, setTab] = useState<'encomendas' | 'comida'>('encomendas')
+  const [dataDe, setDataDe] = useState('')
+  const [dataAte, setDataAte] = useState('')
+  const dataDeRef = useRef<HTMLInputElement>(null)
+  const dataAteRef = useRef<HTMLInputElement>(null)
+
+  const rowsFiltradas = useMemo(() => {
+    const de = dataDe ? new Date(dataDe + 'T00:00:00').getTime() : null
+    const ate = dataAte ? new Date(dataAte + 'T23:59:59').getTime() : null
+    if (de === null && ate === null) return rows
+    return rows.filter((r) => {
+      const t = new Date(r.created_at).getTime()
+      if (de !== null && t < de) return false
+      if (ate !== null && t > ate) return false
+      return true
+    })
+  }, [rows, dataDe, dataAte])
 
   const rowsTab = useMemo(() => {
-    if (tab === 'comida') return rows.filter((r) => r.tipo === 'comida')
-    return rows.filter((r) => r.tipo !== 'comida')
-  }, [rows, tab])
+    if (tab === 'comida') return rowsFiltradas.filter((r) => r.tipo === 'comida')
+    return rowsFiltradas.filter((r) => r.tipo !== 'comida')
+  }, [rowsFiltradas, tab])
 
   const totaisAba = useMemo(() => ({
-    encomendas: rows.filter((r) => r.tipo !== 'comida').length,
-    comida: rows.filter((r) => r.tipo === 'comida').length,
-  }), [rows])
+    encomendas: rowsFiltradas.filter((r) => r.tipo !== 'comida').length,
+    comida: rowsFiltradas.filter((r) => r.tipo === 'comida').length,
+  }), [rowsFiltradas])
 
   const kanbanColunas = useMemo(() => ({
     aguardando: rowsTab.filter((r) => r.status === 'aguardando'),
@@ -172,6 +189,17 @@ export default function Encomendas() {
             </Select>
           </div>
         )}
+        <div>
+          <label className="block text-xs font-medium text-slate-400 mb-1">De</label>
+          <input ref={dataDeRef} type="date" value={dataDe} onChange={(e) => setDataDe(e.target.value)} onClick={() => dataDeRef.current?.showPicker?.()} className="px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-400 mb-1">Até</label>
+          <input ref={dataAteRef} type="date" value={dataAte} onChange={(e) => setDataAte(e.target.value)} onClick={() => dataAteRef.current?.showPicker?.()} className="px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm" />
+        </div>
+        {(dataDe || dataAte) && (
+          <Button size="sm" variant="ghost" onClick={() => { setDataDe(''); setDataAte('') }}>Limpar datas</Button>
+        )}
       </div>
 
       {/* Tabs Encomendas / Comida */}
@@ -191,9 +219,7 @@ export default function Encomendas() {
       )}
 
       {loading ? (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-400 text-sm">
-          Carregando...
-        </div>
+        <CardListSkeleton rows={5} />
       ) : tab === 'encomendas' ? (
         <KanbanEncomendas
           colunas={kanbanColunas}

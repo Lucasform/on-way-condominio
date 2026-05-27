@@ -19,6 +19,8 @@ export interface EmailVars {
   publicacao_conteudo?: string
   evento_titulo?: string
   evento_data?: string
+  /** Nome do remetente. Se omitido, a edge resolve do perfil do chamador. */
+  sender_name?: string | null
 }
 
 export interface SendEmailInput {

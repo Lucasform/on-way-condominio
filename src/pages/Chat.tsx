@@ -19,6 +19,7 @@ import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Field, TextArea, Select } from '../components/ui/Input'
+import { CardListSkeleton } from '../components/ui/Skeleton'
 
 const STATUS_CLASS: Record<StatusConversa, string> = {
   aberta: 'bg-sky-500/10 text-sky-300 border-sky-500/30',
@@ -40,6 +41,11 @@ export default function Chat() {
   const [rows, setRows] = useState<Conversa[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Mapa morador_user_id -> nome (resolvido via perfis+pessoas, com cache leve)
+  const [nomesMorador, setNomesMorador] = useState<Record<string, string>>({})
+  const [assigneeNomes, setAssigneeNomes] = useState<Record<string, string>>({})
+  const [busca, setBusca] = useState('')
 
   // Form de nova conversa (morador)
   const [showNova, setShowNova] = useState(false)
@@ -160,6 +166,56 @@ export default function Chat() {
     reload()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scopeId, statusFilter])
+
+  // Resolve nomes dos moradores (e assignees) das conversas
+  useEffect(() => {
+    if (rows.length === 0) return
+    const moradorIds = Array.from(new Set(rows.map((r) => r.morador_user_id).filter((id) => !!id && !nomesMorador[id])))
+    const assigneeIds = Array.from(new Set(rows.map((r) => r.atribuida_para).filter((id): id is string => !!id && !assigneeNomes[id])))
+    const all = Array.from(new Set([...moradorIds, ...assigneeIds]))
+    if (all.length === 0) return
+    ;(async () => {
+      const { data: perfis } = await supabase
+        .from('perfis')
+        .select('id, nome_exibicao, role')
+        .in('id', all)
+      const moradorPerfilIds = (perfis ?? []).filter((p) => p.role === 'morador').map((p) => p.id)
+      let pessoasPorUser: Record<string, string> = {}
+      if (moradorPerfilIds.length > 0) {
+        const { data: pessoas } = await supabase
+          .from('pessoas')
+          .select('user_id, nome')
+          .in('user_id', moradorPerfilIds)
+        pessoasPorUser = Object.fromEntries((pessoas ?? []).map((p) => [p.user_id, p.nome]))
+      }
+      setNomesMorador((prev) => {
+        const novo = { ...prev }
+        for (const id of moradorIds) {
+          const pf = (perfis ?? []).find((p) => p.id === id)
+          novo[id] = pessoasPorUser[id] ?? pf?.nome_exibicao ?? 'Morador'
+        }
+        return novo
+      })
+      setAssigneeNomes((prev) => {
+        const novo = { ...prev }
+        for (const id of assigneeIds) {
+          const pf = (perfis ?? []).find((p) => p.id === id)
+          novo[id] = pf?.nome_exibicao ?? 'Staff'
+        }
+        return novo
+      })
+    })().catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows])
+
+  const rowsFiltradas = useMemo(() => {
+    const q = busca.trim().toLowerCase()
+    if (!q) return rows
+    return rows.filter((c) => {
+      const nome = nomesMorador[c.morador_user_id]?.toLowerCase() ?? ''
+      return nome.includes(q) || ASSUNTO_LABEL[c.assunto].toLowerCase().includes(q)
+    })
+  }, [rows, busca, nomesMorador])
 
   async function handleStaffEnviar(e: FormEvent) {
     e.preventDefault()
@@ -506,6 +562,16 @@ export default function Chat() {
               <option value="encerrada">Encerrada</option>
             </Select>
           </div>
+          <div className="min-w-[220px] flex-1">
+            <label className="block text-xs font-medium text-slate-400 mb-1">Buscar morador ou assunto</label>
+            <input
+              type="text"
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              placeholder="Nome do morador ou assunto..."
+              className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:border-emerald-500 focus:outline-none"
+            />
+          </div>
         </div>
       )}
 
@@ -516,11 +582,11 @@ export default function Chat() {
       )}
 
       {loading ? (
-        <div className="text-sm text-slate-400">Carregando...</div>
-      ) : rows.length === 0 ? (
+        <CardListSkeleton rows={4} />
+      ) : rowsFiltradas.length === 0 ? (
         <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
-          Nenhuma conversa.
-          {isMorador && !showNova && (
+          {rows.length === 0 ? 'Nenhuma conversa.' : 'Nenhuma conversa bate com a busca.'}
+          {isMorador && !showNova && rows.length === 0 && (
             <div className="mt-2">
               <button
                 onClick={() => setShowNova(true)}
@@ -533,25 +599,35 @@ export default function Chat() {
         </div>
       ) : (
         <div className="space-y-2">
-          {rows.map((c) => (
-            <Link
-              key={c.id}
-              to={`/chat/${c.id}`}
-              className="block rounded-lg border border-slate-800 bg-slate-900/40 p-4 hover:border-slate-700 hover:bg-slate-900/70 transition"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-slate-100">{ASSUNTO_LABEL[c.assunto]}</div>
-                  <div className="text-xs text-slate-500 mt-1">
-                    Última msg: {c.ultima_mensagem_at ? new Date(c.ultima_mensagem_at).toLocaleString('pt-BR') : '—'}
+          {rowsFiltradas.map((c) => {
+            const moradorNome = nomesMorador[c.morador_user_id]
+            const assignee = c.atribuida_para ? assigneeNomes[c.atribuida_para] : null
+            return (
+              <Link
+                key={c.id}
+                to={`/chat/${c.id}`}
+                className="block rounded-lg border border-slate-800 bg-slate-900/40 p-4 hover:border-slate-700 hover:bg-slate-900/70 transition"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-slate-100">
+                      {ASSUNTO_LABEL[c.assunto]}
+                      {isStaff && moradorNome && <span className="text-slate-400 font-normal"> · {moradorNome}</span>}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-x-2">
+                      <span>Última msg: {c.ultima_mensagem_at ? new Date(c.ultima_mensagem_at).toLocaleString('pt-BR') : '-'}</span>
+                      {assignee && (
+                        <span className="text-violet-300">👤 {assignee}</span>
+                      )}
+                    </div>
                   </div>
+                  <span className={`shrink-0 px-2 py-0.5 rounded text-xs border ${STATUS_CLASS[c.status]}`}>
+                    {STATUS_LABEL[c.status]}
+                  </span>
                 </div>
-                <span className={`shrink-0 px-2 py-0.5 rounded text-xs border ${STATUS_CLASS[c.status]}`}>
-                  {STATUS_LABEL[c.status]}
-                </span>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            )
+          })}
         </div>
       )}
     </div>

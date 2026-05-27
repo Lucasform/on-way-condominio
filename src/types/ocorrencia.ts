@@ -16,6 +16,8 @@ export interface Ocorrencia {
   foto_url: string | null
   status: StatusOcorrencia
   comentario_gestao: string | null
+  ia_analysis: unknown | null
+  ia_analisada_em: string | null
   created_at: string
   updated_at: string
 }

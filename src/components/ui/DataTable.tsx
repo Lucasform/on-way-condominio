@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { TableSkeleton } from './Skeleton'
 
 export interface Column<T> {
   key: string
@@ -27,11 +28,7 @@ export default function DataTable<T>({
   loading = false,
 }: Props<T>) {
   if (loading) {
-    return (
-      <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-400 text-sm">
-        Carregando...
-      </div>
-    )
+    return <TableSkeleton rows={5} cols={columns.length || 4} />
   }
 
   if (rows.length === 0) {

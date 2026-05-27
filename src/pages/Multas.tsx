@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { listMultas, MULTA_STATUS_LABEL } from '../lib/multas'
+import { listMultas, MULTA_STATUS_LABEL, changeMultaStatus } from '../lib/multas'
 import { listCondominios } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
 import type { Multa, StatusMulta } from '../types/multa'
@@ -10,6 +10,7 @@ import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
+import { TableSkeleton } from '../components/ui/Skeleton'
 
 const STATUS_OPTS: { value: '' | StatusMulta; label: string }[] = [
   { value: '', label: 'Todos os status' },
@@ -43,6 +44,12 @@ export default function Multas() {
   const [rows, setRows] = useState<Multa[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [dataDe, setDataDe] = useState('')
+  const [dataAte, setDataAte] = useState('')
+  const dataDeRef = useRef<HTMLInputElement>(null)
+  const dataAteRef = useRef<HTMLInputElement>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkBusy, setBulkBusy] = useState(false)
 
   useEffect(() => {
     if (isAdmin) {
@@ -84,11 +91,58 @@ export default function Multas() {
 
   const unidadeLabel = (uid: string) => {
     const u = unidades.find((x) => x.id === uid)
-    if (!u) return '—'
+    if (!u) return '-'
     return u.bloco ? `${u.bloco}-${u.numero}` : u.numero
   }
 
-  const total = rows.reduce((sum, m) => sum + Number(m.valor), 0)
+  const filteredRows = useMemo(() => {
+    const de = dataDe ? new Date(dataDe + 'T00:00:00').getTime() : null
+    const ate = dataAte ? new Date(dataAte + 'T23:59:59').getTime() : null
+    if (de === null && ate === null) return rows
+    return rows.filter((m) => {
+      const t = new Date(m.created_at).getTime()
+      if (de !== null && t < de) return false
+      if (ate !== null && t > ate) return false
+      return true
+    })
+  }, [rows, dataDe, dataAte])
+
+  const total = filteredRows.reduce((sum, m) => sum + Number(m.valor), 0)
+
+  const podeBulk = !isMorador
+  const arquivaveis = filteredRows.filter((m) => m.status !== 'arquivada').map((m) => m.id)
+  const todosSelecionados = arquivaveis.length > 0 && arquivaveis.every((id) => selected.has(id))
+
+  function toggleSelected(id: string) {
+    setSelected((prev) => {
+      const novo = new Set(prev)
+      if (novo.has(id)) novo.delete(id); else novo.add(id)
+      return novo
+    })
+  }
+  function toggleTodos() {
+    if (todosSelecionados) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(arquivaveis))
+    }
+  }
+
+  async function arquivarSelecionadas() {
+    if (selected.size === 0) return
+    if (!window.confirm(`Arquivar ${selected.size} multa(s)?`)) return
+    setBulkBusy(true)
+    try {
+      const ids = Array.from(selected)
+      for (const id of ids) {
+        try { await changeMultaStatus(id, 'arquivada') } catch (e) { console.warn(e) }
+      }
+      setSelected(new Set())
+      await reload()
+    } finally {
+      setBulkBusy(false)
+    }
+  }
 
   return (
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
@@ -130,12 +184,47 @@ export default function Multas() {
             ))}
           </Select>
         </div>
-        {rows.length > 0 && !isMorador && (
+        <div>
+          <label className="block text-xs font-medium text-slate-400 mb-1">De</label>
+          <input
+            ref={dataDeRef}
+            type="date"
+            value={dataDe}
+            onChange={(e) => setDataDe(e.target.value)}
+            onClick={() => dataDeRef.current?.showPicker?.()}
+            className="px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-400 mb-1">Até</label>
+          <input
+            ref={dataAteRef}
+            type="date"
+            value={dataAte}
+            onChange={(e) => setDataAte(e.target.value)}
+            onClick={() => dataAteRef.current?.showPicker?.()}
+            className="px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm"
+          />
+        </div>
+        {(dataDe || dataAte) && (
+          <Button size="sm" variant="ghost" onClick={() => { setDataDe(''); setDataAte('') }}>Limpar datas</Button>
+        )}
+        {filteredRows.length > 0 && !isMorador && (
           <div className="ml-auto text-sm text-slate-400">
             Soma: <span className="text-slate-100 font-semibold">R$ {total.toFixed(2).replace('.', ',')}</span>
           </div>
         )}
       </div>
+
+      {podeBulk && selected.size > 0 && (
+        <div className="mb-3 flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2">
+          <span className="text-sm text-amber-200">{selected.size} selecionada(s)</span>
+          <Button size="sm" variant="secondary" onClick={() => setSelected(new Set())}>Limpar</Button>
+          <Button size="sm" onClick={arquivarSelecionadas} disabled={bulkBusy}>
+            {bulkBusy ? 'Arquivando...' : `Arquivar ${selected.size}`}
+          </Button>
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
@@ -144,10 +233,8 @@ export default function Multas() {
       )}
 
       {loading ? (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-400 text-sm">
-          Carregando...
-        </div>
-      ) : rows.length === 0 ? (
+        <TableSkeleton rows={6} cols={5} />
+      ) : filteredRows.length === 0 ? (
         <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
           Nenhuma multa encontrada.
         </div>
@@ -156,6 +243,11 @@ export default function Multas() {
           <table className="w-full text-sm">
             <thead className="bg-slate-900/60 border-b border-slate-800">
               <tr>
+                {podeBulk && (
+                  <th className="px-3 py-3 w-8">
+                    <input type="checkbox" checked={todosSelecionados} onChange={toggleTodos} aria-label="Selecionar todos" />
+                  </th>
+                )}
                 <th className="text-left px-4 py-3 font-medium text-slate-300 text-xs uppercase tracking-wide">Data</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-300 text-xs uppercase tracking-wide">Unidade</th>
                 <th className="text-left px-4 py-3 font-medium text-slate-300 text-xs uppercase tracking-wide">Descrição</th>
@@ -164,12 +256,26 @@ export default function Multas() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((m) => (
+              {filteredRows.map((m) => (
                 <tr
                   key={m.id}
                   className="border-t border-slate-800/60 cursor-pointer hover:bg-slate-800/40"
-                  onClick={() => navigate(`/multas/${m.id}`)}
+                  onClick={(e) => {
+                    if ((e.target as HTMLElement).tagName === 'INPUT') return
+                    navigate(`/multas/${m.id}`)
+                  }}
                 >
+                  {podeBulk && (
+                    <td className="px-3 py-3 w-8" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selected.has(m.id)}
+                        disabled={m.status === 'arquivada'}
+                        onChange={() => toggleSelected(m.id)}
+                        aria-label={`Selecionar multa ${m.id}`}
+                      />
+                    </td>
+                  )}
                   <td className="px-4 py-3 text-slate-400 whitespace-nowrap">
                     {new Date(m.created_at).toLocaleDateString('pt-BR')}
                   </td>
