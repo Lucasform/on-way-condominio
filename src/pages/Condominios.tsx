@@ -57,7 +57,6 @@ export default function Condominios() {
   const columns: Column<Condominio>[] = [
     { key: 'nome', header: 'Nome', render: (r) => <span className="font-medium text-slate-100">{r.nome}</span> },
     { key: 'cidade', header: 'Cidade', render: (r) => formatCidade(r) },
-    { key: 'plano', header: 'Plano', render: (r) => <PlanoBadge plano={r.plano} /> },
     { key: 'ativo', header: 'Status', render: (r) => <StatusBadge ativo={r.ativo} /> },
   ]
 
@@ -115,19 +114,6 @@ export default function Condominios() {
 function formatCidade(r: Condominio): string {
   if (!r.cidade && !r.estado) return '—'
   return `${r.cidade ?? '—'}${r.estado ? `/${r.estado}` : ''}`
-}
-
-function PlanoBadge({ plano }: { plano: string }) {
-  const map: Record<string, string> = {
-    free: 'bg-slate-700/40 text-slate-300',
-    pro: 'bg-sky-500/15 text-sky-300 border border-sky-500/30',
-    enterprise: 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30',
-  }
-  return (
-    <span className={`px-2 py-0.5 rounded text-xs uppercase tracking-wide ${map[plano] ?? map.free}`}>
-      {plano}
-    </span>
-  )
 }
 
 function StatusBadge({ ativo }: { ativo: boolean }) {

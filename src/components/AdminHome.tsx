@@ -146,14 +146,13 @@ export default function AdminHome() {
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold text-slate-900 dark:text-slate-100 truncate">{c.nome}</div>
-                    <div className="text-xs text-slate-500 uppercase">Plano {c.plano}</div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 text-xs">
-                  <Stat label="Unid." val={c.unidades_atual} max={c.unidades_max} />
-                  <Stat label="Pessoas" val={c.pessoas_atual} max={c.pessoas_max} />
-                  <Stat label="Users" val={c.usuarios_atual} max={c.usuarios_max} />
+                  <Stat label="Unid." val={c.unidades_atual} />
+                  <Stat label="Pessoas" val={c.pessoas_atual} />
+                  <Stat label="Users" val={c.usuarios_atual} />
                 </div>
 
                 <div className="flex gap-2 pt-2 mt-auto">
@@ -184,15 +183,11 @@ export default function AdminHome() {
   )
 }
 
-function Stat({ label, val, max }: { label: string; val: number; max: number }) {
-  const pct = (val / max) * 100
-  const danger = pct >= 90
+function Stat({ label, val }: { label: string; val: number }) {
   return (
     <div>
       <div className="text-slate-500 dark:text-slate-400">{label}</div>
-      <div className={`font-mono ${danger ? 'text-red-600 font-semibold' : 'text-slate-700 dark:text-slate-300'}`}>
-        {val}/{max}
-      </div>
+      <div className="font-mono text-slate-700 dark:text-slate-300">{val}</div>
     </div>
   )
 }

@@ -6,12 +6,12 @@ import {
   getCondominio,
   updateCondominio,
 } from '../lib/condominios'
-import type { CondominioInput, Plano } from '../types/condominio'
+import type { CondominioInput } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
-import { Field, TextInput, Select } from '../components/ui/Input'
+import { Field, TextInput } from '../components/ui/Input'
 import ConvitesPanel from '../components/ConvitesPanel'
 import LogoUpload from '../components/LogoUpload'
 import PessoasImport from '../components/PessoasImport'
@@ -192,17 +192,6 @@ export default function CondominioForm() {
             value={form.administradora ?? ''}
             onChange={(e) => update('administradora', e.target.value)}
           />
-        </Field>
-
-        <Field label="Plano">
-          <Select
-            value={form.plano}
-            onChange={(e) => update('plano', e.target.value as Plano)}
-          >
-            <option value="free">Free</option>
-            <option value="pro">Pro</option>
-            <option value="enterprise">Enterprise</option>
-          </Select>
         </Field>
 
         <fieldset className="border-t border-slate-800 pt-5">

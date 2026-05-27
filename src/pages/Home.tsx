@@ -13,7 +13,6 @@ import type { Evento } from '../types/evento'
 import type { Votacao } from '../types/votacao'
 import type { Chamado } from '../types/chamado'
 import OnboardingChecklist from '../components/OnboardingChecklist'
-import PlanoUsoWidget from '../components/PlanoUsoWidget'
 import AdminHome from '../components/AdminHome'
 
 export default function Home() {
@@ -70,11 +69,6 @@ export default function Home() {
             </Link>
           </div>
 
-          {perfil.condominio_id && (
-            <div className="mt-6 max-w-md">
-              <PlanoUsoWidget />
-            </div>
-          )}
         </>
       )}
     </div>
