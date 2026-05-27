@@ -22,6 +22,8 @@ export async function listPublicacoes(opts: { condominio_id?: string } = {}): Pr
 }
 
 export async function createPublicacao(input: PublicacaoInput): Promise<Publicacao> {
+  const { data: userData } = await supabase.auth.getUser()
+  const userId = userData.user?.id ?? null
   const { data, error } = await supabase
     .from('publicacoes')
     .insert({
@@ -30,6 +32,7 @@ export async function createPublicacao(input: PublicacaoInput): Promise<Publicac
       conteudo: input.conteudo.trim(),
       imagem_url: input.imagem_url || null,
       fixado: input.fixado,
+      ...(userId ? { autor_id: userId } : {}),
     })
     .select('*')
     .single()

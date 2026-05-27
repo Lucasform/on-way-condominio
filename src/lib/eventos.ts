@@ -31,6 +31,10 @@ export async function getEvento(id: string): Promise<Evento | null> {
 }
 
 export async function createEvento(input: EventoInput): Promise<Evento> {
+  // Pega o user atual pra preencher criado_por (a coluna tem default
+  // '00000000-...' que e FK invalida pra auth.users).
+  const { data: userData } = await supabase.auth.getUser()
+  const userId = userData.user?.id ?? null
   const { data, error } = await supabase
     .from('eventos')
     .insert({
@@ -42,6 +46,7 @@ export async function createEvento(input: EventoInput): Promise<Evento> {
       local: input.local?.trim() || null,
       tipo: input.tipo,
       publico: input.publico,
+      ...(userId ? { criado_por: userId } : {}),
     })
     .select('*')
     .single()
