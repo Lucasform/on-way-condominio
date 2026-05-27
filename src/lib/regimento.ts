@@ -53,6 +53,19 @@ export async function setRegimentoArtigoAtivo(id: string, ativo: boolean): Promi
   if (error) throw error
 }
 
+export async function deleteRegimentoArtigo(id: string): Promise<void> {
+  const { error } = await supabase.from('regimento_artigos').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function deleteRegimentoArtigosInativos(condominio_id?: string): Promise<number> {
+  let q = supabase.from('regimento_artigos').delete({ count: 'exact' }).eq('ativo', false)
+  if (condominio_id) q = q.eq('condominio_id', condominio_id)
+  const { error, count } = await q
+  if (error) throw error
+  return count ?? 0
+}
+
 function normalize(input: RegimentoArtigoInput): RegimentoArtigoInput {
   return {
     condominio_id: input.condominio_id,

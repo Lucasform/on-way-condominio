@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import {
   listRegimentoArtigos,
   setRegimentoArtigoAtivo,
+  deleteRegimentoArtigo,
+  deleteRegimentoArtigosInativos,
 } from '../lib/regimento'
 import { regenerateEmbedding } from '../lib/iaAnalysis'
 import { listCondominios } from '../lib/condominios'
@@ -79,7 +81,38 @@ export default function Regimento() {
     }
   }
 
+  async function handleDeleteArtigo(row: RegimentoArtigo) {
+    const label = `${row.numero ?? ''} ${row.titulo}`.trim()
+    if (!window.confirm(`Apagar definitivamente "${label}"? Esta acao nao pode ser desfeita.`)) return
+    try {
+      await deleteRegimentoArtigo(row.id)
+      await reload()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro.')
+    }
+  }
+
+  async function handleDeleteInativos() {
+    const inativos = rows.filter((r) => !r.ativo).length
+    if (inativos === 0) {
+      alert('Nao ha artigos desativados pra apagar.')
+      return
+    }
+    if (!window.confirm(`Apagar definitivamente ${inativos} artigo${inativos > 1 ? 's' : ''} desativado${inativos > 1 ? 's' : ''}? Esta acao nao pode ser desfeita.`)) return
+    try {
+      const apagados = await deleteRegimentoArtigosInativos(
+        isAdmin && scopeId ? scopeId : undefined,
+      )
+      await reload()
+      alert(`${apagados} artigo${apagados !== 1 ? 's' : ''} apagado${apagados !== 1 ? 's' : ''}.`)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro.')
+    }
+  }
+
   const canEdit = perfil && ['admin_onway', 'administradora', 'sindico'].includes(perfil.role)
+  const canDelete = perfil && ['admin_onway', 'sindico'].includes(perfil.role)
+  const temInativos = rows.some((r) => !r.ativo)
 
   return (
     <div className="px-8 py-10 max-w-5xl mx-auto">
@@ -92,6 +125,11 @@ export default function Regimento() {
               <Button variant="secondary" onClick={() => setShowInactive((v) => !v)}>
                 {showInactive ? 'Ocultar inativos' : 'Mostrar inativos'}
               </Button>
+              {canDelete && showInactive && temInativos && (
+                <Button variant="danger" onClick={handleDeleteInativos}>
+                  Apagar inativos
+                </Button>
+              )}
               <Link to="/regimento/novo">
                 <Button>+ Novo artigo</Button>
               </Link>
@@ -171,7 +209,7 @@ export default function Regimento() {
                   </div>
                 </div>
                 {canEdit && (
-                  <div className="flex gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex gap-1 shrink-0 items-center" onClick={(e) => e.stopPropagation()}>
                     <Link to={`/regimento/${art.id}`}>
                       <Button variant="ghost">Editar</Button>
                     </Link>
@@ -181,6 +219,23 @@ export default function Regimento() {
                     >
                       {art.ativo ? 'Desativar' : 'Reativar'}
                     </Button>
+                    {canDelete && !art.ativo && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteArtigo(art)}
+                        title="Apagar definitivamente"
+                        className="p-2 rounded-md text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition"
+                        aria-label="Apagar"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                          <path d="M10 11v6" />
+                          <path d="M14 11v6" />
+                          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                        </svg>
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
