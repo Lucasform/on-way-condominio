@@ -147,7 +147,7 @@ export default function UnidadeForm() {
           </Field>
         )}
 
-        <div className="grid grid-cols-[140px_1fr] gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-4">
           <Field label="Bloco">
             <TextInput
               value={form.bloco ?? ''}

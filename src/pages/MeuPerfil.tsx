@@ -509,7 +509,7 @@ export default function MeuPerfil() {
       {/* Conta — info da sessão */}
       {/* ============================================================ */}
       <Section title="Conta">
-        <dl className="grid grid-cols-[140px_1fr] gap-y-2 gap-x-4 text-sm">
+        <dl className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-y-2 gap-x-4 text-sm">
           <dt className="text-slate-500 dark:text-slate-400">Papel</dt>
           <dd className="text-slate-900 dark:text-slate-100">{roleLabel(perfil.role)}</dd>
 
@@ -559,7 +559,7 @@ export default function MeuPerfil() {
           title="Vínculo com o condomínio"
           hint="Dados de morador. Pra alterar, fale com a administração."
         >
-          <dl className="grid grid-cols-[140px_1fr] gap-y-2 gap-x-4 text-sm">
+          <dl className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-y-2 gap-x-4 text-sm">
             <dt className="text-slate-500 dark:text-slate-400">Vínculo</dt>
             <dd className="text-slate-900 dark:text-slate-100">
               {pessoa.tipo_vinculo}

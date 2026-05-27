@@ -297,7 +297,7 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
           </div>
 
           {result.analysis.cabe_multa && (
-            <dl className="grid grid-cols-[120px_1fr] gap-y-2 gap-x-4 text-sm">
+            <dl className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-y-2 gap-x-4 text-sm">
               <dt className="text-slate-500">Artigo</dt>
               <dd className="text-slate-100">{result.analysis.artigo_aplicavel ?? '—'}</dd>
               <dt className="text-slate-500">Infração</dt>

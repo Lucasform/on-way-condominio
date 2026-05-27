@@ -172,7 +172,7 @@ export default function MultaDetalhe() {
           </span>
         </div>
 
-        <dl className="grid grid-cols-[140px_1fr] gap-y-2 gap-x-4 text-sm mb-5">
+        <dl className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-y-2 gap-x-4 text-sm mb-5">
           <dt className="text-slate-500">Condomínio</dt>
           <dd className="text-slate-200">{condominio?.nome ?? '—'}</dd>
 

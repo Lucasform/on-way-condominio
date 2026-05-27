@@ -255,7 +255,7 @@ export default function OcorrenciaDetalhe() {
 
         {!editingDados ? (
           <>
-            <dl className="grid grid-cols-[140px_1fr] gap-y-2 gap-x-4 text-sm mb-3">
+            <dl className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-y-2 gap-x-4 text-sm mb-3">
               <dt className="text-slate-500">Condomínio</dt>
               <dd className="text-slate-200">{condominio?.nome ?? '—'}</dd>
 
@@ -444,7 +444,7 @@ export default function OcorrenciaDetalhe() {
       {ocorrencia.status === 'virou_multa' && multaVinculada && (
         <div className="mt-6 rounded-lg border border-red-500/30 bg-red-500/5 p-5">
           <div className="text-sm font-medium text-red-200 mb-1">Multa gerada</div>
-          <dl className="grid grid-cols-[120px_1fr] gap-y-1 text-sm">
+          <dl className="grid grid-cols-1 sm:grid-cols-[120px_1fr] gap-y-1 text-sm">
             <dt className="text-slate-500">Valor</dt>
             <dd className="text-slate-100 font-medium">R$ {multaVinculada.valor.toFixed(2).replace('.', ',')}</dd>
             <dt className="text-slate-500">Status</dt>

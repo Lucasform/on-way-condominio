@@ -220,12 +220,12 @@ export default function Calendario() {
         </div>
       )}
 
-      <div className="grid grid-cols-[1fr_320px] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-4">
         {/* Grid mensal */}
         <div className="rounded-lg border border-slate-800 overflow-hidden">
-          <div className="grid grid-cols-7 text-xs font-medium text-slate-500 uppercase bg-slate-900/60 border-b border-slate-800">
+          <div className="grid grid-cols-7 text-[10px] sm:text-xs font-medium text-slate-500 uppercase bg-slate-900/60 border-b border-slate-800">
             {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((d) => (
-              <div key={d} className="px-2 py-2 text-center">{d}</div>
+              <div key={d} className="px-1 sm:px-2 py-1.5 sm:py-2 text-center">{d}</div>
             ))}
           </div>
           <div className="grid grid-cols-7 grid-rows-6">
@@ -239,14 +239,14 @@ export default function Calendario() {
                 <button
                   key={date}
                   onClick={() => setSelectedDay(date)}
-                  className={`min-h-[88px] text-left p-1.5 border-r border-b border-slate-800/60 transition flex flex-col gap-1 ${
+                  className={`min-h-[56px] sm:min-h-[88px] text-left p-1 sm:p-1.5 border-r border-b border-slate-800/60 transition flex flex-col gap-0.5 sm:gap-1 ${
                     inMonth ? 'bg-slate-900/30' : 'bg-slate-950/40 opacity-50'
                   } ${isSelected ? 'ring-2 ring-emerald-500/60 z-10' : ''} hover:bg-slate-800/40`}
                 >
-                  <div className={`text-xs font-mono ${isToday ? 'text-emerald-300 font-bold' : 'text-slate-400'}`}>
+                  <div className={`text-[10px] sm:text-xs font-mono ${isToday ? 'text-emerald-300 font-bold' : 'text-slate-400'}`}>
                     {d.getDate()}
                   </div>
-                  <div className="space-y-0.5">
+                  <div className="space-y-0.5 hidden sm:block">
                     {items.slice(0, 3).map((it) => (
                       <div
                         key={`${it.kind}-${it.id}`}
@@ -260,6 +260,18 @@ export default function Calendario() {
                       <div className="text-[10px] text-slate-500 pl-1">+{items.length - 3}</div>
                     )}
                   </div>
+                  {/* Em mobile: bolinhas em vez de cards (cabe nas celulas estreitas) */}
+                  {items.length > 0 && (
+                    <div className="flex flex-wrap gap-0.5 sm:hidden mt-auto">
+                      {items.slice(0, 4).map((it, i) => (
+                        <span
+                          key={`${it.kind}-${it.id}-${i}`}
+                          className={`w-1.5 h-1.5 rounded-full ${it.color.split(' ').find((c) => c.startsWith('bg-')) ?? 'bg-slate-500'}`}
+                        />
+                      ))}
+                      {items.length > 4 && <span className="text-[8px] text-slate-500">+</span>}
+                    </div>
+                  )}
                 </button>
               )
             })}
