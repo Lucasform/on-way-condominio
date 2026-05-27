@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import { listCondominios } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
@@ -26,12 +26,42 @@ const EMPTY: EncomendaInput = {
   observacoes: null,
 }
 
+const TIPO_INFO: Record<TipoEncomenda, { titulo: string; emoji: string; descricao: string }> = {
+  encomenda: {
+    titulo: 'Encomenda',
+    emoji: '📦',
+    descricao: 'Pacote, caixa ou envelope que será guardado pra retirada.',
+  },
+  comida: {
+    titulo: 'Comida',
+    emoji: '🍔',
+    descricao: 'iFood, delivery ou refeição que precisa ser entregue agora.',
+  },
+  documento: {
+    titulo: 'Documento',
+    emoji: '📄',
+    descricao: 'Cartas, boletos ou correspondências.',
+  },
+  outro: {
+    titulo: 'Outro',
+    emoji: '📬',
+    descricao: 'Qualquer outro item recebido na portaria.',
+  },
+}
+
+function parseTipo(v: string | null): TipoEncomenda | null {
+  if (v === 'encomenda' || v === 'comida' || v === 'documento' || v === 'outro') return v
+  return null
+}
+
 export default function EncomendaNova() {
   const navigate = useNavigate()
   const { user, perfil } = useAuth()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
+  const [params, setParams] = useSearchParams()
+  const tipoUrl = parseTipo(params.get('tipo'))
 
-  const [form, setForm] = useState<EncomendaInput>(EMPTY)
+  const [form, setForm] = useState<EncomendaInput>({ ...EMPTY, tipo: tipoUrl ?? 'encomenda' })
   const [condos, setCondos] = useState<Condominio[]>([])
   const [unidades, setUnidades] = useState<Unidade[]>([])
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
@@ -83,41 +113,71 @@ export default function EncomendaNova() {
 
   // Comida: layout simplificado (sem armazenamento, sem rastreio — entrega imediata)
   const isComida = form.tipo === 'comida'
+  const infoAtual = TIPO_INFO[form.tipo]
+
+  function escolherTipo(t: TipoEncomenda) {
+    update('tipo', t)
+    setParams({ tipo: t }, { replace: true })
+  }
+
+  function voltarParaSelecao() {
+    setParams({}, { replace: true })
+  }
+
+  // Tela inicial: cards de seleção do tipo
+  if (!tipoUrl) {
+    return (
+      <div className="px-8 py-10 max-w-3xl mx-auto">
+        <PageHeader
+          title="Registrar"
+          subtitle="O que chegou na portaria?"
+          actions={
+            <Link to="/encomendas">
+              <Button variant="ghost">← Voltar</Button>
+            </Link>
+          }
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {(['encomenda', 'comida', 'documento', 'outro'] as TipoEncomenda[]).map((t) => {
+            const info = TIPO_INFO[t]
+            return (
+              <button
+                key={t}
+                type="button"
+                onClick={() => escolherTipo(t)}
+                className="text-left rounded-lg border border-slate-800 bg-slate-900/40 p-5 hover:border-emerald-500 hover:bg-emerald-500/5 transition group"
+              >
+                <div className="text-3xl mb-2">{info.emoji}</div>
+                <div className="text-base font-semibold text-slate-100 group-hover:text-emerald-200">
+                  {info.titulo}
+                </div>
+                <div className="mt-1 text-xs text-slate-400 leading-relaxed">
+                  {info.descricao}
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="px-8 py-10 max-w-2xl mx-auto">
       <PageHeader
-        title="Registrar encomenda"
-        subtitle="Pacote, comida, documento ou outro item recebido na portaria."
+        title={`Registrar ${infoAtual.titulo.toLowerCase()}`}
+        subtitle={infoAtual.descricao}
         actions={
-          <Link to="/encomendas">
-            <Button variant="ghost">← Voltar</Button>
-          </Link>
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={voltarParaSelecao}>← Trocar tipo</Button>
+            <Link to="/encomendas">
+              <Button variant="ghost">Sair</Button>
+            </Link>
+          </div>
         }
       />
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <Field label="Tipo" required>
-          <div className="grid grid-cols-4 gap-2">
-            {(['encomenda', 'comida', 'documento', 'outro'] as TipoEncomenda[]).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => update('tipo', t)}
-                className={`px-3 py-2 rounded-md text-sm border transition ${
-                  form.tipo === t
-                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-300'
-                    : 'border-slate-700 bg-slate-900 text-slate-300 hover:border-slate-600'
-                }`}
-              >
-                {t === 'encomenda' && '📦 Encomenda'}
-                {t === 'comida' && '🍔 Comida'}
-                {t === 'documento' && '📄 Documento'}
-                {t === 'outro' && '📬 Outro'}
-              </button>
-            ))}
-          </div>
-        </Field>
 
         {isAdmin && (
           <Field label="Condomínio" required>
