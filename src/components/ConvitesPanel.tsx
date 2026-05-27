@@ -122,7 +122,7 @@ export default function ConvitesPanel({ condominio_id }: Props) {
         Códigos de convite
       </legend>
       <p className="text-xs text-slate-500 dark:text-slate-400 -mt-2">
-        Gere um código pra liberar criação de contas pelo formulário público de signup.
+        Gere um código pra liberar criação de contas.
       </p>
 
       <div className="grid grid-cols-[1fr_140px_100px_100px_auto] gap-3 items-end">
