@@ -75,7 +75,9 @@ export default function ChatConversa() {
     const setIds = new Set<string>()
     if (conversa?.morador_user_id) setIds.add(conversa.morador_user_id)
     for (const m of mensagens) {
-      if (m.autor_tipo !== 'bot' && m.autor_tipo !== 'sistema') setIds.add(m.autor_id)
+      if (m.autor_id && m.autor_tipo !== 'bot' && m.autor_tipo !== 'sistema') {
+        setIds.add(m.autor_id)
+      }
     }
     const ids = Array.from(setIds)
     const pendentes = ids.filter((i) => !autores.has(i))
@@ -86,22 +88,34 @@ export default function ChatConversa() {
         .select('id, role, nome_exibicao, condominio_id')
         .in('id', pendentes)
       const moradorIds = (perfis ?? []).filter((p) => p.role === 'morador').map((p) => p.id)
-      const { data: pessoas } = moradorIds.length > 0
-        ? await supabase
-            .from('pessoas')
-            .select('user_id, nome, unidade_id, unidades:unidade_id(bloco, numero)')
-            .in('user_id', moradorIds)
-        : { data: [] as Array<{ user_id: string; nome: string; unidade_id: string | null; unidades: { bloco: string | null; numero: string } | null }> }
-      const pessoaPorUser = new Map<string, typeof pessoas[number]>()
-      for (const p of pessoas ?? []) pessoaPorUser.set(p.user_id, p)
+      // unidades vem como array em PostgREST quando ha FK, achatamos pra primeiro elemento.
+      type PessoaLite = {
+        user_id: string | null
+        nome: string
+        unidade_id: string | null
+        unidades: { bloco: string | null; numero: string } | { bloco: string | null; numero: string }[] | null
+      }
+      let pessoas: PessoaLite[] = []
+      if (moradorIds.length > 0) {
+        const { data } = await supabase
+          .from('pessoas')
+          .select('user_id, nome, unidade_id, unidades:unidade_id(bloco, numero)')
+          .in('user_id', moradorIds)
+        pessoas = (data ?? []) as PessoaLite[]
+      }
+      const pessoaPorUser = new Map<string, PessoaLite>()
+      for (const p of pessoas) {
+        if (p.user_id) pessoaPorUser.set(p.user_id, p)
+      }
 
       setAutores((prev) => {
         const novo = new Map(prev)
         for (const pf of perfis ?? []) {
           if (pf.role === 'morador') {
             const ps = pessoaPorUser.get(pf.id)
-            const unidadeLbl = ps?.unidades
-              ? (ps.unidades.bloco ? `${ps.unidades.bloco}-${ps.unidades.numero}` : ps.unidades.numero)
+            const u = Array.isArray(ps?.unidades) ? ps?.unidades[0] : ps?.unidades
+            const unidadeLbl = u
+              ? (u.bloco ? `${u.bloco}-${u.numero}` : u.numero)
               : null
             novo.set(pf.id, {
               nome: ps?.nome ?? pf.nome_exibicao ?? 'Morador',
@@ -259,7 +273,7 @@ export default function ChatConversa() {
             <MensagemBubble
               key={m.id}
               mensagem={m}
-              autor={autores.get(m.autor_id) ?? null}
+              autor={m.autor_id ? autores.get(m.autor_id) ?? null : null}
               eMeuLado={Boolean(m.autor_id === user?.id || (isMorador && m.autor_tipo === 'morador') || (isStaff && m.autor_tipo === 'staff'))}
             />
           ))
