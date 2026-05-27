@@ -182,17 +182,17 @@ export default function AppShell() {
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Topbar mobile (hamburger + nome + sino) */}
-        <header className="md:hidden h-12 shrink-0 border-b border-slate-800 bg-slate-900/60 flex items-center px-2 gap-2">
+        {/* Header unificado: hamburger + nome em mobile, sino sempre. */}
+        <header className="h-12 shrink-0 border-b border-slate-800 bg-slate-900/60 md:bg-slate-900/30 flex items-center px-2 md:px-4 gap-2">
           <button
             onClick={() => setMobileOpen(true)}
-            className="p-2 -ml-1 rounded-md text-slate-300 hover:bg-slate-800 active:bg-slate-700 transition"
+            className="md:hidden p-2 -ml-1 rounded-md text-slate-300 hover:bg-slate-800 active:bg-slate-700 transition"
             aria-label="Abrir menu"
             aria-expanded={mobileOpen}
           >
             <MenuIcon />
           </button>
-          <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="md:hidden flex items-center gap-2 min-w-0 flex-1">
             {condoLogo ? (
               <img src={condoLogo} alt="" className="w-7 h-7 object-contain rounded shrink-0" />
             ) : (
@@ -202,6 +202,7 @@ export default function AppShell() {
               {condoNome ?? 'OnWay'}
             </div>
           </div>
+          <div className="hidden md:block flex-1" />
           <NotificationBell />
         </header>
 
@@ -218,11 +219,6 @@ export default function AppShell() {
             </button>
           </div>
         )}
-
-        {/* Header desktop (sino à direita) */}
-        <header className="hidden md:flex h-12 shrink-0 border-b border-slate-800 bg-slate-900/30 items-center justify-end px-4 gap-1">
-          <NotificationBell />
-        </header>
 
         <main className="flex-1 overflow-y-auto bg-slate-950">
           <Outlet />
