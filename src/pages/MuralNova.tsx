@@ -85,7 +85,13 @@ export default function MuralNova() {
       await createPublicacao({ ...form, imagem_url: imgPath })
       navigate('/mural')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao publicar.')
+      console.warn('[mural] falha ao publicar:', e)
+      const msg = e instanceof Error
+        ? e.message
+        : (e && typeof e === 'object' && 'message' in e
+            ? String((e as { message: unknown }).message)
+            : JSON.stringify(e).slice(0, 200))
+      setError(msg || 'Erro ao publicar.')
     } finally {
       setSubmitting(false)
     }
