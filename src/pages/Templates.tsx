@@ -8,6 +8,7 @@ import {
   type MensagemTemplate,
   type TemplateTipo,
 } from '../lib/templates'
+import { supabase } from '../lib/supabase'
 import { listCondominios } from '../lib/condominios'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
@@ -35,6 +36,7 @@ export default function Templates() {
   const [assunto, setAssunto] = useState('')
   const [corpo, setCorpo] = useState('')
   const [saving, setSaving] = useState(false)
+  const [polindo, setPolindo] = useState(false)
 
   const podeEditar = isStaff(perfil?.role)
   const podeApagar = isGestor(perfil?.role)
@@ -120,6 +122,34 @@ export default function Templates() {
     }
   }
 
+  async function melhorarComIA() {
+    if (!corpo.trim()) {
+      setError('Escreva um esboço antes de pedir ajuda da IA.')
+      return
+    }
+    setPolindo(true)
+    setError(null)
+    try {
+      const { data, error: e } = await supabase.functions.invoke('improve-template', {
+        body: {
+          tipo,
+          titulo: titulo.trim() || undefined,
+          corpo: corpo.trim(),
+          assunto: tipo === 'email' ? (assunto.trim() || undefined) : undefined,
+          condominio_id: condoId,
+        },
+      })
+      if (e) throw e
+      if (data?.error) throw new Error(data.error)
+      if (typeof data?.corpo === 'string') setCorpo(data.corpo)
+      if (tipo === 'email' && typeof data?.assunto === 'string') setAssunto(data.assunto)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao melhorar com IA.')
+    } finally {
+      setPolindo(false)
+    }
+  }
+
   async function toggleAtivo(t: MensagemTemplate) {
     try {
       await setTemplateAtivo(t.id, !t.ativo)
@@ -202,8 +232,21 @@ export default function Templates() {
               rows={8}
               value={corpo}
               onChange={(e) => setCorpo(e.target.value)}
-              placeholder="Texto do template. Pode usar {nome}, {unidade}, {data} se quiser referenciar variáveis (substitui manualmente por enquanto)."
+              placeholder="Escreva o esboço — pode ser tosco. A IA pode polir com emojis e estrutura quando você clicar abaixo. Use {nome}, {unidade}, {data} pra variáveis."
             />
+            <div className="mt-2 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={melhorarComIA}
+                disabled={polindo || !corpo.trim()}
+                className="px-3 py-1.5 rounded-md text-xs font-medium bg-violet-700/20 text-violet-200 border border-violet-500/40 hover:bg-violet-700/30 disabled:opacity-50 transition"
+              >
+                {polindo ? '✨ Pensando...' : '✨ Melhorar com IA'}
+              </button>
+              <span className="text-[11px] text-slate-500">
+                Reescreve mantendo o objetivo, aplica padrão{tipo === 'email' ? ' de e-mail' : ' de chat'} do condomínio.
+              </span>
+            </div>
           </Field>
           {error && (
             <div className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
