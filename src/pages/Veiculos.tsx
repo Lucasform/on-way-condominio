@@ -156,7 +156,7 @@ export default function Veiculos() {
         <div className="mt-10">
           <h2 className="text-base font-semibold text-slate-200 mb-1">Importar em massa</h2>
           <p className="text-xs text-slate-400 mb-4">
-            Envie sua planilha em Excel ou CSV. Placas duplicadas são puladas. A unidade pode vir de "bloco + numero" ou ser deduzida pelo CPF/nome da pessoa.
+            Envie sua planilha em Excel ou CSV. Placas duplicadas são ignoradas. A unidade pode vir de "bloco + numero" ou ser deduzida pelo CPF/nome da pessoa.
           </p>
           <VeiculosImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} />
         </div>

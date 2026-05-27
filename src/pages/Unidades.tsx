@@ -163,7 +163,7 @@ export default function Unidades() {
         <div className="mt-10">
           <h2 className="text-base font-semibold text-slate-200 mb-1">Importar em massa</h2>
           <p className="text-xs text-slate-400 mb-4">
-            Envie sua planilha em Excel ou CSV. Duplicadas (mesmo bloco + número) são puladas.
+            Envie sua planilha em Excel ou CSV. Duplicadas (mesmo bloco + número) são ignoradas.
           </p>
           <UnidadesImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} />
         </div>

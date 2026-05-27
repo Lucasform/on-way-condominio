@@ -204,7 +204,7 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
       </legend>
       <p className="text-xs text-slate-500 dark:text-slate-400 -mt-2">
         Aceita CSV ou XLSX. Cria unidades automaticamente quando "Bloco-Número" não existir.
-        Pula linhas duplicadas (mesmo CPF ou e-mail).
+        Linhas duplicadas (mesmo CPF ou e-mail) são ignoradas.
       </p>
 
       <div className="flex flex-wrap gap-2">

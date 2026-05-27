@@ -207,7 +207,7 @@ export default function VeiculosImport({ condominio_id, onDone }: Props) {
         🚗 Importar veículos em massa
       </legend>
       <p className="text-xs text-slate-400 -mt-2">
-        Aceita CSV ou XLSX. Pula placas já cadastradas. A unidade pode vir das colunas
+        Aceita CSV ou XLSX. Placas já cadastradas são ignoradas. A unidade pode vir das colunas
         <strong> bloco + numero</strong> da planilha, ou ser deduzida pelo <strong>CPF</strong> ou <strong>nome</strong> da pessoa.
         Tipos válidos: carro, moto, bicicleta, utilitario, outro.
       </p>

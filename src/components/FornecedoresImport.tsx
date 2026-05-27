@@ -151,8 +151,8 @@ export default function FornecedoresImport({ condominio_id, onDone }: Props) {
         🔧 Importar fornecedores em massa
       </legend>
       <p className="text-xs text-slate-400 -mt-2">
-        Aceita CSV ou XLSX. Pula prestadores com nome já cadastrado. Telefone e
-        CPF/CNPJ são normalizados pra só dígitos. Valor aceita vírgula ou ponto.
+        Aceita CSV ou XLSX. Prestadores com nome já cadastrado são ignorados.
+        Telefone e CPF/CNPJ são normalizados pra só dígitos. Valor aceita vírgula ou ponto.
       </p>
 
       <div className="flex flex-wrap gap-2">

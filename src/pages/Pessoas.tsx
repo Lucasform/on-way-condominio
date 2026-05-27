@@ -202,7 +202,7 @@ export default function Pessoas() {
         <div className="mt-10">
           <h2 className="text-base font-semibold text-slate-200 mb-1">Importar em massa</h2>
           <p className="text-xs text-slate-400 mb-4">
-            Envie sua planilha em Excel ou CSV. Cria unidades automaticamente quando "Bloco-Número" não existir. Linhas duplicadas (mesmo CPF ou e-mail) são puladas.
+            Envie sua planilha em Excel ou CSV. Cria unidades automaticamente quando "Bloco-Número" não existir. Linhas duplicadas (mesmo CPF ou e-mail) são ignoradas.
           </p>
           <PessoasImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} />
         </div>

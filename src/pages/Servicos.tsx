@@ -234,7 +234,7 @@ export default function Servicos() {
         <div className="mt-10">
           <h2 className="text-base font-semibold text-slate-200 mb-1">Importar prestadores em massa</h2>
           <p className="text-xs text-slate-400 mb-4">
-            Envie sua planilha em Excel ou CSV. Prestadores com nome já cadastrado são pulados.
+            Envie sua planilha em Excel ou CSV. Prestadores com nome já cadastrado são ignorados.
           </p>
           <FornecedoresImport condominio_id={condominioId} />
         </div>

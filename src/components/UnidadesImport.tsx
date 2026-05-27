@@ -141,7 +141,7 @@ export default function UnidadesImport({ condominio_id, onDone }: Props) {
         🏠 Importar unidades em massa
       </legend>
       <p className="text-xs text-slate-400 -mt-2">
-        Aceita CSV ou XLSX. Pula duplicadas (mesmo bloco+número). Tipos válidos:
+        Aceita CSV ou XLSX. Duplicadas (mesmo bloco+número) são ignoradas. Tipos válidos:
         apartamento, casa, sala, loja, kitnet, cobertura, outro.
       </p>
 

@@ -169,7 +169,7 @@ export default function Chat() {
           return
         }
         const msg = `${criadas.length} conversa${criadas.length > 1 ? 's' : ''} criada${criadas.length > 1 ? 's' : ''}.` +
-          (sem_acesso > 0 ? ` ${sem_acesso} sem acesso ao app foram puladas.` : '')
+          (sem_acesso > 0 ? ` ${sem_acesso} sem acesso ao app foram ignoradas.` : '')
         alert(msg)
         setShowStaffNova(false)
         setStaffMsg('')

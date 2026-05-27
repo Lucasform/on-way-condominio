@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { listEncomendas } from '../lib/encomendas'
+import { listEncomendas, darBaixaEncomenda } from '../lib/encomendas'
 import { listCondominios } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
 import type { Encomenda, StatusEncomenda, TipoEncomenda } from '../types/encomenda'
@@ -10,13 +10,6 @@ import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
-
-const STATUS_OPTS: { value: '' | StatusEncomenda; label: string }[] = [
-  { value: '', label: 'Todos os status' },
-  { value: 'aguardando', label: 'Aguardando retirada' },
-  { value: 'entregue', label: 'Entregues' },
-  { value: 'devolvida', label: 'Devolvidas' },
-]
 
 const STATUS_CLASS: Record<StatusEncomenda, string> = {
   aguardando: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
@@ -53,10 +46,36 @@ export default function Encomendas() {
   const [condos, setCondos] = useState<Condominio[]>([])
   const [unidades, setUnidades] = useState<Unidade[]>([])
   const [scopeId, setScopeId] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<'' | StatusEncomenda>('aguardando')
   const [rows, setRows] = useState<Encomenda[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [tab, setTab] = useState<'encomendas' | 'comida'>('encomendas')
+
+  const rowsTab = useMemo(() => {
+    if (tab === 'comida') return rows.filter((r) => r.tipo === 'comida')
+    return rows.filter((r) => r.tipo !== 'comida')
+  }, [rows, tab])
+
+  const totaisAba = useMemo(() => ({
+    encomendas: rows.filter((r) => r.tipo !== 'comida').length,
+    comida: rows.filter((r) => r.tipo === 'comida').length,
+  }), [rows])
+
+  const kanbanColunas = useMemo(() => ({
+    aguardando: rowsTab.filter((r) => r.status === 'aguardando'),
+    entregue:   rowsTab.filter((r) => r.status === 'entregue'),
+    devolvida:  rowsTab.filter((r) => r.status === 'devolvida'),
+  }), [rowsTab])
+
+  async function marcarEntregue(id: string, nome: string) {
+    if (!perfil?.id) return
+    try {
+      await darBaixaEncomenda(id, nome || 'Morador', perfil.id)
+      await reload()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro.')
+    }
+  }
 
   useEffect(() => {
     if (isAdmin) {
@@ -80,7 +99,6 @@ export default function Encomendas() {
     try {
       const data = await listEncomendas({
         condominio_id: isAdmin && scopeId ? scopeId : undefined,
-        status: statusFilter || undefined,
       })
       setRows(data)
     } catch (e) {
@@ -94,7 +112,7 @@ export default function Encomendas() {
     if (isAdmin && !scopeId) return
     reload()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scopeId, statusFilter])
+  }, [scopeId])
 
   const unidadeLabel = (uid: string) => {
     const u = unidades.find((x) => x.id === uid)
@@ -144,17 +162,16 @@ export default function Encomendas() {
             </Select>
           </div>
         )}
-        <div className="min-w-[200px]">
-          <label className="block text-xs font-medium text-slate-400 mb-1">Status</label>
-          <Select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as '' | StatusEncomenda)}
-          >
-            {STATUS_OPTS.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </Select>
-        </div>
+      </div>
+
+      {/* Tabs Encomendas / Comida */}
+      <div className="mb-5 border-b border-slate-800 flex gap-1">
+        <TabButton active={tab === 'encomendas'} onClick={() => setTab('encomendas')}>
+          📦 Encomendas <span className="ml-1.5 text-xs text-slate-400">({totaisAba.encomendas})</span>
+        </TabButton>
+        <TabButton active={tab === 'comida'} onClick={() => setTab('comida')}>
+          🍔 Comidas <span className="ml-1.5 text-xs text-slate-400">({totaisAba.comida})</span>
+        </TabButton>
       </div>
 
       {error && (
@@ -167,53 +184,193 @@ export default function Encomendas() {
         <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-400 text-sm">
           Carregando...
         </div>
-      ) : rows.length === 0 ? (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
-          Nenhuma encomenda encontrada.
-        </div>
+      ) : tab === 'encomendas' ? (
+        <KanbanEncomendas
+          colunas={kanbanColunas}
+          unidadeLabel={unidadeLabel}
+          onCard={(id) => navigate(`/encomendas/${id}`)}
+          onEntregar={marcarEntregue}
+        />
       ) : (
-        <div className="space-y-2">
-          {rows.map((e) => (
-            <article
-              key={e.id}
-              onClick={() => navigate(`/encomendas/${e.id}`)}
-              className="rounded-lg border border-slate-800 bg-slate-900/40 p-4 flex gap-4 cursor-pointer hover:border-slate-700 hover:bg-slate-900/70 transition"
-            >
-              <div className="text-3xl shrink-0 leading-none">{TIPO_ICON[e.tipo]}</div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 justify-between flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs uppercase tracking-wide text-slate-500">{TIPO_LABEL[e.tipo]}</span>
-                    <span className="text-slate-400">·</span>
-                    <span className="text-sm font-medium text-slate-200">{unidadeLabel(e.unidade_id)}</span>
-                    {e.transportadora && (
-                      <>
-                        <span className="text-slate-400">·</span>
-                        <span className="text-xs text-slate-400">{e.transportadora}</span>
-                      </>
-                    )}
-                  </div>
-                  <span className={`shrink-0 px-2 py-0.5 rounded text-xs border ${STATUS_CLASS[e.status]}`}>
+        <ListaComidas
+          rows={rowsTab}
+          unidadeLabel={unidadeLabel}
+          onCard={(id) => navigate(`/encomendas/${id}`)}
+          onEntregar={marcarEntregue}
+        />
+      )}
+    </div>
+  )
+}
+
+// ============================================================
+// Tab button
+// ============================================================
+function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${
+        active
+          ? 'text-slate-100 border-brand-500'
+          : 'text-slate-400 border-transparent hover:text-slate-200'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+// ============================================================
+// Kanban (encomendas não-comida)
+// ============================================================
+interface KanbanProps {
+  colunas: Record<StatusEncomenda, Encomenda[]>
+  unidadeLabel: (uid: string) => string
+  onCard: (id: string) => void
+  onEntregar: (id: string, nome: string) => void
+}
+
+const COLUNA_INFO: Record<StatusEncomenda, { label: string; emoji: string; accent: string }> = {
+  aguardando: { label: 'Aguardando retirada', emoji: '⏳', accent: 'border-amber-500/40 bg-amber-500/5' },
+  entregue:   { label: 'Entregues',           emoji: '✓',  accent: 'border-emerald-500/30 bg-emerald-500/5' },
+  devolvida:  { label: 'Devolvidas',          emoji: '↩',  accent: 'border-slate-700 bg-slate-900/40' },
+}
+
+function KanbanEncomendas({ colunas, unidadeLabel, onCard, onEntregar }: KanbanProps) {
+  const order: StatusEncomenda[] = ['aguardando', 'entregue', 'devolvida']
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {order.map((st) => {
+        const info = COLUNA_INFO[st]
+        const items = colunas[st]
+        return (
+          <div key={st} className={`rounded-lg border ${info.accent} p-3`}>
+            <div className="mb-3 flex items-center justify-between">
+              <div className="text-sm font-semibold text-slate-100">
+                <span className="mr-1.5">{info.emoji}</span>{info.label}
+              </div>
+              <span className="text-xs text-slate-400">{items.length}</span>
+            </div>
+            {items.length === 0 ? (
+              <div className="text-center text-xs text-slate-500 py-6">vazio</div>
+            ) : (
+              <div className="space-y-2">
+                {items.map((e) => {
+                  const diasParado = Math.floor((Date.now() - new Date(e.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                  const urgente = st === 'aguardando' && diasParado >= 7
+                  return (
+                    <div
+                      key={e.id}
+                      onClick={() => onCard(e.id)}
+                      className={`rounded-md border bg-slate-950/60 p-3 cursor-pointer hover:border-slate-600 transition ${urgente ? 'border-red-500/60' : 'border-slate-800'}`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="text-xl shrink-0 leading-none">{TIPO_ICON[e.tipo]}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs text-slate-500 uppercase">{TIPO_LABEL[e.tipo]}</div>
+                          <div className="text-sm font-medium text-slate-100">un. {unidadeLabel(e.unidade_id)}</div>
+                          {e.descricao && (
+                            <p className="text-xs text-slate-400 line-clamp-2 mt-0.5">{e.descricao}</p>
+                          )}
+                          <div className="mt-1 text-[10px] text-slate-500">
+                            {st === 'aguardando' && (
+                              <span className={urgente ? 'text-red-400 font-semibold' : ''}>
+                                há {diasParado === 0 ? 'hoje' : `${diasParado}d`}
+                              </span>
+                            )}
+                            {st === 'entregue' && e.entregue_em && (
+                              <span>{new Date(e.entregue_em).toLocaleDateString('pt-BR')}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {st === 'aguardando' && (
+                        <button
+                          type="button"
+                          onClick={(ev) => { ev.stopPropagation(); onEntregar(e.id, '') }}
+                          className="mt-2 w-full text-xs px-2 py-1 rounded bg-emerald-700 hover:bg-emerald-600 text-white font-medium"
+                        >
+                          ✓ Marcar entregue
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ============================================================
+// Lista de comidas (cronológica, com destaque pra urgentes)
+// ============================================================
+interface ListaComidasProps {
+  rows: Encomenda[]
+  unidadeLabel: (uid: string) => string
+  onCard: (id: string) => void
+  onEntregar: (id: string, nome: string) => void
+}
+
+function ListaComidas({ rows, unidadeLabel, onCard, onEntregar }: ListaComidasProps) {
+  if (rows.length === 0) {
+    return (
+      <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
+        Nenhuma entrega de comida agora.
+      </div>
+    )
+  }
+  return (
+    <div className="space-y-2">
+      {rows.map((e) => {
+        const minutos = Math.floor((Date.now() - new Date(e.created_at).getTime()) / 60000)
+        const aguardando = e.status === 'aguardando'
+        const urgente = aguardando && minutos >= 15
+        return (
+          <div
+            key={e.id}
+            onClick={() => onCard(e.id)}
+            className={`rounded-lg border p-4 cursor-pointer transition flex items-center gap-3 ${
+              urgente
+                ? 'border-red-500/60 bg-red-500/5 hover:border-red-500'
+                : aguardando
+                  ? 'border-amber-500/40 bg-amber-500/5 hover:border-amber-500'
+                  : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
+            }`}
+          >
+            <div className="text-3xl shrink-0 leading-none">🍔</div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-medium text-slate-100">un. {unidadeLabel(e.unidade_id)}</span>
+                {urgente && <span className="text-xs text-red-400 font-semibold">▲ {minutos}min aguardando</span>}
+                {aguardando && !urgente && <span className="text-xs text-amber-400">há {minutos}min</span>}
+                {!aguardando && (
+                  <span className={`text-xs px-2 py-0.5 rounded border ${STATUS_CLASS[e.status]}`}>
                     {STATUS_LABEL[e.status]}
                   </span>
-                </div>
-                {e.descricao && (
-                  <p className="mt-1 text-sm text-slate-300 line-clamp-2">{e.descricao}</p>
                 )}
-                <div className="mt-1.5 text-xs text-slate-500 flex gap-3 flex-wrap">
-                  <span>Recebida em {new Date(e.created_at).toLocaleString('pt-BR')}</span>
-                  {e.local_armazenamento && (
-                    <span>📍 {e.local_armazenamento}</span>
-                  )}
-                  {e.entregue_em && (
-                    <span>Entregue em {new Date(e.entregue_em).toLocaleString('pt-BR')}</span>
-                  )}
-                </div>
               </div>
-            </article>
-          ))}
-        </div>
-      )}
+              {e.descricao && (
+                <p className="text-xs text-slate-300 mt-0.5">{e.descricao}</p>
+              )}
+            </div>
+            {aguardando && (
+              <button
+                type="button"
+                onClick={(ev) => { ev.stopPropagation(); onEntregar(e.id, '') }}
+                className="shrink-0 text-xs px-3 py-2 rounded bg-emerald-700 hover:bg-emerald-600 text-white font-medium"
+              >
+                ✓ Entregue
+              </button>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
