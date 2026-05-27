@@ -344,8 +344,6 @@ export default function Painel() {
           <Link to="/ocorrencias/novo" className="text-brand-700 dark:text-brand-400 hover:underline">+ Nova ocorrência</Link>
           <span className="text-slate-300 dark:text-slate-700">·</span>
           <Link to="/chamados/novo" className="text-brand-700 dark:text-brand-400 hover:underline">+ Novo chamado</Link>
-          <span className="text-slate-300 dark:text-slate-700">·</span>
-          <Link to="/notificacoes/nova" className="text-brand-700 dark:text-brand-400 hover:underline">+ Nova notificação</Link>
         </div>
       </div>
 
