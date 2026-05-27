@@ -6,7 +6,8 @@
 //                        condominios.modelo_notificacao_texto pra servir
 //                        de guideline de estilo no analyze-ocorrencia
 //
-// Body: { condominio_id: uuid, tipo: 'regimento' | 'modelo' }
+// Body: { anexo_id: uuid }  (preferido — usa tabela condominio_anexos)
+//   ou:  { condominio_id: uuid, tipo: 'regimento' | 'modelo' }  (legado, ainda aceito)
 // Auth: JWT de staff do condomínio (RLS valida).
 // Secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 
@@ -34,10 +35,12 @@ Deno.serve(async (req: Request) => {
     if (!auth) return jsonResponse({ error: 'Authorization header obrigatório.' }, 401)
 
     const body = await req.json()
-    const condominio_id: string | undefined = body?.condominio_id
-    const tipo: 'regimento' | 'modelo' | undefined = body?.tipo
-    if (!condominio_id || (tipo !== 'regimento' && tipo !== 'modelo')) {
-      return jsonResponse({ error: 'condominio_id (uuid) e tipo (regimento|modelo) obrigatórios.' }, 400)
+    const anexo_id: string | undefined = body?.anexo_id
+    const legadoCondominioId: string | undefined = body?.condominio_id
+    const legadoTipo: 'regimento' | 'modelo' | undefined = body?.tipo
+
+    if (!anexo_id && (!legadoCondominioId || !legadoTipo)) {
+      return jsonResponse({ error: 'anexo_id (uuid) obrigatório.' }, 400)
     }
 
     const admin = createClient(
@@ -45,19 +48,37 @@ Deno.serve(async (req: Request) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
-    // Pega a URL do PDF anexado
-    const { data: condo, error: cErr } = await admin
-      .from('condominios')
-      .select('id, regimento_pdf_url, modelo_notificacao_url')
-      .eq('id', condominio_id)
-      .maybeSingle()
-    if (cErr || !condo) {
-      return jsonResponse({ error: 'Condomínio não encontrado.' }, 404)
+    let url: string | null = null
+    let condominio_id: string
+    let tipoFinal: 'regimento' | 'modelo'
+    let anexoRow: { id: string; nome: string } | null = null
+
+    if (anexo_id) {
+      const { data: anexo, error: aErr } = await admin
+        .from('condominio_anexos')
+        .select('id, condominio_id, tipo, url, nome')
+        .eq('id', anexo_id)
+        .maybeSingle()
+      if (aErr || !anexo) return jsonResponse({ error: 'Anexo não encontrado.' }, 404)
+      url = anexo.url
+      condominio_id = anexo.condominio_id
+      tipoFinal = anexo.tipo === 'regimento' ? 'regimento' : 'modelo'
+      anexoRow = { id: anexo.id, nome: anexo.nome }
+    } else {
+      // Caminho legado (campos antigos em condominios)
+      condominio_id = legadoCondominioId!
+      tipoFinal = legadoTipo!
+      const { data: condo, error: cErr } = await admin
+        .from('condominios')
+        .select('id, regimento_pdf_url, modelo_notificacao_url')
+        .eq('id', condominio_id)
+        .maybeSingle()
+      if (cErr || !condo) return jsonResponse({ error: 'Condomínio não encontrado.' }, 404)
+      url = tipoFinal === 'regimento' ? condo.regimento_pdf_url : condo.modelo_notificacao_url
+      if (!url) return jsonResponse({ error: `Nenhum PDF de ${tipoFinal} anexado.` }, 400)
     }
-    const url = tipo === 'regimento' ? condo.regimento_pdf_url : condo.modelo_notificacao_url
-    if (!url) {
-      return jsonResponse({ error: `Nenhum PDF de ${tipo} anexado a esse condomínio.` }, 400)
-    }
+
+    const tipo: 'regimento' | 'modelo' = tipoFinal
 
     // Baixa e extrai texto do PDF
     const texto = await extrairTextoDoPdf(url)
@@ -67,11 +88,19 @@ Deno.serve(async (req: Request) => {
 
     if (tipo === 'modelo') {
       const truncado = texto.trim().slice(0, MAX_MODELO_CHARS)
-      const { error: upErr } = await admin
-        .from('condominios')
-        .update({ modelo_notificacao_texto: truncado })
-        .eq('id', condominio_id)
-      if (upErr) return jsonResponse({ error: `Falha ao salvar: ${upErr.message}` }, 500)
+      // Se veio por anexo_id, grava na linha do anexo (nova arquitetura)
+      if (anexoRow) {
+        await admin
+          .from('condominio_anexos')
+          .update({ texto_extraido: truncado, processado_em: new Date().toISOString() })
+          .eq('id', anexoRow.id)
+      } else {
+        // Caminho legado
+        await admin
+          .from('condominios')
+          .update({ modelo_notificacao_texto: truncado })
+          .eq('id', condominio_id)
+      }
       return jsonResponse({ ok: true, tipo, chars_salvos: truncado.length })
     }
 
@@ -125,6 +154,14 @@ Deno.serve(async (req: Request) => {
       } catch (_e) {
         // Embedding pode falhar, artigo fica salvo sem ele — pode regerar depois
       }
+    }
+
+    // Atualiza estat no anexo se veio por anexo_id
+    if (anexoRow) {
+      await admin
+        .from('condominio_anexos')
+        .update({ artigos_extraidos: criados, processado_em: new Date().toISOString() })
+        .eq('id', anexoRow.id)
     }
 
     return jsonResponse({

@@ -17,7 +17,8 @@ import LogoUpload from '../components/LogoUpload'
 import PessoasImport from '../components/PessoasImport'
 import UnidadesImport from '../components/UnidadesImport'
 import FornecedoresImport from '../components/FornecedoresImport'
-import CondominioAnexoPdf from '../components/CondominioAnexoPdf'
+import CondominioAnexosManager from '../components/CondominioAnexosManager'
+import AgenteTreinamento from '../components/AgenteTreinamento'
 import { traduzErro } from '../lib/errorMessages'
 
 const EMPTY: CondominioInput = {
@@ -298,28 +299,38 @@ export default function CondominioForm() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-              <CondominioAnexoPdf
+            <div className="grid grid-cols-1 gap-3 mt-3">
+              <CondominioAnexosManager
                 condominio_id={id}
-                campo="regimento_pdf_url"
-                subpasta="regimento"
-                tipoIa="regimento"
-                titulo="Anexar regimento (PDF)"
+                tipo="regimento"
+                titulo="Regimento interno"
                 emoji="📑"
-                descricao="Suba o PDF oficial do regimento interno. Depois clique em Extrair artigos pra IA usar."
-                current={form.regimento_pdf_url}
-                onChange={(url) => update('regimento_pdf_url', url)}
+                descricao="Anexe um ou mais PDFs de regimento (convenção, regulamento interno, normas de áreas comuns). A IA extrai artigos automaticamente."
+                labelProcessar="🤖 Extrair artigos"
               />
-              <CondominioAnexoPdf
+              <CondominioAnexosManager
                 condominio_id={id}
-                campo="modelo_notificacao_url"
-                subpasta="modelo-notificacao"
-                tipoIa="modelo"
-                titulo="Modelo de notificação (PDF)"
+                tipo="modelo_notificacao"
+                titulo="Modelos de notificação"
                 emoji="📄"
-                descricao="Anexe um modelo PDF de notificação/multa no padrão do seu condomínio. Depois clique em Treinar estilo pra IA imitar a redação."
-                current={form.modelo_notificacao_url}
-                onChange={(url) => update('modelo_notificacao_url', url)}
+                descricao="Anexe modelos de notificação/advertência usados pelo condomínio. A IA usa como referência de estilo ao gerar minutas."
+                labelProcessar="🤖 Treinar estilo"
+              />
+              <CondominioAnexosManager
+                condominio_id={id}
+                tipo="modelo_multa"
+                titulo="Modelos de multa"
+                emoji="💰"
+                descricao="Anexe modelos PDF de multa formal. A IA imita o tom desses documentos ao gerar minuta de multa."
+                labelProcessar="🤖 Treinar estilo"
+              />
+            </div>
+
+            <div className="mt-3">
+              <AgenteTreinamento
+                condominio_id={id}
+                current={form.ai_instrucoes}
+                onChange={(v) => update('ai_instrucoes', v)}
               />
             </div>
           </div>

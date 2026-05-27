@@ -71,15 +71,36 @@ Deno.serve(async (req: Request) => {
       }, 404)
     }
 
-    // 1.b) Busca padrões "treinados" do condomínio (modelo de notificação + instruções)
+    // 1.b) Busca padrões "treinados" do condomínio:
+    //   - ai_instrucoes (campo singleton em condominios)
+    //   - todos os anexos ATIVOS do tipo modelo_notificacao e modelo_multa com texto extraído
+    //   - fallback no campo legado modelo_notificacao_texto se nenhum anexo ativo
     const { data: condoCtx } = await userClient
       .from('condominios')
       .select('nome, modelo_notificacao_texto, ai_instrucoes')
       .eq('id', ocorrencia.condominio_id)
       .maybeSingle()
-    const modeloNotif: string | null = (condoCtx?.modelo_notificacao_texto ?? '').trim() || null
     const aiInstrucoes: string | null = (condoCtx?.ai_instrucoes ?? '').trim() || null
     const condoNome: string = condoCtx?.nome ?? 'condomínio'
+
+    const { data: anexosModelo } = await userClient
+      .from('condominio_anexos')
+      .select('tipo, nome, texto_extraido')
+      .eq('condominio_id', ocorrencia.condominio_id)
+      .in('tipo', ['modelo_notificacao', 'modelo_multa'])
+      .eq('ativo', true)
+      .not('texto_extraido', 'is', null)
+    const modelosAtivos = (anexosModelo ?? []) as Array<{ tipo: string; nome: string; texto_extraido: string }>
+    // Junta os modelos num único bloco com cabeçalho identificando cada um
+    let modelosTexto: string | null = null
+    if (modelosAtivos.length > 0) {
+      modelosTexto = modelosAtivos
+        .map((m) => `--- ${m.nome} (${m.tipo === 'modelo_multa' ? 'modelo de multa' : 'modelo de notificação'}) ---\n${m.texto_extraido}`)
+        .join('\n\n')
+    } else if (condoCtx?.modelo_notificacao_texto) {
+      // Fallback no campo legado
+      modelosTexto = condoCtx.modelo_notificacao_texto
+    }
 
     // 2) Gera embedding da descrição (+ contexto da gestão se houver)
     const queryText = [
@@ -145,10 +166,10 @@ Responda EXCLUSIVAMENTE em JSON válido, sem markdown.`,
     }
 
     // Bloco 3: padrão de escrita do condomínio (cacheable)
-    if (modeloNotif) {
+    if (modelosTexto) {
       systemBlocos.push({
         type: 'text',
-        text: `PADRÃO DE REDAÇÃO DESTE CONDOMÍNIO (use como guia de estilo, tom e formato da minuta; não copie literalmente):\n${modeloNotif}`,
+        text: `MODELOS DE NOTIFICAÇÃO/MULTA DESTE CONDOMÍNIO (use como guia de estilo, tom e formato da minuta; não copie literalmente):\n${modelosTexto}`,
         cache_control: { type: 'ephemeral' },
       })
     }
