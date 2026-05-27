@@ -109,9 +109,14 @@ Deno.serve(async (req: Request) => {
       }, 422)
     }
 
-    // Insere artigos. Convenção: 'numero' = "Art. X", 'titulo' = primeira linha, 'conteudo' = resto
+    // Gera titulos contextuais com Claude Haiku (uma unica chamada em batch).
+    // Se falhar ou a key nao estiver setada, cai no comportamento antigo (primeira linha).
+    const titulosContextuais = await gerarTitulosContextuais(artigos)
+
+    // Insere artigos. Convenção: 'numero' = "Art. X", 'titulo' = título contextual gerado pela IA, 'conteudo' = bloco completo
     let criados = 0
-    for (const a of artigos) {
+    for (let i = 0; i < artigos.length; i++) {
+      const a = artigos[i]
       // Verifica se já existe esse "Art. X" pra evitar duplicar a cada reprocessamento
       const { data: existente } = await admin
         .from('regimento_artigos')
@@ -122,7 +127,7 @@ Deno.serve(async (req: Request) => {
       if (existente) continue
 
       const conteudo = a.conteudo.slice(0, MAX_ARTIGO_CHARS)
-      const titulo = a.titulo.slice(0, 200) || a.numero
+      const titulo = (titulosContextuais[i] || a.titulo).slice(0, 200) || a.numero
 
       const { data: criado, error: insErr } = await admin
         .from('regimento_artigos')
@@ -229,4 +234,65 @@ function normalizarNumero(raw: string): string {
   const m = raw.match(/\d+/)
   if (!m) return raw
   return `Art. ${m[0]}`
+}
+
+// Pede pra Claude Haiku gerar um titulo curto e contextual pra cada artigo.
+// Uma unica chamada em batch (~50 artigos cabem com folga em 4k tokens output).
+// Fallback: retorna os titulos extraidos por heuristica (primeira linha).
+async function gerarTitulosContextuais(artigos: ArtigoBruto[]): Promise<string[]> {
+  const fallback = artigos.map((a) => a.titulo)
+  const key = Deno.env.get('ANTHROPIC_API_KEY')
+  if (!key) return fallback
+  if (artigos.length === 0) return []
+
+  // Snippet curto de cada artigo pra economizar token (titulo bruto + comeco do conteudo)
+  const items = artigos.map((a, i) => {
+    const corpo = `${a.titulo}\n${a.conteudo}`.replace(/\s+/g, ' ').trim().slice(0, 350)
+    return `${i + 1}. ${a.numero}: ${corpo}`
+  }).join('\n\n')
+
+  const system = `Voce recebe artigos de regimento interno de condominio e gera um TITULO curto e contextual pra cada um. Regras:
+- 3 a 8 palavras
+- descreve o ASSUNTO do artigo, nao parafraseia a primeira frase
+- comeca com substantivo, sem ponto final
+- evita generico como "Disposicoes gerais" se houver tema especifico
+- sem aspas, sem numeracao, sem prefixo "Art."
+
+Responda EXCLUSIVAMENTE em JSON, sem markdown, no formato:
+{"titulos": ["titulo do artigo 1", "titulo do artigo 2", ...]}
+O array DEVE ter exatamente ${artigos.length} elementos na mesma ordem da entrada.`
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: Math.min(4096, 60 * artigos.length + 200),
+        system,
+        messages: [{ role: 'user', content: items }],
+      }),
+    })
+    if (!res.ok) {
+      console.warn('[parse-condominio-pdf] titulos Haiku status', res.status)
+      return fallback
+    }
+    const data = await res.json()
+    const raw: string = data?.content?.[0]?.text ?? ''
+    const jsonMatch = raw.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) return fallback
+    const parsed = JSON.parse(jsonMatch[0]) as { titulos?: string[] }
+    if (!Array.isArray(parsed.titulos)) return fallback
+    return artigos.map((_, i) => {
+      const t = (parsed.titulos?.[i] ?? '').trim()
+      return t || fallback[i]
+    })
+  } catch (e) {
+    console.warn('[parse-condominio-pdf] falha titulos Haiku:', (e as Error).message)
+    return fallback
+  }
 }
