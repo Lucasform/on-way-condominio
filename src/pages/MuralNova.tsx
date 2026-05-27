@@ -8,6 +8,7 @@ import type { PublicacaoInput } from '../types/mural'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
+import { traduzErro } from '../lib/errorMessages'
 
 const MAX_IMG = 10 * 1024 * 1024 // 10 MB
 
@@ -86,12 +87,7 @@ export default function MuralNova() {
       navigate('/mural')
     } catch (e) {
       console.warn('[mural] falha ao publicar:', e)
-      const msg = e instanceof Error
-        ? e.message
-        : (e && typeof e === 'object' && 'message' in e
-            ? String((e as { message: unknown }).message)
-            : JSON.stringify(e).slice(0, 200))
-      setError(msg || 'Erro ao publicar.')
+      setError(traduzErro(e))
     } finally {
       setSubmitting(false)
     }

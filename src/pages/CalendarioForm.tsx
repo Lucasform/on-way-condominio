@@ -8,6 +8,7 @@ import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
+import { traduzErro } from '../lib/errorMessages'
 
 const EMPTY: EventoInput = {
   condominio_id: '',
@@ -97,7 +98,8 @@ export default function CalendarioForm() {
       else await updateEvento(id!, payload)
       navigate('/calendario')
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao salvar.')
+      console.warn('[calendario] erro ao salvar:', e)
+      setError(traduzErro(e))
     } finally {
       setSaving(false)
     }
