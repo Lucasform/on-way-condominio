@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listNotificacoes, NOTIFICACAO_STATUS_LABEL } from '../lib/notificacoes'
 import { listUnidades } from '../lib/unidades'
+import { listCondominios } from '../lib/condominios'
 import type { Notificacao, StatusNotificacao } from '../types/notificacao'
 import type { Unidade } from '../types/unidade'
+import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
@@ -21,9 +23,12 @@ const STATUS_CLASS: Record<StatusNotificacao, string> = {
 export default function Notificacoes() {
   const { perfil } = useAuth()
   const navigate = useNavigate()
+  const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
   const [rows, setRows] = useState<Notificacao[]>([])
   const [unidades, setUnidades] = useState<Unidade[]>([])
+  const [condos, setCondos] = useState<Condominio[]>([])
+  const [scopeId, setScopeId] = useState<string | null>(null)
   const [status, setStatus] = useState<'' | StatusNotificacao>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -32,7 +37,10 @@ export default function Notificacoes() {
     setLoading(true)
     setError(null)
     try {
-      const data = await listNotificacoes({ status: status || undefined })
+      const data = await listNotificacoes({
+        condominio_id: isAdmin && scopeId ? scopeId : undefined,
+        status: status || undefined,
+      })
       setRows(data)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro.')
@@ -42,18 +50,33 @@ export default function Notificacoes() {
   }
 
   useEffect(() => {
-    listUnidades().then(setUnidades).catch(() => {})
-  }, [])
+    listCondominios()
+      .then((cs) => {
+        setCondos(cs)
+        if (isAdmin && cs.length && !scopeId) setScopeId(cs[0].id)
+      })
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin])
 
   useEffect(() => {
+    listUnidades({ condominio_id: isAdmin && scopeId ? scopeId : undefined })
+      .then(setUnidades)
+      .catch(() => {})
+  }, [isAdmin, scopeId])
+
+  useEffect(() => {
+    if (isAdmin && !scopeId) return
     reload()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status])
+  }, [status, scopeId])
 
   const unidadeLabel = (uid: string) => {
     const u = unidades.find((x) => x.id === uid)
     return u ? (u.bloco ? `${u.bloco}-${u.numero}` : u.numero) : '—'
   }
+
+  const condoNome = (id: string) => condos.find((c) => c.id === id)?.nome ?? '—'
 
   const podeCriar = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
 
@@ -64,6 +87,11 @@ export default function Notificacoes() {
       render: (r) => <span className="font-medium text-slate-100">{r.assunto}</span>,
     },
     { key: 'unidade', header: 'Unidade', render: (r) => unidadeLabel(r.unidade_id) },
+  ]
+  if (isAdmin) {
+    columns.push({ key: 'condo', header: 'Condomínio', render: (r) => condoNome(r.condominio_id) })
+  }
+  columns.push(
     {
       key: 'status',
       header: 'Status',
@@ -78,7 +106,7 @@ export default function Notificacoes() {
       header: 'Emitida em',
       render: (r) => new Date(r.created_at).toLocaleDateString('pt-BR'),
     },
-  ]
+  )
 
   return (
     <div className="px-8 py-10 max-w-6xl mx-auto">
@@ -94,14 +122,26 @@ export default function Notificacoes() {
         }
       />
 
-      <div className="mb-4 max-w-xs">
-        <label className="block text-xs font-medium text-slate-400 mb-1">Filtrar por status</label>
-        <Select value={status} onChange={(e) => setStatus(e.target.value as '' | StatusNotificacao)}>
-          <option value="">Todos os status</option>
-          {Object.entries(NOTIFICACAO_STATUS_LABEL).map(([k, v]) => (
-            <option key={k} value={k}>{v}</option>
-          ))}
-        </Select>
+      <div className="mb-4 flex flex-wrap gap-4 items-end">
+        {isAdmin && condos.length > 0 && (
+          <div className="min-w-[220px]">
+            <label className="block text-xs font-medium text-slate-400 mb-1">Filtrar por condomínio</label>
+            <Select value={scopeId ?? ''} onChange={(e) => setScopeId(e.target.value)}>
+              {condos.map((c) => (
+                <option key={c.id} value={c.id}>{c.nome}</option>
+              ))}
+            </Select>
+          </div>
+        )}
+        <div className="min-w-[200px]">
+          <label className="block text-xs font-medium text-slate-400 mb-1">Filtrar por status</label>
+          <Select value={status} onChange={(e) => setStatus(e.target.value as '' | StatusNotificacao)}>
+            <option value="">Todos os status</option>
+            {Object.entries(NOTIFICACAO_STATUS_LABEL).map(([k, v]) => (
+              <option key={k} value={k}>{v}</option>
+            ))}
+          </Select>
+        </div>
       </div>
 
       {error && (
