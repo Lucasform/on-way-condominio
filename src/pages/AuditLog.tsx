@@ -97,10 +97,22 @@ export default function AuditLog() {
           </Select>
         </Field>
         <Field label="De">
-          <TextInput type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
+          <TextInput
+            type="date"
+            value={desde}
+            onChange={(e) => setDesde(e.target.value)}
+            onFocus={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+            onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+          />
         </Field>
         <Field label="Até">
-          <TextInput type="date" value={ate} onChange={(e) => setAte(e.target.value)} />
+          <TextInput
+            type="date"
+            value={ate}
+            onChange={(e) => setAte(e.target.value)}
+            onFocus={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+            onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+          />
         </Field>
       </div>
 

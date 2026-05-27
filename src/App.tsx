@@ -55,6 +55,7 @@ const VotacaoDetalhe = lazy(() => import('./pages/VotacaoDetalhe'))
 const Assembleias = lazy(() => import('./pages/Assembleias'))
 const AssembleiaForm = lazy(() => import('./pages/AssembleiaForm'))
 const AssembleiaDetalhe = lazy(() => import('./pages/AssembleiaDetalhe'))
+const Templates = lazy(() => import('./pages/Templates'))
 const Chamados = lazy(() => import('./pages/Chamados'))
 const ChamadoNovo = lazy(() => import('./pages/ChamadoNovo'))
 const ChamadoDetalhe = lazy(() => import('./pages/ChamadoDetalhe'))
@@ -422,6 +423,14 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <AssembleiaForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/templates"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
+                  <Templates />
                 </ProtectedRoute>
               }
             />

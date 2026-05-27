@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { createVotacao } from '../lib/votacoes'
 import { listCondominios } from '../lib/condominios'
+import { listAssembleias } from '../lib/assembleias'
 import type { VotacaoInput } from '../types/votacao'
 import type { Condominio } from '../types/condominio'
+import type { Assembleia } from '../types/assembleia'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
@@ -11,6 +13,7 @@ import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
 
 const EMPTY: VotacaoInput = {
   condominio_id: '',
+  assembleia_id: null,
   titulo: '',
   descricao: null,
   data_inicio: new Date().toISOString().slice(0, 16), // datetime-local format
@@ -22,9 +25,12 @@ export default function VotacaoNova() {
   const navigate = useNavigate()
   const { perfil } = useAuth()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
+  const [params] = useSearchParams()
+  const assembleiaUrl = params.get('assembleia')
 
-  const [form, setForm] = useState<VotacaoInput>(EMPTY)
+  const [form, setForm] = useState<VotacaoInput>({ ...EMPTY, assembleia_id: assembleiaUrl })
   const [condos, setCondos] = useState<Condominio[]>([])
+  const [assembleias, setAssembleias] = useState<Assembleia[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -35,6 +41,13 @@ export default function VotacaoNova() {
       setForm((f) => ({ ...f, condominio_id: perfil.condominio_id! }))
     }
   }, [isAdmin, perfil])
+
+  useEffect(() => {
+    if (!form.condominio_id) { setAssembleias([]); return }
+    listAssembleias({ condominio_id: form.condominio_id })
+      .then(setAssembleias)
+      .catch(() => setAssembleias([]))
+  }, [form.condominio_id])
 
   function setOpcao(i: number, v: string) {
     setForm((f) => ({ ...f, opcoes: f.opcoes.map((o, idx) => (idx === i ? v : o)) }))
@@ -96,6 +109,21 @@ export default function VotacaoNova() {
             </Select>
           </Field>
         )}
+
+        <Field label="Assembleia (opcional)" hint="Vincule a votação a uma assembleia já cadastrada. A votação aparece na página de detalhe da assembleia.">
+          <Select
+            value={form.assembleia_id ?? ''}
+            onChange={(e) => setForm({ ...form, assembleia_id: e.target.value || null })}
+            disabled={!form.condominio_id}
+          >
+            <option value="">— Sem vínculo</option>
+            {assembleias.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.titulo} ({new Date(a.data_assembleia).toLocaleDateString('pt-BR')})
+              </option>
+            ))}
+          </Select>
+        </Field>
 
         <Field label="Pergunta" required>
           <TextInput
