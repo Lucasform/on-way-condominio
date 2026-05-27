@@ -458,7 +458,7 @@ export default function OcorrenciaDetalhe() {
         </div>
       )}
 
-      {canChangeStatus && transitions.length > 0 && (
+      {canChangeStatus && transitions.length > 0 && !canGenerateMulta && (
         <div className="mt-6 rounded-lg border border-slate-800 bg-slate-900/40 p-5">
           <div className="text-sm font-medium text-slate-300 mb-3">Mudar status para:</div>
           <div className="flex flex-wrap gap-2">
