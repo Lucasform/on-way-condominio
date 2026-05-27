@@ -21,7 +21,10 @@ export async function listPublicacoes(opts: { condominio_id?: string; apenas_ati
   return (data ?? []) as Publicacao[]
 }
 
-export async function createPublicacao(input: PublicacaoInput): Promise<Publicacao> {
+export async function createPublicacao(
+  input: PublicacaoInput,
+  opts: { enviarEmail?: boolean } = {},
+): Promise<Publicacao> {
   const { data: userData } = await supabase.auth.getUser()
   const userId = userData.user?.id ?? null
   const { data, error } = await supabase
@@ -38,10 +41,12 @@ export async function createPublicacao(input: PublicacaoInput): Promise<Publicac
     .single()
   if (error) throw error
   const pub = data as Publicacao
-  // Dispara e-mail pra todos os moradores ativos do condomínio (etapa 66)
-  notifyMoradoresPublicacao(pub).catch((e) =>
-    console.warn('[mural] falha ao enviar e-mail:', e.message),
-  )
+  // E-mail e OPCIONAL: so dispara se o usuario marcar a opcao na publicacao.
+  if (opts.enviarEmail) {
+    notifyMoradoresPublicacao(pub).catch((e) =>
+      console.warn('[mural] falha ao enviar e-mail:', e.message),
+    )
+  }
   return pub
 }
 

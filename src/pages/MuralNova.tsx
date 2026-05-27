@@ -29,6 +29,7 @@ export default function MuralNova() {
   const [condos, setCondos] = useState<Condominio[]>([])
   const [imagem, setImagem] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
+  const [enviarEmail, setEnviarEmail] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -83,7 +84,7 @@ export default function MuralNova() {
       if (imagem) {
         imgPath = await uploadMuralImagem(form.condominio_id, imagem)
       }
-      await createPublicacao({ ...form, imagem_url: imgPath })
+      await createPublicacao({ ...form, imagem_url: imgPath }, { enviarEmail })
       navigate('/mural')
     } catch (e) {
       console.warn('[mural] falha ao publicar:', e)
@@ -154,15 +155,31 @@ export default function MuralNova() {
           </div>
         )}
 
-        <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={form.fixado}
-            onChange={(e) => update('fixado', e.target.checked)}
-            className="rounded border-slate-700 bg-slate-950 text-emerald-500 focus:ring-emerald-500"
-          />
-          📌 Fixar no topo do mural
-        </label>
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.fixado}
+              onChange={(e) => update('fixado', e.target.checked)}
+              className="rounded border-slate-700 bg-slate-950 text-brand-700 focus:ring-brand-700"
+            />
+            📌 Fixar no topo do mural
+          </label>
+          <label className="flex items-start gap-2 text-sm text-slate-300 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={enviarEmail}
+              onChange={(e) => setEnviarEmail(e.target.checked)}
+              className="mt-0.5 rounded border-slate-700 bg-slate-950 text-brand-700 focus:ring-brand-700"
+            />
+            <span>
+              ✉ Enviar e-mail também para os moradores
+              <span className="block text-xs text-slate-500">
+                Manda esta publicação por e-mail pra todos os moradores ativos com e-mail cadastrado.
+              </span>
+            </span>
+          </label>
+        </div>
 
         {error && (
           <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
