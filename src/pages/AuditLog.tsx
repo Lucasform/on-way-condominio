@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { listAudit, deleteAuditEntry, deleteAuditEntries, type AuditEntry } from '../lib/auditLog'
+import { listAudit, deleteAuditEntries, type AuditEntry } from '../lib/auditLog'
 import { listCondominios } from '../lib/condominios'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
@@ -22,6 +22,24 @@ export default function AuditLog() {
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const podeApagar = perfil?.role === 'admin_onway'
   const [busy, setBusy] = useState(false)
+  const [selecionados, setSelecionados] = useState<Set<number>>(new Set())
+
+  function toggleSelecao(id: number) {
+    setSelecionados((prev) => {
+      const novo = new Set(prev)
+      if (novo.has(id)) novo.delete(id)
+      else novo.add(id)
+      return novo
+    })
+  }
+
+  function toggleSelecionarTodos() {
+    if (selecionados.size === rows.length) {
+      setSelecionados(new Set())
+    } else {
+      setSelecionados(new Set(rows.map((r) => r.id)))
+    }
+  }
 
   const [condos, setCondos] = useState<Condominio[]>([])
   const [scopeId, setScopeId] = useState<string>('')
@@ -79,12 +97,14 @@ export default function AuditLog() {
         title="Log de auditoria"
         subtitle={`Últimas ${rows.length} ações sensíveis registradas.`}
         actions={
-          podeApagar && rows.length > 0 ? (
+          podeApagar && selecionados.size > 0 ? (
             <Button variant="danger" disabled={busy} onClick={async () => {
-              if (!window.confirm(`Apagar todos os ${rows.length} registros visíveis? Esta ação não pode ser desfeita.`)) return
+              const ids = Array.from(selecionados)
+              if (!window.confirm(`Apagar ${ids.length} registro${ids.length !== 1 ? 's' : ''} selecionado${ids.length !== 1 ? 's' : ''}? Esta ação não pode ser desfeita.`)) return
               setBusy(true)
               try {
-                const n = await deleteAuditEntries(rows.map((r) => r.id))
+                const n = await deleteAuditEntries(ids)
+                setSelecionados(new Set())
                 await reload()
                 alert(`${n} registro${n !== 1 ? 's' : ''} apagado${n !== 1 ? 's' : ''}.`)
               } catch (e) {
@@ -93,7 +113,7 @@ export default function AuditLog() {
                 setBusy(false)
               }
             }}>
-              Apagar todos visíveis
+              🗑 Apagar {selecionados.size} selecionado{selecionados.size !== 1 ? 's' : ''}
             </Button>
           ) : undefined
         }
@@ -157,13 +177,23 @@ export default function AuditLog() {
         <table className="w-full text-sm">
           <thead className="text-xs uppercase text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/60">
             <tr>
+              {podeApagar && (
+                <th className="px-3 py-2 w-8">
+                  <input
+                    type="checkbox"
+                    checked={rows.length > 0 && selecionados.size === rows.length}
+                    onChange={toggleSelecionarTodos}
+                    className="rounded border-slate-700 bg-slate-950 text-brand-700 focus:ring-brand-700"
+                    title="Selecionar todos visíveis"
+                  />
+                </th>
+              )}
               <th className="text-left px-3 py-2">Quando</th>
               <th className="text-left px-3 py-2">Ator</th>
               <th className="text-left px-3 py-2">Role</th>
               <th className="text-left px-3 py-2">Ação</th>
               <th className="text-left px-3 py-2">Alvo</th>
               <th className="text-left px-3 py-2">Detalhes</th>
-              {podeApagar && <th className="px-3 py-2" />}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
@@ -173,42 +203,36 @@ export default function AuditLog() {
             {!loading && rows.length === 0 && (
               <tr><td colSpan={podeApagar ? 7 : 6} className="text-center py-6 text-slate-500">Nada registrado nesse filtro.</td></tr>
             )}
-            {rows.map((r) => (
-              <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/30">
-                <td className="px-3 py-2 text-xs text-slate-500 whitespace-nowrap">{fmtTs(r.created_at)}</td>
-                <td className="px-3 py-2 text-xs">{r.ator_email ?? '—'}</td>
-                <td className="px-3 py-2 text-xs"><span className="capitalize">{r.ator_role ?? '—'}</span></td>
-                <td className="px-3 py-2 font-mono text-xs text-brand-700 dark:text-brand-400">{r.acao}</td>
-                <td className="px-3 py-2 text-xs">{r.alvo_tipo}{r.alvo_id ? ` · ${r.alvo_id.slice(0, 8)}…` : ''}</td>
-                <td className="px-3 py-2 text-xs text-slate-500 max-w-md truncate" title={JSON.stringify(r.detalhes)}>
-                  {fmtDetalhes(r.detalhes)}
-                </td>
-                {podeApagar && (
-                  <td className="px-3 py-2 text-right">
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={async () => {
-                        if (!window.confirm('Apagar este registro do log de auditoria? Esta ação não pode ser desfeita.')) return
-                        setBusy(true)
-                        try {
-                          await deleteAuditEntry(r.id)
-                          await reload()
-                        } catch (e) {
-                          alert(e instanceof Error ? e.message : 'Erro.')
-                        } finally {
-                          setBusy(false)
-                        }
-                      }}
-                      className="text-slate-500 hover:text-red-400 transition disabled:opacity-50"
-                      title="Apagar este registro"
-                    >
-                      🗑
-                    </button>
+            {rows.map((r) => {
+              const checked = selecionados.has(r.id)
+              return (
+                <tr
+                  key={r.id}
+                  className={`hover:bg-slate-50 dark:hover:bg-slate-900/30 ${
+                    checked ? 'bg-brand-500/5 dark:bg-brand-700/10' : ''
+                  }`}
+                >
+                  {podeApagar && (
+                    <td className="px-3 py-2 align-middle">
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleSelecao(r.id)}
+                        className="rounded border-slate-700 bg-slate-950 text-brand-700 focus:ring-brand-700"
+                      />
+                    </td>
+                  )}
+                  <td className="px-3 py-2 text-xs text-slate-500 whitespace-nowrap">{fmtTs(r.created_at)}</td>
+                  <td className="px-3 py-2 text-xs">{r.ator_email ?? '—'}</td>
+                  <td className="px-3 py-2 text-xs"><span className="capitalize">{r.ator_role ?? '—'}</span></td>
+                  <td className="px-3 py-2 font-mono text-xs text-brand-700 dark:text-brand-400">{r.acao}</td>
+                  <td className="px-3 py-2 text-xs">{r.alvo_tipo}{r.alvo_id ? ` · ${r.alvo_id.slice(0, 8)}…` : ''}</td>
+                  <td className="px-3 py-2 text-xs text-slate-500 max-w-md truncate" title={JSON.stringify(r.detalhes)}>
+                    {fmtDetalhes(r.detalhes)}
                   </td>
-                )}
-              </tr>
-            ))}
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
