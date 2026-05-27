@@ -124,8 +124,8 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
             tem_acesso: !!p.user_id && !!perfilLigado,
           }
         })
-        // tira quem ja esta na diretoria desse condo
-        .filter((c) => !c.perfil_id || !idsNaDiretoria.has(c.perfil_id))
+        // so pessoas com acesso ao app, e que nao estao na diretoria desse condo
+        .filter((c) => c.tem_acesso && c.perfil_id && !idsNaDiretoria.has(c.perfil_id))
       setCandidatos(cands)
     } catch (e) {
       console.warn('[diretoria] erro ao carregar:', e)
@@ -300,7 +300,7 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
           </div>
           {candidatos.length === 0 && !loading && !error && (
             <div className="text-xs text-slate-500">
-              Nenhuma pessoa elegível. Convide moradores ou outros perfis pela seção <strong>Convites</strong> abaixo.
+              Nenhuma pessoa com acesso ao app. Para atribuir cargo, a pessoa precisa ter aceito o convite e logado pelo menos uma vez. Use a seção <strong>Convites</strong> abaixo pra gerar um código.
             </div>
           )}
         </div>
