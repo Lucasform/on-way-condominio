@@ -122,9 +122,9 @@ export default function Templates() {
     }
   }
 
-  async function melhorarComIA() {
+  async function melhorarComAgente() {
     if (!corpo.trim()) {
-      setError('Escreva um esboço antes de pedir ajuda da IA.')
+      setError('Escreva um esboço antes de pedir ajuda do Agente.')
       return
     }
     setPolindo(true)
@@ -144,7 +144,7 @@ export default function Templates() {
       if (typeof data?.corpo === 'string') setCorpo(data.corpo)
       if (tipo === 'email' && typeof data?.assunto === 'string') setAssunto(data.assunto)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao melhorar com IA.')
+      setError(e instanceof Error ? e.message : 'Erro ao melhorar com o Agente.')
     } finally {
       setPolindo(false)
     }
@@ -232,16 +232,16 @@ export default function Templates() {
               rows={8}
               value={corpo}
               onChange={(e) => setCorpo(e.target.value)}
-              placeholder="Escreva o esboço — pode ser tosco. A IA pode polir com emojis e estrutura quando você clicar abaixo. Use {nome}, {unidade}, {data} pra variáveis."
+              placeholder="Escreva o esboço. O Agente pode polir com emojis e estrutura quando você clicar abaixo. Use {nome}, {unidade}, {data} pra variáveis."
             />
             <div className="mt-2 flex items-center gap-2">
               <button
                 type="button"
-                onClick={melhorarComIA}
+                onClick={melhorarComAgente}
                 disabled={polindo || !corpo.trim()}
                 className="px-3 py-1.5 rounded-md text-xs font-medium bg-violet-700/20 text-violet-200 border border-violet-500/40 hover:bg-violet-700/30 disabled:opacity-50 transition"
               >
-                {polindo ? '✨ Pensando...' : '✨ Melhorar com IA'}
+                {polindo ? '✨ Pensando...' : '✨ Melhorar com o Agente'}
               </button>
               <span className="text-[11px] text-slate-500">
                 Reescreve mantendo o objetivo, aplica padrão{tipo === 'email' ? ' de e-mail' : ' de chat'} do condomínio.
