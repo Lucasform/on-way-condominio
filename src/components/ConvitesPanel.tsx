@@ -20,6 +20,10 @@ const ROLES: { value: ConviteRole; label: string }[] = [
   { value: 'morador', label: 'Morador' },
   { value: 'portaria', label: 'Portaria' },
   { value: 'ronda', label: 'Ronda' },
+  { value: 'administradora', label: 'Administradora' },
+  { value: 'sindico', label: 'Síndico' },
+  { value: 'subsindico', label: 'Subsíndico' },
+  { value: 'conselheiro', label: 'Conselheiro' },
 ]
 
 export default function ConvitesPanel({ condominio_id }: Props) {

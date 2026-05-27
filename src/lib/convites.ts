@@ -1,6 +1,13 @@
 import { supabase } from './supabase'
 
-export type ConviteRole = 'morador' | 'portaria' | 'ronda'
+export type ConviteRole =
+  | 'morador'
+  | 'portaria'
+  | 'ronda'
+  | 'administradora'
+  | 'sindico'
+  | 'subsindico'
+  | 'conselheiro'
 
 export interface Convite {
   id: string

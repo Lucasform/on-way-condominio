@@ -8,11 +8,18 @@ import Button from './ui/Button'
 import { Select } from './ui/Input'
 
 interface PerfilLinha {
-  id: string
+  id: string          // = perfis.id (auth user id)
   nome_exibicao: string | null
   role: Role
   ativo: boolean
-  user_email?: string | null
+}
+
+interface PessoaCandidata {
+  pessoa_id: string
+  perfil_id: string | null  // perfis.id (= pessoas.user_id) ou null se sem acesso
+  nome: string
+  role_atual: Role | null
+  tem_acesso: boolean
 }
 
 interface Props {
@@ -33,7 +40,7 @@ function msgErro(e: unknown): string {
 export default function CondominioDiretoria({ condominio_id }: Props) {
   const { perfil: meuPerfil } = useAuth()
   const [diretoria, setDiretoria] = useState<PerfilLinha[]>([])
-  const [candidatos, setCandidatos] = useState<PerfilLinha[]>([])
+  const [candidatos, setCandidatos] = useState<PessoaCandidata[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showAdd, setShowAdd] = useState(false)
@@ -48,13 +55,14 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
     const q = busca.trim().toLowerCase()
     if (!q) return candidatos
     return candidatos.filter((c) => {
-      const nome = (c.nome_exibicao ?? '').toLowerCase()
-      return nome.includes(q) || roleLabel(c.role).toLowerCase().includes(q)
+      const nome = c.nome.toLowerCase()
+      const role = c.role_atual ? roleLabel(c.role_atual).toLowerCase() : ''
+      return nome.includes(q) || role.includes(q)
     })
   }, [busca, candidatos])
 
-  const perfilSelecionado = useMemo(
-    () => candidatos.find((c) => c.id === novoPerfilId) ?? null,
+  const pessoaSelecionada = useMemo(
+    () => candidatos.find((c) => c.pessoa_id === novoPerfilId) ?? null,
     [candidatos, novoPerfilId],
   )
 
@@ -81,17 +89,44 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
     setLoading(true)
     setError(null)
     try {
-      const { data, error: e1 } = await supabase
+      // 1) Diretoria atual: perfis ativos do condo nos cargos especiais
+      const { data: perfisData, error: e1 } = await supabase
         .from('perfis')
         .select('id, nome_exibicao, role, ativo')
         .eq('condominio_id', condominio_id)
         .eq('ativo', true)
-        .order('role')
-        .order('nome_exibicao')
       if (e1) throw e1
-      const linhas = (data ?? []) as PerfilLinha[]
-      setDiretoria(linhas.filter((p) => CARGOS_DIRETORIA.includes(p.role)))
-      setCandidatos(linhas.filter((p) => !CARGOS_DIRETORIA.includes(p.role) && p.role !== 'admin_onway'))
+      const perfis = (perfisData ?? []) as PerfilLinha[]
+      const mapaPerfis = new Map(perfis.map((p) => [p.id, p]))
+      setDiretoria(perfis.filter((p) => CARGOS_DIRETORIA.includes(p.role)))
+
+      // 2) Pessoas cadastradas no condo: pra dar promocao precisa ter user_id (acesso ao app)
+      const { data: pessoasData, error: e2 } = await supabase
+        .from('pessoas')
+        .select('id, nome, user_id, ativo')
+        .eq('condominio_id', condominio_id)
+        .eq('ativo', true)
+        .order('nome')
+      if (e2) throw e2
+
+      const idsNaDiretoria = new Set(
+        perfis.filter((p) => CARGOS_DIRETORIA.includes(p.role)).map((p) => p.id),
+      )
+
+      const cands: PessoaCandidata[] = (pessoasData ?? [])
+        .map((p) => {
+          const perfilLigado = p.user_id ? mapaPerfis.get(p.user_id) ?? null : null
+          return {
+            pessoa_id: p.id,
+            perfil_id: p.user_id ?? null,
+            nome: p.nome,
+            role_atual: perfilLigado?.role ?? null,
+            tem_acesso: !!p.user_id && !!perfilLigado,
+          }
+        })
+        // tira quem ja esta na diretoria desse condo
+        .filter((c) => !c.perfil_id || !idsNaDiretoria.has(c.perfil_id))
+      setCandidatos(cands)
     } catch (e) {
       console.warn('[diretoria] erro ao carregar:', e)
       setError(msgErro(e))
@@ -106,11 +141,15 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
   }, [condominio_id])
 
   async function atribuir() {
-    if (!novoPerfilId) return
+    if (!pessoaSelecionada) return
+    if (!pessoaSelecionada.tem_acesso || !pessoaSelecionada.perfil_id) {
+      setError(`${pessoaSelecionada.nome} ainda não aceitou o convite e não tem acesso ao app. Convide pela seção "Convites" antes de atribuir cargo.`)
+      return
+    }
     setBusy(true)
     setError(null)
     try {
-      // Se está virando síndico, garante que nenhum outro síndico ativo existe
+      // Se esta virando sindico, garante que nenhum outro sindico ativo existe
       if (novoCargo === 'sindico') {
         const ja = diretoria.find((d) => d.role === 'sindico')
         if (ja) {
@@ -118,20 +157,20 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
             setBusy(false)
             return
           }
-          // rebaixa o atual a subsindico
           const { error: eDown } = await supabase
             .from('perfis').update({ role: 'subsindico' }).eq('id', ja.id)
           if (eDown) throw eDown
         }
       }
       const { error: eUp } = await supabase
-        .from('perfis').update({ role: novoCargo }).eq('id', novoPerfilId)
+        .from('perfis').update({ role: novoCargo }).eq('id', pessoaSelecionada.perfil_id)
       if (eUp) throw eUp
       setShowAdd(false)
       setNovoPerfilId('')
+      setBusca('')
       await carregar()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao atribuir cargo.')
+      setError(msgErro(e))
     } finally {
       setBusy(false)
     }
@@ -203,8 +242,8 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
               <input
                 type="text"
                 value={
-                  perfilSelecionado && !comboAberto
-                    ? `${perfilSelecionado.nome_exibicao ?? '(sem nome)'} — ${roleLabel(perfilSelecionado.role)}`
+                  pessoaSelecionada && !comboAberto
+                    ? `${pessoaSelecionada.nome}${pessoaSelecionada.role_atual ? ` — ${roleLabel(pessoaSelecionada.role_atual)}` : ' — sem acesso ao app'}`
                     : busca
                 }
                 onChange={(e) => {
@@ -227,20 +266,18 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
                   ) : (
                     candidatosFiltrados.map((c) => (
                       <button
-                        key={c.id}
+                        key={c.pessoa_id}
                         type="button"
                         onClick={() => {
-                          setNovoPerfilId(c.id)
+                          setNovoPerfilId(c.pessoa_id)
                           setBusca('')
                           setComboAberto(false)
                         }}
                         className="w-full text-left px-3 py-2 hover:bg-slate-800 transition flex items-center justify-between gap-3"
                       >
-                        <span className="text-sm text-slate-100 truncate">
-                          {c.nome_exibicao ?? '(sem nome)'}
-                        </span>
+                        <span className="text-sm text-slate-100 truncate">{c.nome}</span>
                         <span className="text-[10px] uppercase tracking-wide text-slate-500 shrink-0">
-                          {roleLabel(c.role)}
+                          {c.role_atual ? roleLabel(c.role_atual) : 'sem acesso'}
                         </span>
                       </button>
                     ))
