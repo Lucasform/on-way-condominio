@@ -8,6 +8,7 @@ import type { Condominio } from '../types/condominio'
 import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
+import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
 
 const STATUS_OPTS: { value: '' | StatusMulta; label: string }[] = [
@@ -96,7 +97,14 @@ export default function Multas() {
         subtitle={
           isMorador
             ? 'Multas vinculadas ao seu cadastro.'
-            : 'Decisões registradas; sem cobrança financeira no app.'
+            : 'Multas emitidas a partir de uma ocorrência. Sem cobrança financeira no app.'
+        }
+        actions={
+          !isMorador ? (
+            <Link to="/ocorrencias">
+              <Button variant="secondary">Ir para ocorrências →</Button>
+            </Link>
+          ) : undefined
         }
       />
 
