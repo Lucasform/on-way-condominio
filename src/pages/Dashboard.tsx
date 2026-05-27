@@ -174,19 +174,9 @@ export default function Dashboard() {
               link="/ocorrencias"
               accent={stats.ocorrAbertas > 0 ? 'amber' : 'default'}
             />
-            <StatCard
-              label="Multas pendentes"
-              value={stats.multasPendentes}
-              link="/multas"
-              accent={stats.multasPendentes > 0 ? 'red' : 'default'}
-            />
-            <StatCard
-              label="Encomendas na portaria"
-              value={stats.encomendasAguardando}
-              link="/encomendas"
-              accent={stats.encomendasAguardando > 0 ? 'sky' : 'default'}
-            />
-            <StatCard label="Multas pagas" value={stats.multasPagas} link="/multas" accent="emerald" />
+            <StatCard label="Multas pendentes" value={stats.multasPendentes} link="/multas" />
+            <StatCard label="Encomendas na portaria" value={stats.encomendasAguardando} link="/encomendas" />
+            <StatCard label="Multas pagas" value={stats.multasPagas} link="/multas" />
             <StatCard
               label="Total em multas (R$)"
               value={stats.totalMultas.toFixed(2).replace('.', ',')}
@@ -196,7 +186,6 @@ export default function Dashboard() {
               label="Arrecadado (R$)"
               value={stats.arrecadado.toFixed(2).replace('.', ',')}
               link="/multas"
-              accent="emerald"
             />
           </div>
 

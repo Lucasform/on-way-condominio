@@ -4,6 +4,7 @@ import { createNotificacao } from '../lib/notificacoes'
 import { listUnidades } from '../lib/unidades'
 import { listPessoas } from '../lib/pessoas'
 import { getOcorrencia, updateOcorrenciaStatus } from '../lib/ocorrencias'
+import { getOcorrenciaIaAnalysis } from '../lib/iaAnalysis'
 import type { Unidade } from '../types/unidade'
 import type { Pessoa } from '../types/pessoa'
 import { useAuth } from '../components/AuthProvider'
@@ -37,20 +38,27 @@ export default function NotificacaoNova() {
     listPessoas().then(setPessoas).catch(() => {})
   }, [])
 
-  // Pré-popula a partir da ocorrência
+  // Pré-popula a partir da ocorrência + análise persistida da IA (se houver)
   useEffect(() => {
     if (!ocorrenciaId) return
-    getOcorrencia(ocorrenciaId).then((o) => {
-      if (!o) return
-      setForm((f) => ({
-        ...f,
-        unidade_id: o.unidade_id ?? '',
-        descricao: `Foi registrada a seguinte ocorrência: "${o.descricao}". ` +
-          `${o.local ? `Local: ${o.local}. ` : ''}` +
-          `Solicitamos a regularização imediata e atenção às normas do condomínio.`,
-        assunto: f.assunto || 'Advertência por descumprimento de norma interna',
-      }))
-    }).catch(() => {})
+    ;(async () => {
+      try {
+        const o = await getOcorrencia(ocorrenciaId)
+        if (!o) return
+        const ia = await getOcorrenciaIaAnalysis(ocorrenciaId)
+        const usarIa = !!ia
+        setForm((f) => ({
+          ...f,
+          unidade_id: o.unidade_id ?? '',
+          descricao: usarIa && ia.analysis.minuta
+            ? ia.analysis.minuta
+            : `Foi registrada a seguinte ocorrência: "${o.descricao}". ${o.local ? `Local: ${o.local}. ` : ''}Solicitamos a regularização imediata e atenção às normas do condomínio.`,
+          assunto: f.assunto || (usarIa && ia.analysis.tipo_infracao ? `Notificação: ${ia.analysis.tipo_infracao}` : 'Advertência por descumprimento de norma interna'),
+          artigo_regimento: f.artigo_regimento || (usarIa ? ia.analysis.artigo_aplicavel ?? '' : ''),
+          observacoes: f.observacoes || (usarIa ? ia.analysis.justificativa : ''),
+        }))
+      } catch { /* ignora */ }
+    })()
   }, [ocorrenciaId])
 
   const pessoasUnidade = pessoas.filter((p) => p.unidade_id === form.unidade_id)

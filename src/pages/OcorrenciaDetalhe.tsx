@@ -404,13 +404,13 @@ export default function OcorrenciaDetalhe() {
             Escolha uma das ações abaixo de acordo com a gravidade. Notificação é advertência sem valor; multa tem valor financeiro.
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Link to={`/notificacoes/nova?ocorrencia=${ocorrencia.id}`} className="block">
+            <Link to={`/notificacoes/nova?ocorrencia=${ocorrencia.id}&fromIA=1`} className="block">
               <div className="rounded-md border border-slate-700 bg-slate-900/40 p-3 hover:border-brand-500 hover:bg-slate-800/60 transition h-full">
                 <div className="text-sm font-semibold text-slate-100">📋 Virar notificação</div>
                 <div className="text-xs text-slate-400 mt-1">Advertência formal, sem valor financeiro.</div>
               </div>
             </Link>
-            <Link to={`/multas/nova?ocorrencia=${ocorrencia.id}`} className="block">
+            <Link to={`/multas/nova?ocorrencia=${ocorrencia.id}&fromIA=1`} className="block">
               <div className="rounded-md border border-slate-700 bg-slate-900/40 p-3 hover:border-brand-500 hover:bg-slate-800/60 transition h-full">
                 <div className="text-sm font-semibold text-slate-100">💰 Virar multa</div>
                 <div className="text-xs text-slate-400 mt-1">Sanção com valor monetário conforme regimento.</div>

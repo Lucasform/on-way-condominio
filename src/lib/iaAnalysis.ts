@@ -43,6 +43,57 @@ export async function analisarOcorrenciaIA(
 }
 
 /**
+ * Lê a última análise persistida na ocorrência (sobrevive entre sessões).
+ */
+export async function getOcorrenciaIaAnalysis(ocorrenciaId: string): Promise<{
+  analysis: IAAnalysis
+  artigos_consultados: IAResult['artigos_consultados']
+  modelo: string
+  analisada_em: string
+} | null> {
+  const { data, error } = await supabase
+    .from('ocorrencias')
+    .select('ia_analysis, ia_analisada_em')
+    .eq('id', ocorrenciaId)
+    .maybeSingle()
+  if (error || !data?.ia_analysis) return null
+  const raw = data.ia_analysis as {
+    analysis: IAAnalysis
+    artigos_consultados: IAResult['artigos_consultados']
+    modelo: string
+  }
+  return {
+    analysis: raw.analysis,
+    artigos_consultados: raw.artigos_consultados ?? [],
+    modelo: raw.modelo,
+    analisada_em: data.ia_analisada_em as string,
+  }
+}
+
+/**
+ * Atualiza a análise da ocorrência (edição manual depois de gerada).
+ */
+export async function updateOcorrenciaIaAnalysis(
+  ocorrenciaId: string,
+  patch: Partial<IAAnalysis>,
+): Promise<void> {
+  const atual = await getOcorrenciaIaAnalysis(ocorrenciaId)
+  if (!atual) throw new Error('Ainda não há análise pra editar.')
+  const novaAnalysis: IAAnalysis = { ...atual.analysis, ...patch }
+  const { error } = await supabase
+    .from('ocorrencias')
+    .update({
+      ia_analysis: {
+        analysis: novaAnalysis,
+        artigos_consultados: atual.artigos_consultados,
+        modelo: atual.modelo,
+      },
+    })
+    .eq('id', ocorrenciaId)
+  if (error) throw error
+}
+
+/**
  * Stash da sugestão IA pra ser lida pelo MultaNova (etapa 43).
  */
 export interface IAStashedSuggestion {

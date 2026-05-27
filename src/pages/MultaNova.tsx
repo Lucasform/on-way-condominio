@@ -5,7 +5,7 @@ import { getOcorrencia } from '../lib/ocorrencias'
 import { getUnidade } from '../lib/unidades'
 import { getPessoa } from '../lib/pessoas'
 import { createMultaFromOcorrencia } from '../lib/multas'
-import { readIASuggestion, clearIASuggestion } from '../lib/iaAnalysis'
+import { clearIASuggestion, getOcorrenciaIaAnalysis, readIASuggestion } from '../lib/iaAnalysis'
 import type { Ocorrencia } from '../types/ocorrencia'
 import type { Unidade } from '../types/unidade'
 import type { Pessoa } from '../types/pessoa'
@@ -60,9 +60,21 @@ export default function MultaNova() {
         }
         setOcorrencia(o)
 
-        // Tenta puxar sugestão da IA do sessionStorage (etapa 43)
+        // 1) Tenta análise persistida no banco (mais confiável, sobrevive entre sessões)
+        const persistida = await getOcorrenciaIaAnalysis(o.id)
         const stashed = readIASuggestion(o.id)
-        if (stashed) {
+        if (persistida?.analysis.cabe_multa) {
+          const a = persistida.analysis
+          setForm((f) => ({
+            ...f,
+            valor: a.valor_sugerido_reais != null ? String(a.valor_sugerido_reais) : '',
+            artigo_regimento: a.artigo_aplicavel ?? '',
+            descricao: a.minuta || o.descricao,
+            observacoes: a.justificativa ?? '',
+          }))
+          setUsouIA(true)
+          clearIASuggestion()
+        } else if (stashed) {
           setForm((f) => ({
             ...f,
             valor: String(stashed.valor),

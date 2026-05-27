@@ -102,6 +102,61 @@ Deno.serve(async (req: Request) => {
       modelosTexto = condoCtx.modelo_notificacao_texto
     }
 
+    // 1.c) Histórico da unidade — pra IA detectar reincidência
+    let historicoTexto: string | null = null
+    if (ocorrencia.unidade_id) {
+      const seisMesesAtras = new Date()
+      seisMesesAtras.setMonth(seisMesesAtras.getMonth() - 6)
+      const isoLimite = seisMesesAtras.toISOString()
+
+      const [{ data: histOcorr }, { data: histMultas }, { data: histNotif }] = await Promise.all([
+        userClient
+          .from('ocorrencias')
+          .select('id, descricao, status, created_at')
+          .eq('unidade_id', ocorrencia.unidade_id)
+          .neq('id', ocorrencia_id)
+          .gte('created_at', isoLimite)
+          .order('created_at', { ascending: false })
+          .limit(10),
+        userClient
+          .from('multas')
+          .select('id, descricao, artigo_regimento, valor, status, data_aplicacao, created_at')
+          .eq('unidade_id', ocorrencia.unidade_id)
+          .gte('created_at', isoLimite)
+          .order('created_at', { ascending: false })
+          .limit(10),
+        userClient
+          .from('notificacoes')
+          .select('id, assunto, descricao, artigo_regimento, status, created_at')
+          .eq('unidade_id', ocorrencia.unidade_id)
+          .gte('created_at', isoLimite)
+          .order('created_at', { ascending: false })
+          .limit(10),
+      ])
+
+      const blocos: string[] = []
+      if (histMultas && histMultas.length > 0) {
+        blocos.push('Multas aplicadas nesta unidade (últimos 6 meses):')
+        for (const m of histMultas) {
+          const data = m.data_aplicacao || m.created_at
+          blocos.push(`- ${new Date(data).toLocaleDateString('pt-BR')} | ${m.artigo_regimento ?? 's/artigo'} | R$ ${Number(m.valor).toFixed(2)} | status: ${m.status} | ${String(m.descricao).slice(0, 120)}`)
+        }
+      }
+      if (histNotif && histNotif.length > 0) {
+        blocos.push('\nNotificações nesta unidade (últimos 6 meses):')
+        for (const n of histNotif) {
+          blocos.push(`- ${new Date(n.created_at).toLocaleDateString('pt-BR')} | ${n.artigo_regimento ?? 's/artigo'} | ${n.assunto} | status: ${n.status}`)
+        }
+      }
+      if (histOcorr && histOcorr.length > 0) {
+        blocos.push('\nOutras ocorrências registradas nesta unidade (últimos 6 meses):')
+        for (const o of histOcorr) {
+          blocos.push(`- ${new Date(o.created_at).toLocaleDateString('pt-BR')} | status: ${o.status} | ${String(o.descricao).slice(0, 120)}`)
+        }
+      }
+      if (blocos.length > 0) historicoTexto = blocos.join('\n')
+    }
+
     // 2) Gera embedding da descrição (+ contexto da gestão se houver)
     const queryText = [
       ocorrencia.local ?? '',
@@ -162,6 +217,10 @@ Responda EXCLUSIVAMENTE em JSON válido, sem markdown.`,
 
     if (aiInstrucoes) {
       partes.push(`INSTRUÇÕES ESPECÍFICAS DESTE CONDOMÍNIO:\n${aiInstrucoes}`)
+    }
+
+    if (historicoTexto) {
+      partes.push(`HISTÓRICO DA UNIDADE (analise pra detectar reincidência. Reincidência = problema parecido nos últimos 6 meses. Considere agravar valor da multa quando aplicável):\n${historicoTexto}`)
     }
 
     const systemPrompt = partes.join('\n\n---\n\n')
@@ -240,15 +299,30 @@ Responda em JSON com EXATAMENTE este schema:
       )
     }
 
+    const artigosConsultados = artigosList.map((a) => ({
+      id: a.id,
+      numero: a.numero,
+      titulo: a.titulo,
+      similarity: Number(a.similarity.toFixed(3)),
+    }))
+
+    // Persiste a análise no banco — sobrevive a refresh, abrir notificação/multa, etc.
+    try {
+      await userClient
+        .from('ocorrencias')
+        .update({
+          ia_analysis: { analysis, artigos_consultados: artigosConsultados, modelo: CLAUDE_MODEL },
+          ia_analisada_em: new Date().toISOString(),
+        })
+        .eq('id', ocorrencia_id)
+    } catch (e) {
+      console.warn('[analyze-ocorrencia] falha ao persistir ia_analysis:', e)
+    }
+
     return jsonResponse({
       ocorrencia_id,
       analysis,
-      artigos_consultados: artigosList.map((a) => ({
-        id: a.id,
-        numero: a.numero,
-        titulo: a.titulo,
-        similarity: Number(a.similarity.toFixed(3)),
-      })),
+      artigos_consultados: artigosConsultados,
       modelo: CLAUDE_MODEL,
       usou_modelo_redacao: !!modelosTexto,
       usou_instrucoes_custom: !!aiInstrucoes,

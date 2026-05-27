@@ -1,12 +1,19 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { analisarOcorrenciaIA, stashIASuggestion, type IAResult } from '../lib/iaAnalysis'
+import {
+  analisarOcorrenciaIA,
+  getOcorrenciaIaAnalysis,
+  stashIASuggestion,
+  updateOcorrenciaIaAnalysis,
+  type IAAnalysis,
+  type IAResult,
+} from '../lib/iaAnalysis'
 import Button from './ui/Button'
 
 interface Props {
   ocorrenciaId: string
-  canAnalyse: boolean   // só admin/adm/sindico
-  canGenerateMulta: boolean  // se ocorrência está em status que permite
+  canAnalyse: boolean       // só admin/adm/sindico
+  canGenerateMulta: boolean // se ocorrência está em status que permite
 }
 
 const CONFIANCA_COLOR = {
@@ -18,26 +25,81 @@ const CONFIANCA_COLOR = {
 export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateMulta }: Props) {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
+  const [loadingPersist, setLoadingPersist] = useState(true)
   const [result, setResult] = useState<IAResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [comentario, setComentario] = useState('')
   const [showComment, setShowComment] = useState(false)
+  const [analisadaEm, setAnalisadaEm] = useState<string | null>(null)
+
+  // Edição manual
+  const [editando, setEditando] = useState(false)
+  const [editForm, setEditForm] = useState<IAAnalysis | null>(null)
+  const [salvandoEdit, setSalvandoEdit] = useState(false)
+
+  // Carrega análise persistida ao montar
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const persistida = await getOcorrenciaIaAnalysis(ocorrenciaId)
+        if (!mounted) return
+        if (persistida) {
+          setResult({
+            ocorrencia_id: ocorrenciaId,
+            analysis: persistida.analysis,
+            artigos_consultados: persistida.artigos_consultados,
+            modelo: persistida.modelo,
+            tokens: { input: null, output: null },
+          })
+          setAnalisadaEm(persistida.analisada_em)
+        }
+      } catch (e) {
+        console.warn('[AIAnalysisPanel] erro ao ler análise persistida:', e)
+      } finally {
+        if (mounted) setLoadingPersist(false)
+      }
+    })()
+    return () => { mounted = false }
+  }, [ocorrenciaId])
 
   if (!canAnalyse) return null
 
   async function handleAnalyze() {
     setLoading(true)
     setError(null)
-    setResult(null)
+    setEditando(false)
     try {
       const r = await analisarOcorrenciaIA(ocorrenciaId, comentario.trim() || undefined)
       setResult(r)
+      setAnalisadaEm(new Date().toISOString())
       setComentario('')
       setShowComment(false)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro na análise.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  function handleEditar() {
+    if (!result) return
+    setEditForm({ ...result.analysis })
+    setEditando(true)
+  }
+
+  async function handleSalvarEdit() {
+    if (!editForm || !result) return
+    setSalvandoEdit(true)
+    setError(null)
+    try {
+      await updateOcorrenciaIaAnalysis(ocorrenciaId, editForm)
+      setResult({ ...result, analysis: editForm })
+      setEditando(false)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao salvar edição.')
+    } finally {
+      setSalvandoEdit(false)
     }
   }
 
@@ -55,30 +117,45 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
     navigate(`/multas/nova?ocorrencia=${ocorrenciaId}&fromIA=1`)
   }
 
+  if (loadingPersist) {
+    return (
+      <div className="mt-6 rounded-lg border border-slate-800 bg-slate-900/40 p-5 text-sm text-slate-500">
+        Carregando análise...
+      </div>
+    )
+  }
+
   return (
     <div className="mt-6 rounded-lg border border-sky-500/30 bg-sky-500/5 p-5">
-      <div className="flex items-center justify-between mb-3 gap-3">
+      <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
         <div>
           <div className="text-sm font-medium text-sky-200">🧑‍💼 Análise do Gestor</div>
           <div className="text-xs text-slate-400 mt-0.5">
-            Análise com base no regimento e sugestão. Apenas sugestão, decisão administrativa.
+            {analisadaEm
+              ? `Última análise em ${new Date(analisadaEm).toLocaleString('pt-BR')}.`
+              : 'Análise com base no regimento e histórico da unidade. Apenas sugestão.'}
           </div>
         </div>
-        <div className="flex gap-2 items-start">
-          {!result && !showComment && (
+        <div className="flex gap-2 items-start flex-wrap">
+          {!showComment && !editando && (
             <Button variant="ghost" onClick={() => setShowComment(true)} disabled={loading}>
               + Comentário
             </Button>
           )}
-          {!result && (
+          {!result && !showComment && (
             <Button onClick={handleAnalyze} disabled={loading}>
               {loading ? 'Analisando...' : 'Analisar'}
             </Button>
           )}
-          {result && !showComment && (
-            <Button variant="ghost" onClick={() => setShowComment(true)} disabled={loading}>
-              {loading ? '...' : '🔄 Reanalisar'}
-            </Button>
+          {result && !showComment && !editando && (
+            <>
+              <Button variant="ghost" onClick={handleEditar}>
+                ✎ Editar
+              </Button>
+              <Button variant="ghost" onClick={handleAnalyze} disabled={loading}>
+                {loading ? '...' : '🔄 Reanalisar'}
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -87,7 +164,7 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
         <div className="mb-3">
           <label className="block text-xs text-slate-400 mb-1">
             {result
-              ? 'Comentário pra reanálise (opcional). Diga o que mudou ou o que a IA deve considerar.'
+              ? 'Comentário pra reanálise (opcional). Diga o que mudou ou o que considerar.'
               : 'Comentário adicional (ex.: considere reincidência, valor = 1% do salário mínimo).'}
           </label>
           <textarea
@@ -124,10 +201,87 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
         </div>
       )}
 
-      {result && (
+      {/* Modo edição manual */}
+      {result && editando && editForm && (
+        <div className="space-y-3 mt-2">
+          <div className="text-xs text-slate-400 italic">
+            Editando a análise. O conteúdo abaixo será salvo na ocorrência e usado ao gerar notificação ou multa.
+          </div>
+          <FieldEdit label="Cabe sanção">
+            <select
+              value={editForm.cabe_multa ? 'sim' : 'nao'}
+              onChange={(e) => setEditForm({ ...editForm, cabe_multa: e.target.value === 'sim' })}
+              className={inputCls}
+            >
+              <option value="sim">Sim, cabe</option>
+              <option value="nao">Não cabe</option>
+            </select>
+          </FieldEdit>
+          <FieldEdit label="Artigo aplicável">
+            <input
+              value={editForm.artigo_aplicavel ?? ''}
+              onChange={(e) => setEditForm({ ...editForm, artigo_aplicavel: e.target.value || null })}
+              className={inputCls}
+              placeholder="Ex.: Art. 12"
+            />
+          </FieldEdit>
+          <FieldEdit label="Tipo de infração">
+            <input
+              value={editForm.tipo_infracao}
+              onChange={(e) => setEditForm({ ...editForm, tipo_infracao: e.target.value })}
+              className={inputCls}
+            />
+          </FieldEdit>
+          <FieldEdit label="Valor sugerido (R$)">
+            <input
+              type="number" step="0.01" min="0"
+              value={editForm.valor_sugerido_reais ?? ''}
+              onChange={(e) => setEditForm({ ...editForm, valor_sugerido_reais: e.target.value ? Number(e.target.value) : null })}
+              className={inputCls}
+            />
+          </FieldEdit>
+          <FieldEdit label="Confiança">
+            <select
+              value={editForm.confianca}
+              onChange={(e) => setEditForm({ ...editForm, confianca: e.target.value as IAAnalysis['confianca'] })}
+              className={inputCls}
+            >
+              <option value="alta">Alta</option>
+              <option value="media">Média</option>
+              <option value="baixa">Baixa</option>
+            </select>
+          </FieldEdit>
+          <FieldEdit label="Justificativa">
+            <textarea
+              value={editForm.justificativa}
+              onChange={(e) => setEditForm({ ...editForm, justificativa: e.target.value })}
+              rows={3}
+              className={inputCls}
+            />
+          </FieldEdit>
+          <FieldEdit label="Minuta (texto que vai pra notificação ou multa)">
+            <textarea
+              value={editForm.minuta}
+              onChange={(e) => setEditForm({ ...editForm, minuta: e.target.value })}
+              rows={6}
+              className={inputCls}
+            />
+          </FieldEdit>
+          <div className="flex gap-2 pt-2">
+            <Button onClick={handleSalvarEdit} disabled={salvandoEdit}>
+              {salvandoEdit ? 'Salvando...' : '✓ Salvar edição'}
+            </Button>
+            <Button variant="ghost" onClick={() => { setEditando(false); setEditForm(null) }} disabled={salvandoEdit}>
+              Cancelar
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Modo visualização */}
+      {result && !editando && (
         <div className="space-y-4 mt-2">
-          {/* Resultado principal */}
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-3 flex-wrap">
             <span
               className={`shrink-0 px-3 py-1 rounded text-xs font-semibold border ${
                 result.analysis.cabe_multa
@@ -135,22 +289,19 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
                   : 'bg-slate-700/40 text-slate-300 border-slate-700'
               }`}
             >
-              {result.analysis.cabe_multa ? '⚠ Cabe multa' : '✓ Não cabe multa'}
+              {result.analysis.cabe_multa ? '⚠ Cabe sanção' : '✓ Não cabe sanção'}
             </span>
             <span className={`shrink-0 px-2 py-1 rounded text-xs border ${CONFIANCA_COLOR[result.analysis.confianca]}`}>
               confiança: {result.analysis.confianca}
             </span>
           </div>
 
-          {/* Dados da multa sugerida */}
           {result.analysis.cabe_multa && (
             <dl className="grid grid-cols-[120px_1fr] gap-y-2 gap-x-4 text-sm">
               <dt className="text-slate-500">Artigo</dt>
               <dd className="text-slate-100">{result.analysis.artigo_aplicavel ?? '—'}</dd>
-
               <dt className="text-slate-500">Infração</dt>
               <dd className="text-slate-100">{result.analysis.tipo_infracao}</dd>
-
               <dt className="text-slate-500">Valor sugerido</dt>
               <dd className="text-slate-100 font-semibold">
                 R$ {result.analysis.valor_sugerido_reais?.toFixed(2).replace('.', ',') ?? '—'}
@@ -158,7 +309,6 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
             </dl>
           )}
 
-          {/* Justificativa */}
           <div className="border-t border-sky-500/20 pt-3">
             <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
               Justificativa
@@ -166,11 +316,10 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
             <p className="text-sm text-slate-200 whitespace-pre-wrap">{result.analysis.justificativa}</p>
           </div>
 
-          {/* Minuta */}
           {result.analysis.cabe_multa && (
             <div className="border-t border-sky-500/20 pt-3">
               <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
-                Minuta sugerida (você pode editar antes de enviar)
+                Minuta (vai pro texto da notificação ou multa)
               </div>
               <div className="bg-slate-950/60 border border-slate-700 rounded-md p-3 text-sm text-slate-200 whitespace-pre-wrap">
                 {result.analysis.minuta}
@@ -178,36 +327,46 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
             </div>
           )}
 
-          {/* Artigos consultados */}
-          <div className="border-t border-sky-500/20 pt-3">
-            <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
-              Artigos consultados (RAG, top {result.artigos_consultados.length})
+          {result.artigos_consultados.length > 0 && (
+            <div className="border-t border-sky-500/20 pt-3">
+              <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
+                Artigos consultados
+              </div>
+              <ul className="space-y-1">
+                {result.artigos_consultados.map((a) => (
+                  <li key={a.id} className="text-xs text-slate-400">
+                    <span className="font-mono text-slate-500">[{a.numero ?? 's/n'}]</span>{' '}
+                    {a.titulo}
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="space-y-1">
-              {result.artigos_consultados.map((a) => (
-                <li key={a.id} className="text-xs text-slate-400">
-                  <span className="font-mono text-slate-500">[{a.numero ?? 's/n'}]</span>{' '}
-                  {a.titulo}
-                  <span className="text-slate-600 ml-2">· similarity {a.similarity.toFixed(2)}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+          )}
 
-          {/* Ação aprovar */}
           {result.analysis.cabe_multa && canGenerateMulta && (
-            <div className="border-t border-sky-500/20 pt-4 flex items-center gap-3">
+            <div className="border-t border-sky-500/20 pt-4 flex items-center gap-3 flex-wrap">
               <Button onClick={handleApprove}>
                 ✓ Aprovar e gerar multa
               </Button>
               <span className="text-xs text-slate-500">
-                Vai abrir o form de multa pré-preenchido. Você ainda pode ajustar tudo.
+                Vai abrir o form de multa pré-preenchido com a análise.
               </span>
             </div>
           )}
-
         </div>
       )}
     </div>
+  )
+}
+
+const inputCls =
+  'w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:border-sky-500 focus:outline-none'
+
+function FieldEdit({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="block text-xs font-medium text-slate-400 mb-1">{label}</span>
+      {children}
+    </label>
   )
 }
