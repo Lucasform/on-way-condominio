@@ -97,6 +97,7 @@ function normalize(input: PessoaInput): PessoaInput {
     data_nascimento: input.data_nascimento || null,
     tipo_vinculo: input.tipo_vinculo,
     relacao_unidade: input.relacao_unidade,
+    setor: trimOrNull(input.setor),
     foto_url: trimOrNull(input.foto_url),
   }
 }

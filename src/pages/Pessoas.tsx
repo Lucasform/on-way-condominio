@@ -13,6 +13,7 @@ import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
 import DataTable, { type Column } from '../components/ui/DataTable'
 import PessoasImport from '../components/PessoasImport'
+import FuncionariosImport from '../components/FuncionariosImport'
 
 export default function Pessoas() {
   const { perfil } = useAuth()
@@ -187,7 +188,10 @@ export default function Pessoas() {
 
   const columns: Column<Pessoa>[] = [
     { key: 'nome', header: 'Nome', render: (r) => <span className="font-medium text-slate-100">{r.nome}</span> },
-    { key: 'unidade', header: 'Unidade', render: (r) => unidadeLabel(r.unidade_id) },
+    ...(tab === 'funcionarios'
+      ? [{ key: 'setor', header: 'Setor', render: (r: Pessoa) => r.setor ?? '—' } as Column<Pessoa>]
+      : [{ key: 'unidade', header: 'Unidade', render: (r: Pessoa) => unidadeLabel(r.unidade_id) } as Column<Pessoa>]
+    ),
     { key: 'vinculo', header: 'Vínculo', render: (r) => <span className="capitalize text-slate-300">{r.tipo_vinculo}</span> },
     { key: 'email', header: 'E-mail', render: (r) => r.email ?? '—' },
     { key: 'telefone', header: 'Telefone', render: (r) => r.telefone ? formatPhone(r.telefone) : '—' },
@@ -336,13 +340,14 @@ export default function Pessoas() {
         />
       )}
 
-      {isGestor(perfil?.role) && (perfil?.condominio_id || (isAdmin && scopeId)) && (
+      {isGestor(perfil?.role) && (perfil?.condominio_id || (isAdmin && scopeId)) && tab !== 'sem_cadastro' && tab !== 'diretoria' && (
         <div className="mt-10">
           <h2 className="text-base font-semibold text-slate-200 mb-1">Importar em massa</h2>
-          <p className="text-xs text-slate-400 mb-4">
-            Envie sua planilha em Excel ou CSV. Cria unidades automaticamente quando "Bloco-Número" não existir. Linhas duplicadas (mesmo CPF ou e-mail) são ignoradas.
-          </p>
-          <PessoasImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} />
+          {tab === 'funcionarios' ? (
+            <FuncionariosImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} />
+          ) : (
+            <PessoasImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} />
+          )}
         </div>
       )}
     </div>

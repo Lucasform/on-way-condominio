@@ -22,6 +22,7 @@ export interface Pessoa {
   data_nascimento: string | null
   tipo_vinculo: TipoVinculo
   relacao_unidade: RelacaoUnidade
+  setor: string | null
   foto_url: string | null
   ativo: boolean
   created_at: string

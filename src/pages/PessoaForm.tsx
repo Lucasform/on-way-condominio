@@ -25,6 +25,7 @@ const EMPTY: PessoaInput = {
   data_nascimento: null,
   tipo_vinculo: 'morador',
   relacao_unidade: 'morador',
+  setor: null,
   foto_url: null,
 }
 
@@ -174,6 +175,7 @@ export default function PessoaForm() {
             data_nascimento: p.data_nascimento,
             tipo_vinculo: p.tipo_vinculo,
             relacao_unidade: p.relacao_unidade,
+            setor: p.setor ?? null,
             foto_url: p.foto_url,
           })
         }
@@ -345,19 +347,29 @@ export default function PessoaForm() {
                   <option value="outro">Outro</option>
                 </Select>
               </Field>
-              <Field label="Relação com a unidade">
-                <Select
-                  value={form.relacao_unidade ?? ''}
-                  onChange={(e) =>
-                    update('relacao_unidade', (e.target.value || null) as RelacaoUnidade)
-                  }
-                >
-                  <option value="">—</option>
-                  <option value="proprietario">Proprietário</option>
-                  <option value="inquilino">Inquilino</option>
-                  <option value="morador">Morador</option>
-                </Select>
-              </Field>
+              {form.tipo_vinculo === 'funcionario' ? (
+                <Field label="Setor / Função" hint="Ex: Portaria, Limpeza, Manutenção">
+                  <TextInput
+                    value={form.setor ?? ''}
+                    onChange={(e) => update('setor', e.target.value || null)}
+                    placeholder="Ex: Portaria diurna"
+                  />
+                </Field>
+              ) : (
+                <Field label="Relação com a unidade">
+                  <Select
+                    value={form.relacao_unidade ?? ''}
+                    onChange={(e) =>
+                      update('relacao_unidade', (e.target.value || null) as RelacaoUnidade)
+                    }
+                  >
+                    <option value="">—</option>
+                    <option value="proprietario">Proprietário</option>
+                    <option value="inquilino">Inquilino</option>
+                    <option value="morador">Morador</option>
+                  </Select>
+                </Field>
+              )}
             </div>
           </div>
         </fieldset>
