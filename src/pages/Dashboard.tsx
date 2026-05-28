@@ -1,9 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
-} from 'recharts'
 import { listCondominios } from '../lib/condominios'
 import { listOcorrencias } from '../lib/ocorrencias'
 import { listMultas } from '../lib/multas'
@@ -21,11 +17,8 @@ import PageHeader from '../components/ui/PageHeader'
 import { Select } from '../components/ui/Input'
 import HeatmapOcorrencias from '../components/HeatmapOcorrencias'
 
-// ----------------------------------------------------------------
-// Cores
-// ----------------------------------------------------------------
-
-const PIE_COLORS = ['#10b981', '#ef4444', '#f59e0b', '#0ea5e9', '#a855f7', '#64748b']
+// Lazy: o chunk do recharts so e baixado quando o Dashboard abre de fato
+const DashboardCharts = lazy(() => import('../components/DashboardCharts'))
 
 // ----------------------------------------------------------------
 
@@ -192,64 +185,17 @@ export default function Dashboard() {
             />
           </div>
 
-          {/* Gráficos */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <ChartCard title="Ocorrências e multas (últimos 6 meses)">
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={stats.monthly}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="mes" stroke="#94a3b8" fontSize={12} />
-                  <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: '#0f172a',
-                      border: '1px solid #334155',
-                      borderRadius: '6px',
-                      color: '#e2e8f0',
-                    }}
-                  />
-                  <Bar dataKey="ocorrencias" fill="#0ea5e9" name="Ocorrências" />
-                  <Bar dataKey="multas" fill="#ef4444" name="Multas" />
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartCard>
-
-            <ChartCard title="Multas por status">
-              {stats.multasByStatus.length === 0 ? (
-                <div className="h-[260px] flex items-center justify-center text-sm text-slate-500">
-                  Sem multas no período.
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height={260}>
-                  <PieChart>
-                    <Pie
-                      data={stats.multasByStatus}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={80}
-                      label={(entry) => `${entry.name}: ${entry.value}`}
-                      labelLine={false}
-                    >
-                      {stats.multasByStatus.map((entry, i) => (
-                        <Cell key={i} fill={entry.color ?? PIE_COLORS[i % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: '#0f172a',
-                        border: '1px solid #334155',
-                        borderRadius: '6px',
-                        color: '#e2e8f0',
-                      }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 12, color: '#94a3b8' }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              )}
-            </ChartCard>
-          </div>
+          {/* Gráficos (chunk recharts lazy-loaded) */}
+          <Suspense fallback={
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-4 h-[290px] flex items-center justify-center text-sm text-slate-500">
+                Carregando gráficos...
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-4 h-[290px]" />
+            </div>
+          }>
+            <DashboardCharts monthly={stats.monthly} multasByStatus={stats.multasByStatus} />
+          </Suspense>
 
           <div className="mt-4">
             <HeatmapOcorrencias condominio_id={isAdmin && scopeId ? scopeId : (perfil?.condominio_id ?? undefined)} dias={90} />
@@ -290,11 +236,3 @@ function StatCard({
   return link ? <Link to={link}>{Content}</Link> : Content
 }
 
-function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-4">
-      <h3 className="text-sm font-semibold text-slate-100 mb-3">{title}</h3>
-      {children}
-    </div>
-  )
-}

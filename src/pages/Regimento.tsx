@@ -15,6 +15,7 @@ import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
+import RegimentoVersoes from '../components/RegimentoVersoes'
 
 export default function Regimento() {
   const { perfil } = useAuth()
@@ -244,6 +245,8 @@ export default function Regimento() {
           ))}
         </div>
       )}
+
+      <RegimentoVersoes condominio_id={isAdmin ? scopeId : perfil?.condominio_id ?? null} />
     </div>
   )
 }

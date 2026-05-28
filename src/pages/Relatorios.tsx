@@ -1,6 +1,4 @@
 import { useEffect, useState } from 'react'
-import { jsPDF } from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import { listOcorrencias } from '../lib/ocorrencias'
 import { listMultas, MULTA_STATUS_LABEL } from '../lib/multas'
 import { listEncomendas } from '../lib/encomendas'
@@ -71,6 +69,11 @@ export default function Relatorios() {
         return u ? (u.bloco ? `${u.bloco}-${u.numero}` : u.numero) : '—'
       }
 
+      // jsPDF e autoTable carregam aqui — chunk so baixa quando user gera PDF
+      const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+        import('jspdf'),
+        import('jspdf-autotable'),
+      ])
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
       // Cabeçalho
       doc.setFontSize(16)
