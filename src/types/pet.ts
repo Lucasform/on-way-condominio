@@ -12,6 +12,7 @@ export interface Pet {
   porte: PortePet
   foto_url: string | null
   vacinacao_em_dia: boolean
+  data_vacina_antirabica: string | null
   observacoes: string | null
   ativo: boolean
   created_at: string
@@ -19,3 +20,13 @@ export interface Pet {
 }
 
 export type PetInput = Omit<Pet, 'id' | 'ativo' | 'created_at' | 'updated_at'>
+
+export interface PetCirculacao {
+  id: string
+  pet_id: string
+  condominio_id: string
+  area: string
+  observado_em: string
+  observador_id: string | null
+  observacoes: string | null
+}

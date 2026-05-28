@@ -25,6 +25,7 @@ const EMPTY: PetInput = {
   porte: null,
   foto_url: null,
   vacinacao_em_dia: false,
+  data_vacina_antirabica: null,
   observacoes: null,
 }
 
@@ -95,6 +96,7 @@ export default function PetForm() {
             porte: p.porte,
             foto_url: p.foto_url,
             vacinacao_em_dia: p.vacinacao_em_dia,
+            data_vacina_antirabica: p.data_vacina_antirabica,
             observacoes: p.observacoes,
           })
         }
@@ -251,6 +253,16 @@ export default function PetForm() {
           />
           Vacinação em dia
         </label>
+
+        <Field label="Data da próxima antirrábica" hint="Lembrete automático 30 dias antes do vencimento.">
+          <TextInput
+            type="date"
+            value={form.data_vacina_antirabica ?? ''}
+            onChange={(e) => update('data_vacina_antirabica', e.target.value || null)}
+            onFocus={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+            onClick={(e) => (e.currentTarget as HTMLInputElement).showPicker?.()}
+          />
+        </Field>
 
         <Field label="Observações">
           <TextArea

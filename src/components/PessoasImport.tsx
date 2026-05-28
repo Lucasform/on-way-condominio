@@ -1,6 +1,9 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { msgErroImport } from '../lib/importHelpers'
+import { criarImportBatch, setImportBatchTotal } from '../lib/importBatches'
+import { useAuth } from './AuthProvider'
+import ImportUndoButton from './ImportUndoButton'
 
 interface Props {
   condominio_id: string
@@ -39,12 +42,14 @@ const HEADER_MAP: Record<string, keyof Row> = {
 }
 
 export default function PessoasImport({ condominio_id, onDone }: Props) {
+  const { user } = useAuth()
   const inputRef = useRef<HTMLInputElement>(null)
   const [parsing, setParsing] = useState(false)
   const [rows, setRows] = useState<Row[]>([])
   const [results, setResults] = useState<RowResult[] | null>(null)
   const [importando, setImportando] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [undoTick, setUndoTick] = useState(0)
 
   async function parseArquivo(file: File) {
     setError(null)
@@ -96,10 +101,15 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
   }
 
   async function importar() {
+    if (!user) { setError('Faça login pra importar.'); return }
     setImportando(true)
     setError(null)
     const res: RowResult[] = rows.map((r) => ({ row: r, status: 'pendente' }))
+    let batchId: string | null = null
+    let total = 0
     try {
+      batchId = await criarImportBatch({ condominio_id, user_id: user.id, tipo: 'pessoas' })
+
       // Carrega unidades existentes pra resolver Bloco-Numero → unidade_id
       const { data: unidadesExist } = await supabase
         .from('unidades')
@@ -157,16 +167,22 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
             tipo_vinculo: r.tipo_vinculo,
             relacao_unidade: r.relacao_unidade,
             ativo: true,
+            import_batch_id: batchId,
           })
           if (pErr) throw pErr
           res[i] = { row: r, status: 'ok' }
+          total++
         } catch (e) {
           res[i] = { row: r, status: 'erro', msg: msgErroImport(e) }
         }
         setResults([...res])
       }
     } finally {
+      if (batchId && total > 0) {
+        try { await setImportBatchTotal(batchId, total) } catch { /* noop */ }
+      }
       setImportando(false)
+      setUndoTick((t) => t + 1)
       onDone?.()
     }
   }
@@ -207,6 +223,12 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
         Aceita CSV ou XLSX. Cria unidades automaticamente quando "Bloco-Número" não existir.
         Linhas duplicadas (mesmo CPF ou e-mail) são ignoradas.
       </p>
+
+      <ImportUndoButton
+        condominio_id={condominio_id}
+        tipo="pessoas"
+        refreshKey={undoTick}
+      />
 
       <div className="flex flex-wrap gap-2">
         <button

@@ -16,6 +16,7 @@ import ConvitesPanel from '../components/ConvitesPanel'
 import LogoUpload from '../components/LogoUpload'
 import CondominioAnexosManager from '../components/CondominioAnexosManager'
 import CondominioDiretoria from '../components/CondominioDiretoria'
+import CondominioMandatos from '../components/CondominioMandatos'
 import AgenteTreinamento from '../components/AgenteTreinamento'
 import { traduzErro } from '../lib/errorMessages'
 
@@ -324,6 +325,7 @@ export default function CondominioForm() {
           {/* ============================================================ */}
           <div className="mt-10">
             <CondominioDiretoria condominio_id={id} />
+            <CondominioMandatos condominio_id={id} />
           </div>
 
           {/* ============================================================ */}

@@ -62,6 +62,7 @@ function normalize(input: PetInput): PetInput {
     porte: input.porte || null,
     foto_url: trimOrNull(input.foto_url),
     vacinacao_em_dia: !!input.vacinacao_em_dia,
+    data_vacina_antirabica: input.data_vacina_antirabica || null,
     observacoes: trimOrNull(input.observacoes),
   }
 }

@@ -24,6 +24,7 @@ const Unidades = lazy(() => import('./pages/Unidades'))
 const UnidadeForm = lazy(() => import('./pages/UnidadeForm'))
 const Pessoas = lazy(() => import('./pages/Pessoas'))
 const PessoaForm = lazy(() => import('./pages/PessoaForm'))
+const PessoaHistorico = lazy(() => import('./pages/PessoaHistorico'))
 const Veiculos = lazy(() => import('./pages/Veiculos'))
 const VeiculoForm = lazy(() => import('./pages/VeiculoForm'))
 const Pets = lazy(() => import('./pages/Pets'))
@@ -160,6 +161,14 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <PessoaForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pessoas/:id/historico"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
+                  <PessoaHistorico />
                 </ProtectedRoute>
               }
             />
