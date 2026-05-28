@@ -125,7 +125,7 @@ export default function ConvitesPanel({ condominio_id }: Props) {
         Gere um código pra liberar criação de contas.
       </p>
 
-      <div className="grid grid-cols-[1fr_140px_100px_100px_auto] gap-3 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_140px_100px_100px_auto] gap-3 items-end">
         <Field label="Código">
           <TextInput
             value={codigo}
@@ -156,7 +156,12 @@ export default function ConvitesPanel({ condominio_id }: Props) {
             onChange={(e) => setDiasValidade(Math.max(1, parseInt(e.target.value || '30')))}
           />
         </Field>
-        <Button type="button" onClick={handleCreate} disabled={creating}>
+        <Button
+          type="button"
+          onClick={handleCreate}
+          disabled={creating}
+          className="sm:col-span-2 lg:col-span-1 w-full lg:w-auto"
+        >
           {creating ? '...' : '+ Gerar'}
         </Button>
       </div>
@@ -167,8 +172,9 @@ export default function ConvitesPanel({ condominio_id }: Props) {
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      {/* Em mobile mostra cards. Em sm+ tabela tradicional. */}
+      <div className="hidden sm:block overflow-x-auto">
+        <table className="w-full text-sm min-w-[640px]">
           <thead className="text-xs uppercase text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
             <tr>
               <th className="text-left py-2">Código</th>
@@ -198,17 +204,17 @@ export default function ConvitesPanel({ condominio_id }: Props) {
                     <span className={`px-2 py-0.5 rounded text-xs ${st.cls}`}>{st.label}</span>
                   </td>
                   <td className="py-2 text-right">
-                    <div className="inline-flex items-center gap-1">
-                      <Button type="button" variant="ghost" onClick={() => copiar(c.codigo)} title="Copiar código">
+                    <div className="inline-flex items-center gap-1 flex-wrap justify-end">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => copiar(c.codigo)} title="Copiar código">
                         Copiar
                       </Button>
                       {(c.revogado || new Date(c.expira_em) < new Date() || c.usos >= c.usos_max) && (
-                        <Button type="button" variant="secondary" onClick={() => handleRenovar(c)} title="Renovar +30 dias">
+                        <Button type="button" variant="secondary" size="sm" onClick={() => handleRenovar(c)} title="Renovar +30 dias">
                           Renovar
                         </Button>
                       )}
                       {!c.revogado && (
-                        <Button type="button" variant="ghost" onClick={() => handleRevogar(c)} title="Revogar (bloqueia mas mantém histórico)">
+                        <Button type="button" variant="ghost" size="sm" onClick={() => handleRevogar(c)} title="Revogar (bloqueia mas mantém histórico)">
                           Revogar
                         </Button>
                       )}
@@ -220,6 +226,42 @@ export default function ConvitesPanel({ condominio_id }: Props) {
             })}
           </tbody>
         </table>
+      </div>
+
+      {/* Cards em mobile (< sm) */}
+      <div className="sm:hidden space-y-2">
+        {loading && (
+          <div className="py-4 text-center text-slate-500 text-sm">Carregando...</div>
+        )}
+        {!loading && convites.length === 0 && (
+          <div className="py-4 text-center text-slate-500 text-sm">Nenhum código ainda.</div>
+        )}
+        {convites.map((c) => {
+          const st = statusDe(c)
+          return (
+            <div key={c.id} className="rounded-md border border-slate-700 bg-slate-900/40 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-brand-400 text-sm">{c.codigo}</span>
+                <span className={`px-2 py-0.5 rounded text-xs ${st.cls}`}>{st.label}</span>
+              </div>
+              <div className="text-xs text-slate-400 grid grid-cols-2 gap-x-2 gap-y-0.5">
+                <span>Tipo: <span className="capitalize text-slate-200">{c.role}</span></span>
+                <span>Usos: <span className="text-slate-200">{c.usos}/{c.usos_max}</span></span>
+                <span className="col-span-2">Expira: <span className="text-slate-200">{formatDate(c.expira_em)}</span></span>
+              </div>
+              <div className="flex flex-wrap gap-1 pt-1">
+                <Button type="button" variant="ghost" size="sm" onClick={() => copiar(c.codigo)}>Copiar</Button>
+                {(c.revogado || new Date(c.expira_em) < new Date() || c.usos >= c.usos_max) && (
+                  <Button type="button" variant="secondary" size="sm" onClick={() => handleRenovar(c)}>Renovar</Button>
+                )}
+                {!c.revogado && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => handleRevogar(c)}>Revogar</Button>
+                )}
+                <DeleteButton label="" onClick={() => handleApagar(c)} />
+              </div>
+            </div>
+          )
+        })}
       </div>
     </fieldset>
   )
