@@ -1,8 +1,8 @@
 // supabase/functions/notify-votacoes/index.ts
-// FASE 15 / Leva C — roda a cada hora.
+// FASE 15 / Leva C — roda a cada 30min.
 // Dispara push pra moradores em dois momentos:
 //   - Abertura: votação ativa, data_inicio <= now() e push_abertura_at IS NULL
-//   - Encerramento: votação ativa, data_fim no passado próximo e push_encerramento_at IS NULL
+//   - Encerramento: 2h antes do fim. data_fim entre now() e now()+2h, push_encerramento_at IS NULL
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { handleCors, jsonResponse } from '../_shared/cors.ts'
@@ -60,8 +60,8 @@ Deno.serve(async (req: Request) => {
       await admin.from('votacoes').update({ push_abertura_at: agora }).eq('id', v.id)
     }
 
-    // Encerramentos próximos (24h antes do fim)
-    const limite = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    // Encerramentos próximos (2h antes do fim)
+    const limite = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString()
     const { data: aFechar } = await admin
       .from('votacoes')
       .select('id, condominio_id, titulo, data_fim')
