@@ -33,6 +33,15 @@ export async function createPessoa(input: PessoaInput): Promise<Pessoa> {
   return data as Pessoa
 }
 
+export async function excluirUsuarioAuth(user_id: string, motivo?: string): Promise<{ email_enviado: boolean }> {
+  const { data, error } = await supabase.functions.invoke('delete-user-account', {
+    body: { user_id, motivo: motivo ?? null },
+  })
+  if (error) throw error
+  if (data?.error) throw new Error(data.error)
+  return { email_enviado: !!data?.email_enviado }
+}
+
 export async function updatePessoa(id: string, input: PessoaInput): Promise<Pessoa> {
   const { data, error } = await supabase
     .from('pessoas')

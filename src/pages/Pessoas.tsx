@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { listPessoas, setPessoaAtivo, convidarPessoa, resetSenhaUsuario } from '../lib/pessoas'
+import { listPessoas, setPessoaAtivo, convidarPessoa, resetSenhaUsuario, excluirUsuarioAuth } from '../lib/pessoas'
 import { listCondominios } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
 import type { Pessoa } from '../types/pessoa'
@@ -159,6 +159,25 @@ export default function Pessoas() {
     }
   }
 
+  async function handleExcluirConta(p: { id: string; nome_exibicao: string | null }) {
+    const nome = p.nome_exibicao ?? '(sem nome)'
+    const motivo = window.prompt(
+      `Excluir DEFINITIVAMENTE a conta de "${nome}"?\n\n` +
+      `Isso remove o login e envia um e-mail avisando.\n` +
+      `Cadastros em /pessoas associados ficam sem login (você pode reaproveitá-los).\n\n` +
+      `Motivo (opcional, vai no e-mail):`,
+      '',
+    )
+    if (motivo === null) return // cancelou
+    try {
+      const r = await excluirUsuarioAuth(p.id, motivo || undefined)
+      alert(r.email_enviado ? `✓ Conta excluída. E-mail enviado.` : `✓ Conta excluída (sem e-mail).`)
+      await reload()
+    } catch (e) {
+      alert('Erro: ' + (e instanceof Error ? e.message : String(e)))
+    }
+  }
+
   const unidadeLabel = (uid: string | null) => {
     if (!uid) return '—'
     const u = unidades.find((x) => x.id === uid)
@@ -258,11 +277,25 @@ export default function Pessoas() {
                     <div className="text-sm font-medium text-slate-100 truncate">
                       {p.nome_exibicao ?? '(sem nome)'}
                     </div>
-                    <div className="text-xs text-slate-400 uppercase tracking-wide">{p.role}</div>
+                    <div className="text-xs text-slate-400 uppercase tracking-wide">
+                      {p.role}{p.email ? ` · ${p.email}` : ''}
+                    </div>
                   </div>
-                  <Link to={`/pessoas/novo?user_id=${p.id}&nome=${encodeURIComponent(p.nome_exibicao ?? '')}`}>
-                    <Button size="sm">+ Cadastrar</Button>
-                  </Link>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Link to={`/pessoas/novo?user_id=${p.id}&nome=${encodeURIComponent(p.nome_exibicao ?? '')}`}>
+                      <Button size="sm">+ Cadastrar</Button>
+                    </Link>
+                    {isGestor(perfil?.role) && (
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => handleExcluirConta(p)}
+                        title="Excluir conta + e-mail de aviso"
+                      >
+                        🗑 Excluir
+                      </Button>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>

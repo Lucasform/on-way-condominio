@@ -8,6 +8,8 @@ import {
   type Convite,
   type ConviteRole,
 } from '../lib/convites'
+import { listUnidades } from '../lib/unidades'
+import type { Unidade } from '../types/unidade'
 import Button from './ui/Button'
 import DeleteButton from './ui/DeleteButton'
 import { Field, TextInput, Select } from './ui/Input'
@@ -36,6 +38,11 @@ export default function ConvitesPanel({ condominio_id }: Props) {
   const [role, setRole] = useState<ConviteRole>('morador')
   const [usosMax, setUsosMax] = useState(1)
   const [diasValidade, setDiasValidade] = useState(30)
+  const [unidadeId, setUnidadeId] = useState<string>('')
+  const [setor, setSetor] = useState('')
+  const [pessoaNome, setPessoaNome] = useState('')
+  const [unidades, setUnidades] = useState<Unidade[]>([])
+  const [maisOpcoes, setMaisOpcoes] = useState(false)
 
   async function reload() {
     setLoading(true)
@@ -51,6 +58,9 @@ export default function ConvitesPanel({ condominio_id }: Props) {
 
   useEffect(() => {
     reload()
+    listUnidades({ condominio_id, ativo: true })
+      .then(setUnidades)
+      .catch((e) => console.warn('Falha ao carregar unidades pro convite:', e))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [condominio_id])
 
@@ -58,17 +68,26 @@ export default function ConvitesPanel({ condominio_id }: Props) {
     setCreating(true)
     setError(null)
     try {
+      const isMorador = role === 'morador'
+      const isFunc = role === 'portaria' || role === 'ronda'
       await createConvite({
         condominio_id,
         codigo: codigo.trim() || undefined,
         role,
         usos_max: usosMax,
         dias_validade: diasValidade,
+        unidade_id: isMorador ? (unidadeId || null) : null,
+        setor: isFunc ? (setor.trim() || null) : null,
+        pessoa_nome: pessoaNome.trim() || null,
       })
       setCodigo('')
       setRole('morador')
       setUsosMax(1)
       setDiasValidade(30)
+      setUnidadeId('')
+      setSetor('')
+      setPessoaNome('')
+      setMaisOpcoes(false)
       await reload()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao criar.')
@@ -165,6 +184,41 @@ export default function ConvitesPanel({ condominio_id }: Props) {
           {creating ? '...' : '+ Gerar'}
         </Button>
       </div>
+
+      <div>
+        <button
+          type="button"
+          onClick={() => setMaisOpcoes((v) => !v)}
+          className="text-xs text-brand-700 dark:text-brand-400 hover:underline"
+        >
+          {maisOpcoes ? '− Menos opções' : '+ Vincular já (unidade / setor / nome)'}
+        </button>
+      </div>
+
+      {maisOpcoes && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 -mt-1">
+          {role === 'morador' && (
+            <Field label="Travar unidade (opcional)" hint="Morador já entra vinculado a essa unidade.">
+              <Select value={unidadeId} onChange={(e) => setUnidadeId(e.target.value)}>
+                <option value="">Não travar (morador escolhe)</option>
+                {unidades.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {(u.bloco ? `${u.bloco} - ` : '') + u.numero}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
+          {(role === 'portaria' || role === 'ronda') && (
+            <Field label="Setor sugerido (opcional)" hint="Ex: Portaria diurna, Ronda noturna.">
+              <TextInput value={setor} onChange={(e) => setSetor(e.target.value)} placeholder="Setor / função" />
+            </Field>
+          )}
+          <Field label="Nome da pessoa (opcional)" hint="Trava o nome no signup. Ex: 'Maria Silva'.">
+            <TextInput value={pessoaNome} onChange={(e) => setPessoaNome(e.target.value)} placeholder="Nome completo" />
+          </Field>
+        </div>
+      )}
 
       {error && (
         <div className="text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-md px-3 py-2">
