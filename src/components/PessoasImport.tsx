@@ -109,7 +109,14 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
     let batchId: string | null = null
     let total = 0
     try {
-      batchId = await criarImportBatch({ condominio_id, user_id: user.id, tipo: 'pessoas' })
+      // Se a migration 0062 ainda nao foi aplicada, segue sem batch_id
+      // (importacao funciona, so nao habilita o "Desfazer ultima").
+      try {
+        batchId = await criarImportBatch({ condominio_id, user_id: user.id, tipo: 'pessoas' })
+      } catch (e) {
+        console.warn('[import] batch indisponivel (migration 0062 pendente?):', e)
+        batchId = null
+      }
 
       // Carrega unidades existentes pra resolver Bloco-Numero → unidade_id
       const { data: unidadesExist } = await supabase
@@ -157,7 +164,7 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
             }
           }
 
-          const { error: pErr } = await supabase.from('pessoas').insert({
+          const insertPayload: Record<string, unknown> = {
             condominio_id,
             unidade_id,
             nome: r.nome,
@@ -168,8 +175,9 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
             tipo_vinculo: r.tipo_vinculo,
             relacao_unidade: r.relacao_unidade,
             ativo: true,
-            import_batch_id: batchId,
-          })
+          }
+          if (batchId) insertPayload.import_batch_id = batchId
+          const { error: pErr } = await supabase.from('pessoas').insert(insertPayload)
           if (pErr) throw pErr
           res[i] = { row: r, status: 'ok' }
           total++

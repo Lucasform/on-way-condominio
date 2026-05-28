@@ -64,12 +64,16 @@ export default function Mural() {
         apenas_ativas: !(canModerate && mostrarArquivadas),
       })
       setRows(pubs)
-      // Carrega reacoes, comentarios e leituras em paralelo
+      // Carrega reacoes, comentarios e leituras em paralelo.
+      // Comentarios e leituras dependem das migrations 0061 — se ainda nao
+      // foram aplicadas, falham silenciosamente sem derrubar o mural.
       const pubIds = pubs.map((p) => p.id)
       const [reacs, coments, leituras] = await Promise.all([
         listReacoes(pubIds),
-        listComentarios(pubIds),
-        user ? listMinhasLeituras(user.id) : Promise.resolve([]),
+        listComentarios(pubIds).catch(() => [] as ComentarioPublicacao[]),
+        user
+          ? listMinhasLeituras(user.id).catch(() => [])
+          : Promise.resolve([]),
       ])
       const map = new Map<string, Reacao[]>()
       for (const r of reacs) {

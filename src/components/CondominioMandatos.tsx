@@ -38,6 +38,7 @@ export default function CondominioMandatos({ condominio_id }: Props) {
   const [perfis, setPerfis] = useState<PerfilOpcao[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [tabelaIndisponivel, setTabelaIndisponivel] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [busy, setBusy] = useState(false)
   const [form, setForm] = useState({
@@ -54,15 +55,24 @@ export default function CondominioMandatos({ condominio_id }: Props) {
       setLoading(false)
       return
     }
-    setLoading(true); setError(null)
+    setLoading(true); setError(null); setTabelaIndisponivel(false)
     try {
-      const [ms, { data: perfisData, error: perfisErr }] = await Promise.all([
-        listMandatos({ condominio_id, apenas_ativos: false }),
+      // perfis e mandatos em paralelo. Se a tabela diretoria_mandatos ainda
+      // nao foi criada (migration 0062 pendente), exibe aviso amigavel em
+      // vez de stack trace.
+      const [ms, perfisRes] = await Promise.all([
+        listMandatos({ condominio_id, apenas_ativos: false }).catch((e) => {
+          if (isTableMissing(e)) {
+            setTabelaIndisponivel(true)
+            return [] as Mandato[]
+          }
+          throw e
+        }),
         supabase.from('perfis').select('id, nome_exibicao').eq('condominio_id', condominio_id).eq('ativo', true).order('nome_exibicao'),
       ])
-      if (perfisErr) throw perfisErr
+      if (perfisRes.error) throw perfisRes.error
       setMandatos(ms)
-      setPerfis((perfisData ?? []) as PerfilOpcao[])
+      setPerfis((perfisRes.data ?? []) as PerfilOpcao[])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar.')
     } finally {
@@ -125,16 +135,19 @@ export default function CondominioMandatos({ condominio_id }: Props) {
   return (
     <div className="mt-8">
       <div className="flex items-center justify-between mb-3">
-        <div>
-          <h2 className="text-base font-semibold text-slate-200">Mandatos</h2>
-          <p className="text-xs text-slate-400">
-            Histórico formal com início, fim e cargo. Aviso amarelo aparece quando o fim está em &lt; 30 dias.
-          </p>
-        </div>
-        {podeGerenciar && !showForm && (
+        <h2 className="text-base font-semibold text-slate-200">Mandatos</h2>
+        {podeGerenciar && !showForm && !tabelaIndisponivel && (
           <Button variant="secondary" onClick={() => setShowForm(true)}>+ Novo mandato</Button>
         )}
       </div>
+
+      {tabelaIndisponivel && (
+        <div className="mb-3 text-sm text-amber-200 bg-amber-500/10 border border-amber-500/40 rounded-md px-3 py-2">
+          A tabela de mandatos ainda não foi criada no banco. Aplique a migration
+          <code className="mx-1 px-1.5 py-0.5 rounded bg-slate-800/60 text-amber-100 text-xs">0062_leva_j_historico_imports_diretoria_pets.sql</code>
+          para liberar esta seção.
+        </div>
+      )}
 
       {error && (
         <div className="mb-3 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
@@ -142,13 +155,13 @@ export default function CondominioMandatos({ condominio_id }: Props) {
         </div>
       )}
 
-      {vencendo.length > 0 && (
+      {!tabelaIndisponivel && vencendo.length > 0 && (
         <div className="mb-4 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
           ⚠ {vencendo.length} mandato{vencendo.length > 1 ? 's vencem' : ' vence'} nos próximos 30 dias.
         </div>
       )}
 
-      {showForm && (
+      {!tabelaIndisponivel && showForm && (
         <div className="mb-4 rounded-lg border border-slate-700 bg-slate-900/60 p-4 space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Pessoa" required>
@@ -195,7 +208,7 @@ export default function CondominioMandatos({ condominio_id }: Props) {
         </div>
       )}
 
-      {loading ? (
+      {tabelaIndisponivel ? null : loading ? (
         <div className="text-sm text-slate-500">Carregando...</div>
       ) : ativos.length === 0 && inativos.length === 0 ? (
         <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-5 text-center text-sm text-slate-500">
@@ -279,4 +292,14 @@ function cargoLabel(c: CargoDiretoria): string {
 
 function fmtDate(iso: string): string {
   try { return new Date(iso + 'T00:00:00').toLocaleDateString('pt-BR') } catch { return iso }
+}
+
+function isTableMissing(e: unknown): boolean {
+  if (!e) return false
+  const code = (e as { code?: string }).code
+  const msg = (e instanceof Error ? e.message : String(e)).toLowerCase()
+  // PG/PostgREST: 42P01 = relation does not exist, PGRST205 = relation in schema not found
+  return code === '42P01' || code === 'PGRST205' ||
+    msg.includes('does not exist') ||
+    msg.includes('not found in the schema cache')
 }
