@@ -37,3 +37,18 @@ Roadmap específico das levas atuais. Cada leva = 1 commit + push.
 - [x] F2. TemplatePicker passa a usar `w-[90vw]` em mobile (mantém `max-w-xl` + `max-h-[80vh]`).
 - [x] F3. Padronização Button: refatorados 13 botões inline em 10 arquivos (PessoasImport, FornecedoresImport, VeiculosImport, UnidadesImport, CondominioAnexosManager, TwoFactorPanel, EsqueciSenha, MeuPerfil, AuthCallback, Encomendas — kanban + lista comidas). AuthProvider/RecoveryScreen mantido inline pra evitar dependência circular. Botões violeta "✨ Sugerir/Melhorar com Agente" mantidos com estilo próprio (semantic IA).
 - [x] F4. Rate limit IA (30/hora/user) via tabela `ia_rate_limit` + RPC `ia_consume_rate_limit`; plugado em `analyze-ocorrencia`, `improve-template` e `suggest-chat-reply`.
+
+### Leva M — Onboarding refinado (entregue 2026-05-28, commits `85de704`→`e19b59f`)
+- [x] M1. Edge `delete-user-account` (admin/sindico/subsindico) + botão "🗑 Excluir" na aba "Sem cadastro" de /pessoas. Envia email Resend custom explicando remoção.
+- [x] M2. Convites com vínculo inicial: `convites_condominio.{unidade_id,setor,pessoa_nome,tipo_vinculo}` (migration 0067). ConvitesPanel ganha toggle "+ Vincular já" pra travar.
+- [x] M3. Signup 2 etapas: valida código → mostra contexto + campos coerentes com role. RPC `listar_unidades_de_convite` (anti-enumeração: só responde se código válido). Edge `redeem-invite-code` cria perfil + pessoa numa transação.
+- [x] M4. `FuncionariosImport.tsx` (XLSX/CSV, dedup por CPF/email, undo via batch). `pessoas.setor` (migration 0073). PessoaForm troca "Relação" por "Setor" quando tipo_vinculo=funcionario. Aba Funcionários mostra coluna Setor.
+- [x] M5. Layout fix: Dashboard/Painel/Calendario com `mx-auto`. EsqueciSenha copy reescrito em 3 linhas.
+- [x] M6. pg_cron ajustado: notify-votacoes a cada 5min com janela 2h (em vez de 24h); notify-encomendas-paradas a cada 2h; assembleia-lembretes 08h diário; cron-{auditoria,multa,pet,votacao-eventos} desagendados (edges seguem deployadas pra invocação manual). Migrations 0069/0070/0072.
+- [x] M7. SMTP custom Resend ativado em Supabase Auth (sender `nao-responda@onwaytech.com.br`).
+
+### Pendente (não iniciado)
+- [ ] Customizar 5 templates HTML do Supabase Auth (Confirm signup, Magic Link, Change Email, Reset Password, Invite user) — hoje rodam template default cinza com "Supabase" no rodapé.
+- [ ] Refactor multi-condomínio (`perfis_condominios`) — Leva L original. Permite 1 user gerir N condos.
+- [ ] Polish: trocar `alert/confirm/prompt` por modal/toast (incluindo `handleExcluirConta` em /pessoas).
+- [ ] ConvitesPanel: badge "🏠 Unidade X / 👷 Setor Y / 👤 Nome" abaixo do código quando vier travado.
