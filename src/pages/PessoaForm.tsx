@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { createPessoa, deletePessoa, getPessoa, updatePessoa } from '../lib/pessoas'
 import { supabase } from '../lib/supabase'
 import { listCondominios } from '../lib/condominios'
@@ -35,8 +35,15 @@ export default function PessoaForm() {
   const isNew = !id || id === 'novo'
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const canDelete = !isNew && isGestor(perfil?.role)
+  const [params] = useSearchParams()
+  // Quando vem da aba "Sem cadastro" de /pessoas: pre-popula nome e vinculara
+  // user_id ao usuario existente apos o INSERT.
+  const linkUserId = isNew ? params.get('user_id') : null
+  const linkNome = isNew ? params.get('nome') : null
 
-  const [form, setForm] = useState<PessoaInput>(EMPTY)
+  const [form, setForm] = useState<PessoaInput>(
+    linkNome ? { ...EMPTY, nome: linkNome } : EMPTY,
+  )
   const [condos, setCondos] = useState<Condominio[]>([])
   const [unidades, setUnidades] = useState<Unidade[]>([])
   const [loading, setLoading] = useState(!isNew)
@@ -202,8 +209,13 @@ export default function PessoaForm() {
     setSaving(true)
     setError(null)
     try {
-      if (isNew) await createPessoa(form)
-      else await updatePessoa(id!, form)
+      if (isNew) {
+        const nova = await createPessoa(form)
+        // Vincula user_id quando veio do fluxo "Sem cadastro"
+        if (linkUserId) {
+          await supabase.from('pessoas').update({ user_id: linkUserId }).eq('id', nova.id)
+        }
+      } else await updatePessoa(id!, form)
       navigate('/pessoas')
     } catch (e) {
       setError(traduzErro(e))

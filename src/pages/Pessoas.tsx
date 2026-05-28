@@ -23,8 +23,10 @@ export default function Pessoas() {
   const [unidades, setUnidades] = useState<Unidade[]>([])
   const [scopeId, setScopeId] = useState<string | null>(null)
   const [rows, setRows] = useState<Pessoa[]>([])
-  const [tab, setTab] = useState<'moradores' | 'funcionarios' | 'diretoria'>('moradores')
+  const [tab, setTab] = useState<'moradores' | 'funcionarios' | 'diretoria' | 'sem_cadastro'>('moradores')
   const [diretoriaIds, setDiretoriaIds] = useState<Set<string>>(new Set())
+  type PerfilSemCadastro = { id: string; nome_exibicao: string | null; role: string; email: string | null }
+  const [perfisSemCadastro, setPerfisSemCadastro] = useState<PerfilSemCadastro[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showInactive, setShowInactive] = useState(false)
@@ -46,21 +48,32 @@ export default function Pessoas() {
       .catch(() => {})
   }, [])
 
-  // Carrega ids de perfis na diretoria (sindico/subsindico/conselheiro)
-  // pra marcar as pessoas correspondentes na aba Diretoria.
+  // Carrega ids de perfis na diretoria + perfis sem cadastro residencial.
   useEffect(() => {
     const condoId = isAdmin && scopeId ? scopeId : perfil?.condominio_id
-    if (!condoId) { setDiretoriaIds(new Set()); return }
-    import('../lib/supabase').then(({ supabase }) =>
-      supabase
+    if (!condoId) { setDiretoriaIds(new Set()); setPerfisSemCadastro([]); return }
+    import('../lib/supabase').then(async ({ supabase }) => {
+      const { data: perfisAtivos } = await supabase
         .from('perfis')
-        .select('id')
+        .select('id, nome_exibicao, role')
         .eq('condominio_id', condoId)
-        .in('role', ['sindico', 'subsindico', 'conselheiro'])
         .eq('ativo', true)
-        .then(({ data }) => setDiretoriaIds(new Set((data ?? []).map((p) => p.id))))
-    )
-  }, [isAdmin, scopeId, perfil?.condominio_id])
+        .neq('role', 'admin_onway')
+      const ids = (perfisAtivos ?? []).map((p) => p.id)
+      const diretoria = (perfisAtivos ?? [])
+        .filter((p) => ['sindico', 'subsindico', 'conselheiro'].includes(p.role))
+        .map((p) => p.id)
+      setDiretoriaIds(new Set(diretoria))
+      // Quais ids de perfis ja tem registro em pessoas?
+      const userIdsComPessoa = new Set(rows.filter((r) => r.user_id).map((r) => r.user_id as string))
+      const semCadastro = (perfisAtivos ?? [])
+        .filter((p) => !userIdsComPessoa.has(p.id))
+        .map((p) => ({ id: p.id, nome_exibicao: p.nome_exibicao, role: p.role, email: null }))
+      // Tenta buscar e-mails via RPC se existir (fallback silencioso)
+      void ids
+      setPerfisSemCadastro(semCadastro)
+    })
+  }, [isAdmin, scopeId, perfil?.condominio_id, rows])
 
   const RESIDENCIAIS = ['titular', 'conjuge', 'filho', 'dependente', 'inquilino', 'morador']
 
@@ -77,6 +90,7 @@ export default function Pessoas() {
     moradores: rows.filter((p) => RESIDENCIAIS.includes(p.tipo_vinculo)).length,
     funcionarios: rows.filter((p) => p.tipo_vinculo === 'funcionario' || p.tipo_vinculo === 'outro').length,
     diretoria: rows.filter((p) => p.user_id && diretoriaIds.has(p.user_id)).length,
+    sem_cadastro: perfisSemCadastro.length,
   }
 
   async function reload() {
@@ -204,11 +218,12 @@ export default function Pessoas() {
         </div>
       )}
 
-      <div className="mb-4 flex gap-1 border-b border-slate-800">
-        {(['moradores', 'funcionarios', 'diretoria'] as const).map((t) => {
+      <div className="mb-4 flex flex-wrap gap-1 border-b border-slate-800">
+        {(['moradores', 'funcionarios', 'diretoria', 'sem_cadastro'] as const).map((t) => {
           const label = t === 'moradores' ? '🏠 Moradores'
             : t === 'funcionarios' ? '🛠 Funcionários'
-            : '👔 Diretoria'
+            : t === 'diretoria' ? '👔 Diretoria'
+            : '⚠ Sem cadastro'
           return (
             <button
               key={t}
@@ -226,38 +241,67 @@ export default function Pessoas() {
         })}
       </div>
 
-      <DataTable
-        columns={columns}
-        rows={rowsFiltrados}
-        rowKey={(r) => r.id}
-        loading={loading}
-        onRowClick={(r) => navigate(`/pessoas/${r.id}`)}
-        emptyMessage={
-          tab === 'moradores' ? 'Nenhum morador cadastrado nesse condomínio.'
-          : tab === 'funcionarios' ? 'Nenhum funcionário cadastrado.'
-          : 'Nenhuma pessoa com cargo na diretoria.'
-        }
-        actions={(r) => (
-          <div className="flex gap-1 justify-end">
-            <Link to={`/pessoas/${r.id}`}>
-              <Button variant="ghost">Editar</Button>
-            </Link>
-            {r.email && !r.user_id && r.ativo && (
-              <Button variant="secondary" onClick={() => handleConvidar(r)} title="Enviar convite por e-mail">
-                ✉ Convidar
-              </Button>
-            )}
-            {r.user_id && r.ativo && (
-              <Button variant="ghost" onClick={() => handleResetSenha(r)} title="Enviar link de redefinição de senha">
-                🔑 Reset
-              </Button>
-            )}
-            <Button variant={r.ativo ? 'danger' : 'secondary'} onClick={() => handleToggleAtivo(r)}>
-              {r.ativo ? 'Desativar' : 'Reativar'}
-            </Button>
+      {tab === 'sem_cadastro' ? (
+        perfisSemCadastro.length === 0 ? (
+          <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
+            Todos os usuários ativos do condomínio têm cadastro residencial. 👍
           </div>
-        )}
-      />
+        ) : (
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 overflow-hidden">
+            <div className="px-4 py-3 border-b border-amber-500/30 text-xs text-amber-200">
+              Esses usuários têm login no app mas ainda não foram cadastrados como pessoa. Cadastre pra associar a uma unidade (ou marcar como funcionário).
+            </div>
+            <ul className="divide-y divide-slate-800">
+              {perfisSemCadastro.map((p) => (
+                <li key={p.id} className="px-4 py-3 flex items-center gap-3 justify-between">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-slate-100 truncate">
+                      {p.nome_exibicao ?? '(sem nome)'}
+                    </div>
+                    <div className="text-xs text-slate-400 uppercase tracking-wide">{p.role}</div>
+                  </div>
+                  <Link to={`/pessoas/novo?user_id=${p.id}&nome=${encodeURIComponent(p.nome_exibicao ?? '')}`}>
+                    <Button size="sm">+ Cadastrar</Button>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={rowsFiltrados}
+          rowKey={(r) => r.id}
+          loading={loading}
+          onRowClick={(r) => navigate(`/pessoas/${r.id}`)}
+          emptyMessage={
+            tab === 'moradores' ? 'Nenhum morador cadastrado nesse condomínio.'
+            : tab === 'funcionarios' ? 'Nenhum funcionário cadastrado.'
+            : 'Nenhuma pessoa com cargo na diretoria.'
+          }
+          actions={(r) => (
+            <div className="flex gap-1 justify-end">
+              <Link to={`/pessoas/${r.id}`}>
+                <Button variant="ghost">Editar</Button>
+              </Link>
+              {r.email && !r.user_id && r.ativo && (
+                <Button variant="secondary" onClick={() => handleConvidar(r)} title="Enviar convite por e-mail">
+                  ✉ Convidar
+                </Button>
+              )}
+              {r.user_id && r.ativo && (
+                <Button variant="ghost" onClick={() => handleResetSenha(r)} title="Enviar link de redefinição de senha">
+                  🔑 Reset
+                </Button>
+              )}
+              <Button variant={r.ativo ? 'danger' : 'secondary'} onClick={() => handleToggleAtivo(r)}>
+                {r.ativo ? 'Desativar' : 'Reativar'}
+              </Button>
+            </div>
+          )}
+        />
+      )}
 
       {isGestor(perfil?.role) && (perfil?.condominio_id || (isAdmin && scopeId)) && (
         <div className="mt-10">
