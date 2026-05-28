@@ -8,9 +8,16 @@ interface AuthContextValue {
   user: User | null
   session: Session | null
   perfil: Perfil | null
+  /** Role efetiva: se viewAsMorador estiver ativo, retorna 'morador'; senão, perfil.role. */
+  effectiveRole: Perfil['role'] | null
+  /** Modo "ver como morador" pra staff que tambem e morador residencial. */
+  viewAsMorador: boolean
+  setViewAsMorador: (v: boolean) => void
   loading: boolean
   refreshPerfil: () => Promise<void>
 }
+
+const VIEW_AS_MORADOR_KEY = 'onway:view_as_morador'
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
@@ -190,10 +197,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return <RecoveryScreen message={hardError} />
   }
 
+  const [viewAsMorador, setViewAsMoradorState] = useState<boolean>(() => {
+    try { return localStorage.getItem(VIEW_AS_MORADOR_KEY) === '1' } catch { return false }
+  })
+  function setViewAsMorador(v: boolean) {
+    setViewAsMoradorState(v)
+    try { localStorage.setItem(VIEW_AS_MORADOR_KEY, v ? '1' : '0') } catch { /* ignore */ }
+  }
+  // Se nao ha mais perfil ou virou morador de fato, limpa o toggle.
+  useEffect(() => {
+    if (!perfil || perfil.role === 'morador') {
+      if (viewAsMorador) setViewAsMorador(false)
+    }
+  }, [perfil, viewAsMorador])
+
+  const effectiveRole: Perfil['role'] | null = perfil
+    ? (viewAsMorador && perfil.role !== 'morador' ? 'morador' : perfil.role)
+    : null
+
   const value: AuthContextValue = {
     user: session?.user ?? null,
     session,
     perfil,
+    effectiveRole,
+    viewAsMorador,
+    setViewAsMorador,
     loading,
     refreshPerfil: () => loadPerfil(session?.user.id ?? null, false),
   }

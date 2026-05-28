@@ -10,10 +10,23 @@ import CondominioSwitcher from './CondominioSwitcher'
 import { prefetchRoutes } from '../lib/prefetchRoutes'
 
 export default function AppShell() {
-  const { perfil, user } = useAuth()
+  const { perfil, user, effectiveRole, viewAsMorador, setViewAsMorador } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const items = perfil ? menuFor(perfil.role) : []
+  const items = effectiveRole ? menuFor(effectiveRole) : []
+  // Toggle "ver como morador" so faz sentido se o user nao e morador de fato
+  // E tem cadastro residencial vinculado (pessoa.user_id = user.id).
+  const [temPessoaResidencial, setTemPessoaResidencial] = useState(false)
+  useEffect(() => {
+    if (!user || !perfil || perfil.role === 'morador') { setTemPessoaResidencial(false); return }
+    supabase
+      .from('pessoas')
+      .select('id', { head: true, count: 'exact' })
+      .eq('user_id', user.id)
+      .in('tipo_vinculo', ['titular', 'conjuge', 'filho', 'dependente', 'inquilino', 'morador'])
+      .then(({ count }) => setTemPessoaResidencial((count ?? 0) > 0))
+  }, [user, perfil])
+  const podeAlternarMorador = !!perfil && perfil.role !== 'morador' && temPessoaResidencial
   const [condoLogo, setCondoLogo] = useState<string | null>(null)
   const [condoNome, setCondoNome] = useState<string | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -111,13 +124,28 @@ export default function AppShell() {
                 {perfil.nome_exibicao ?? user?.email ?? 'Sem nome'}
               </div>
               <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-500 truncate">
-                {roleLabel(perfil.role)}
+                {viewAsMorador ? `${roleLabel('morador')} (visão)` : roleLabel(perfil.role)}
               </div>
             </div>
             <span className="text-[10px] text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition shrink-0">
               ✎
             </span>
           </Link>
+        )}
+
+        {podeAlternarMorador && (
+          <button
+            type="button"
+            onClick={() => setViewAsMorador(!viewAsMorador)}
+            className={`px-3 py-2 text-xs border-b border-slate-200 dark:border-slate-800 text-left transition ${
+              viewAsMorador
+                ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15'
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40'
+            }`}
+            title={viewAsMorador ? 'Voltar ao papel original' : 'Ver o app como um morador veria'}
+          >
+            {viewAsMorador ? '👁 Voltar ao papel' : '👁 Ver como morador'}
+          </button>
         )}
 
         <CondominioSwitcher />

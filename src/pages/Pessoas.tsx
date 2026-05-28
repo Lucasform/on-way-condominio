@@ -23,6 +23,8 @@ export default function Pessoas() {
   const [unidades, setUnidades] = useState<Unidade[]>([])
   const [scopeId, setScopeId] = useState<string | null>(null)
   const [rows, setRows] = useState<Pessoa[]>([])
+  const [tab, setTab] = useState<'moradores' | 'funcionarios' | 'diretoria'>('moradores')
+  const [diretoriaIds, setDiretoriaIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showInactive, setShowInactive] = useState(false)
@@ -43,6 +45,39 @@ export default function Pessoas() {
       .then(setUnidades)
       .catch(() => {})
   }, [])
+
+  // Carrega ids de perfis na diretoria (sindico/subsindico/conselheiro)
+  // pra marcar as pessoas correspondentes na aba Diretoria.
+  useEffect(() => {
+    const condoId = isAdmin && scopeId ? scopeId : perfil?.condominio_id
+    if (!condoId) { setDiretoriaIds(new Set()); return }
+    import('../lib/supabase').then(({ supabase }) =>
+      supabase
+        .from('perfis')
+        .select('id')
+        .eq('condominio_id', condoId)
+        .in('role', ['sindico', 'subsindico', 'conselheiro'])
+        .eq('ativo', true)
+        .then(({ data }) => setDiretoriaIds(new Set((data ?? []).map((p) => p.id))))
+    )
+  }, [isAdmin, scopeId, perfil?.condominio_id])
+
+  const RESIDENCIAIS = ['titular', 'conjuge', 'filho', 'dependente', 'inquilino', 'morador']
+
+  const rowsFiltrados = (() => {
+    if (tab === 'funcionarios') {
+      return rows.filter((p) => p.tipo_vinculo === 'funcionario' || p.tipo_vinculo === 'outro')
+    }
+    if (tab === 'diretoria') {
+      return rows.filter((p) => p.user_id && diretoriaIds.has(p.user_id))
+    }
+    return rows.filter((p) => RESIDENCIAIS.includes(p.tipo_vinculo))
+  })()
+  const totais = {
+    moradores: rows.filter((p) => RESIDENCIAIS.includes(p.tipo_vinculo)).length,
+    funcionarios: rows.filter((p) => p.tipo_vinculo === 'funcionario' || p.tipo_vinculo === 'outro').length,
+    diretoria: rows.filter((p) => p.user_id && diretoriaIds.has(p.user_id)).length,
+  }
 
   async function reload() {
     setLoading(true)
@@ -138,8 +173,8 @@ export default function Pessoas() {
   return (
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-6xl mx-auto">
       <PageHeader
-        title={`Pessoas (${rows.length})`}
-        subtitle="Moradores, dependentes, inquilinos e funcionários."
+        title={`Pessoas (${rowsFiltrados.length})`}
+        subtitle="Moradores, funcionários e diretoria. Filtre pelas abas."
         actions={
           <>
             <Button variant="secondary" onClick={() => setShowInactive((v) => !v)}>
@@ -169,13 +204,39 @@ export default function Pessoas() {
         </div>
       )}
 
+      <div className="mb-4 flex gap-1 border-b border-slate-800">
+        {(['moradores', 'funcionarios', 'diretoria'] as const).map((t) => {
+          const label = t === 'moradores' ? '🏠 Moradores'
+            : t === 'funcionarios' ? '🛠 Funcionários'
+            : '👔 Diretoria'
+          return (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition ${
+                tab === t
+                  ? 'border-brand-500 text-slate-100'
+                  : 'border-transparent text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {label} <span className="text-xs text-slate-500">({totais[t]})</span>
+            </button>
+          )
+        })}
+      </div>
+
       <DataTable
         columns={columns}
-        rows={rows}
+        rows={rowsFiltrados}
         rowKey={(r) => r.id}
         loading={loading}
         onRowClick={(r) => navigate(`/pessoas/${r.id}`)}
-        emptyMessage="Nenhuma pessoa cadastrada."
+        emptyMessage={
+          tab === 'moradores' ? 'Nenhum morador cadastrado nesse condomínio.'
+          : tab === 'funcionarios' ? 'Nenhum funcionário cadastrado.'
+          : 'Nenhuma pessoa com cargo na diretoria.'
+        }
         actions={(r) => (
           <div className="flex gap-1 justify-end">
             <Link to={`/pessoas/${r.id}`}>

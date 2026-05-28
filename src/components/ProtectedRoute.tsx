@@ -13,7 +13,7 @@ interface Props {
 const REDIRECT_GRACE_MS = 1500
 
 export default function ProtectedRoute({ children, roles }: Props) {
-  const { user, perfil, loading } = useAuth()
+  const { user, perfil, effectiveRole, loading } = useAuth()
   const location = useLocation()
 
   // Se tínhamos `user` há pouco e agora não temos, esperamos a janela de graça
@@ -61,7 +61,7 @@ export default function ProtectedRoute({ children, roles }: Props) {
     )
   }
 
-  if (roles && !roles.includes(perfil.role)) {
+  if (roles && !roles.includes(effectiveRole ?? perfil.role)) {
     return <Navigate to="/" replace />
   }
 
