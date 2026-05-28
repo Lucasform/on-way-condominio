@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from './AuthProvider'
-import { isStaff } from '../lib/permissions'
-import { listVersoes, criarSnapshot, type RegimentoVersao } from '../lib/regimentoVersoes'
+import { isStaff, isGestor } from '../lib/permissions'
+import { listVersoes, criarSnapshot, deleteVersao, type RegimentoVersao } from '../lib/regimentoVersoes'
 import Button from './ui/Button'
 import { Field, TextInput } from './ui/Input'
 
@@ -12,6 +12,17 @@ interface Props {
 export default function RegimentoVersoes({ condominio_id }: Props) {
   const { user, perfil } = useAuth()
   const podeGerenciar = isStaff(perfil?.role)
+  const podeApagar = isGestor(perfil?.role)
+
+  async function apagar(v: RegimentoVersao) {
+    if (!window.confirm(`Apagar definitivamente o snapshot v${v.versao_num}? Multas que referenciam essa versão perderão o vínculo.`)) return
+    try {
+      await deleteVersao(v.id)
+      setVersoes((prev) => prev.filter((x) => x.id !== v.id))
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao apagar.')
+    }
+  }
 
   const [versoes, setVersoes] = useState<RegimentoVersao[]>([])
   const [loading, setLoading] = useState(false)
@@ -117,9 +128,23 @@ export default function RegimentoVersoes({ condominio_id }: Props) {
                         </div>
                         {v.motivo && <div className="text-xs text-slate-400 mt-0.5 truncate">{v.motivo}</div>}
                       </div>
-                      <span className="text-xs text-slate-500">
-                        {v.total_artigos} artigo{v.total_artigos !== 1 ? 's' : ''} {isOpen ? '▾' : '▸'}
-                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {podeApagar && (
+                          <span
+                            role="button"
+                            tabIndex={0}
+                            onClick={(e) => { e.stopPropagation(); apagar(v) }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); apagar(v) } }}
+                            className="text-xs text-slate-500 hover:text-red-400 transition cursor-pointer"
+                            title="Apagar este snapshot"
+                          >
+                            🗑
+                          </span>
+                        )}
+                        <span className="text-xs text-slate-500">
+                          {v.total_artigos} artigo{v.total_artigos !== 1 ? 's' : ''} {isOpen ? '▾' : '▸'}
+                        </span>
+                      </div>
                     </button>
                     {isOpen && (
                       <div className="border-t border-slate-800 px-3 py-2 max-h-80 overflow-y-auto">

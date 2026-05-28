@@ -75,6 +75,11 @@ export async function criarSnapshot(opts: {
   return data as RegimentoVersao
 }
 
+export async function deleteVersao(id: string): Promise<void> {
+  const { error } = await supabase.from('regimento_versoes').delete().eq('id', id)
+  if (error) throw error
+}
+
 /** Versao mais recente; null se nunca houve snapshot. */
 export async function getVersaoAtual(condominio_id: string): Promise<RegimentoVersao | null> {
   const { data, error } = await supabase
