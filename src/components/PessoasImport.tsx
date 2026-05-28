@@ -4,6 +4,7 @@ import { msgErroImport } from '../lib/importHelpers'
 import { criarImportBatch, setImportBatchTotal } from '../lib/importBatches'
 import { useAuth } from './AuthProvider'
 import ImportUndoButton from './ImportUndoButton'
+import Button from './ui/Button'
 
 interface Props {
   condominio_id: string
@@ -274,14 +275,14 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
             </button>
           </div>
           <PreviewTabela rows={rows} max={6} />
-          <button
+          <Button
             type="button"
             onClick={importar}
             disabled={importando}
-            className="mt-3 px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium disabled:opacity-50"
+            className="mt-3"
           >
             {importando ? 'Importando...' : `✓ Importar ${rows.length} linhas`}
-          </button>
+          </Button>
         </div>
       )}
 

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { requestPasswordReset } from '../lib/auth'
 import AuthShell from '../components/AuthShell'
+import Button from '../components/ui/Button'
 
 export default function EsqueciSenha() {
   const [email, setEmail] = useState('')
@@ -57,13 +58,9 @@ export default function EsqueciSenha() {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full py-2 rounded-md bg-brand-700 hover:bg-brand-800 active:bg-brand-900 text-white font-semibold text-sm transition disabled:opacity-50"
-          >
+          <Button type="submit" disabled={submitting} className="w-full">
             {submitting ? 'Enviando...' : 'Enviar link de recuperação'}
-          </button>
+          </Button>
         </form>
       )}
     </AuthShell>

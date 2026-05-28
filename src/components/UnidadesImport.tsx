@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import Button from './ui/Button'
 import {
   applyHeaderMap,
   gerarXlsxModelo,
@@ -190,14 +191,9 @@ export default function UnidadesImport({ condominio_id, onDone }: Props) {
             </button>
           </div>
           <Preview rows={rows} max={6} />
-          <button
-            type="button"
-            onClick={importar}
-            disabled={importando}
-            className="mt-3 px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium disabled:opacity-50"
-          >
+          <Button type="button" onClick={importar} disabled={importando} className="mt-3">
             {importando ? 'Importando...' : `✓ Importar ${rows.length} unidades`}
-          </button>
+          </Button>
         </div>
       )}
 

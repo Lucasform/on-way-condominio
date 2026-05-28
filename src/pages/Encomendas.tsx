@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { listEncomendas, darBaixaEncomenda } from '../lib/encomendas'
+import { listEncomendas, darBaixaEncomenda, devolverEncomenda } from '../lib/encomendas'
 import { listCondominios } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
 import type { Encomenda, StatusEncomenda, TipoEncomenda } from '../types/encomenda'
@@ -55,6 +55,26 @@ export default function Encomendas() {
   const [dataAte, setDataAte] = useState('')
   const dataDeRef = useRef<HTMLInputElement>(null)
   const dataAteRef = useRef<HTMLInputElement>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const podeBulk = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico', 'portaria'].includes(perfil.role)
+  function toggleSelected(id: string) {
+    setSelected((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n })
+  }
+  async function devolverSelecionadas() {
+    if (selected.size === 0) return
+    if (!window.confirm(`Marcar ${selected.size} como devolvida(s)?`)) return
+    setBulkBusy(true)
+    try {
+      for (const id of Array.from(selected)) {
+        try { await devolverEncomenda(id) } catch (e) { console.warn(e) }
+      }
+      setSelected(new Set())
+      await reload()
+    } finally {
+      setBulkBusy(false)
+    }
+  }
 
   const rowsFiltradas = useMemo(() => {
     const de = dataDe ? new Date(dataDe + 'T00:00:00').getTime() : null
@@ -202,6 +222,16 @@ export default function Encomendas() {
         )}
       </div>
 
+      {podeBulk && selected.size > 0 && (
+        <div className="mb-3 flex items-center gap-2 rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2">
+          <span className="text-sm text-amber-200">{selected.size} selecionada(s)</span>
+          <Button size="sm" variant="secondary" onClick={() => setSelected(new Set())}>Limpar</Button>
+          <Button size="sm" onClick={devolverSelecionadas} disabled={bulkBusy}>
+            {bulkBusy ? 'Devolvendo...' : `↩ Devolver ${selected.size}`}
+          </Button>
+        </div>
+      )}
+
       {/* Tabs Encomendas / Comida */}
       <div className="mb-5 border-b border-slate-800 flex gap-1">
         <TabButton active={tab === 'encomendas'} onClick={() => setTab('encomendas')}>
@@ -226,6 +256,8 @@ export default function Encomendas() {
           unidadeLabel={unidadeLabel}
           onCard={(id) => navigate(`/encomendas/${id}`)}
           onEntregar={marcarEntregue}
+          selected={podeBulk ? selected : null}
+          onToggle={toggleSelected}
         />
       ) : (
         <ListaComidas
@@ -233,6 +265,8 @@ export default function Encomendas() {
           unidadeLabel={unidadeLabel}
           onCard={(id) => navigate(`/encomendas/${id}`)}
           onEntregar={marcarEntregue}
+          selected={podeBulk ? selected : null}
+          onToggle={toggleSelected}
         />
       )}
     </div>
@@ -266,6 +300,8 @@ interface KanbanProps {
   unidadeLabel: (uid: string) => string
   onCard: (id: string) => void
   onEntregar: (id: string, nome: string) => void
+  selected: Set<string> | null
+  onToggle: (id: string) => void
 }
 
 const COLUNA_INFO: Record<StatusEncomenda, { label: string; emoji: string; accent: string }> = {
@@ -274,7 +310,7 @@ const COLUNA_INFO: Record<StatusEncomenda, { label: string; emoji: string; accen
   devolvida:  { label: 'Devolvidas',          emoji: '↩',  accent: 'border-slate-700 bg-slate-900/40' },
 }
 
-function KanbanEncomendas({ colunas, unidadeLabel, onCard, onEntregar }: KanbanProps) {
+function KanbanEncomendas({ colunas, unidadeLabel, onCard, onEntregar, selected, onToggle }: KanbanProps) {
   const order: StatusEncomenda[] = ['aguardando', 'entregue', 'devolvida']
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -303,6 +339,16 @@ function KanbanEncomendas({ colunas, unidadeLabel, onCard, onEntregar }: KanbanP
                       className={`rounded-md border bg-slate-950/60 p-3 cursor-pointer hover:border-slate-600 transition ${urgente ? 'border-red-500/60' : 'border-slate-800'}`}
                     >
                       <div className="flex items-start gap-2">
+                        {selected && st === 'aguardando' && (
+                          <input
+                            type="checkbox"
+                            className="mt-1"
+                            checked={selected.has(e.id)}
+                            onClick={(ev) => ev.stopPropagation()}
+                            onChange={() => onToggle(e.id)}
+                            aria-label="Selecionar encomenda"
+                          />
+                        )}
                         <div className="text-xl shrink-0 leading-none">{TIPO_ICON[e.tipo]}</div>
                         <div className="min-w-0 flex-1">
                           <div className="text-xs text-slate-500 uppercase">{TIPO_LABEL[e.tipo]}</div>
@@ -323,13 +369,14 @@ function KanbanEncomendas({ colunas, unidadeLabel, onCard, onEntregar }: KanbanP
                         </div>
                       </div>
                       {st === 'aguardando' && (
-                        <button
+                        <Button
                           type="button"
+                          size="sm"
                           onClick={(ev) => { ev.stopPropagation(); onEntregar(e.id, '') }}
-                          className="mt-2 w-full text-xs px-2 py-1 rounded bg-emerald-700 hover:bg-emerald-600 text-white font-medium"
+                          className="mt-2 w-full"
                         >
                           ✓ Marcar entregue
-                        </button>
+                        </Button>
                       )}
                     </div>
                   )
@@ -351,9 +398,11 @@ interface ListaComidasProps {
   unidadeLabel: (uid: string) => string
   onCard: (id: string) => void
   onEntregar: (id: string, nome: string) => void
+  selected: Set<string> | null
+  onToggle: (id: string) => void
 }
 
-function ListaComidas({ rows, unidadeLabel, onCard, onEntregar }: ListaComidasProps) {
+function ListaComidas({ rows, unidadeLabel, onCard, onEntregar, selected, onToggle }: ListaComidasProps) {
   if (rows.length === 0) {
     return (
       <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
@@ -379,6 +428,16 @@ function ListaComidas({ rows, unidadeLabel, onCard, onEntregar }: ListaComidasPr
                   : 'border-slate-800 bg-slate-900/40 hover:border-slate-700'
             }`}
           >
+            {selected && aguardando && (
+              <input
+                type="checkbox"
+                className="mr-1"
+                checked={selected.has(e.id)}
+                onClick={(ev) => ev.stopPropagation()}
+                onChange={() => onToggle(e.id)}
+                aria-label="Selecionar comida"
+              />
+            )}
             <div className="text-3xl shrink-0 leading-none">🍔</div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
@@ -396,13 +455,14 @@ function ListaComidas({ rows, unidadeLabel, onCard, onEntregar }: ListaComidasPr
               )}
             </div>
             {aguardando && (
-              <button
+              <Button
                 type="button"
+                size="sm"
                 onClick={(ev) => { ev.stopPropagation(); onEntregar(e.id, '') }}
-                className="shrink-0 text-xs px-3 py-2 rounded bg-emerald-700 hover:bg-emerald-600 text-white font-medium"
+                className="shrink-0"
               >
                 ✓ Entregue
-              </button>
+              </Button>
             )}
           </div>
         )

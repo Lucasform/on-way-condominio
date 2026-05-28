@@ -29,11 +29,11 @@ Roadmap específico das levas atuais. Cada leva = 1 commit + push.
 
 ### Leva E — Filtros + bulk + foto ocorrência
 - [x] E1. Filtros por data (de/até) em `/multas`, `/notificacoes`, `/encomendas`, `/chamados`
-- [x] E2. Bulk arquivar em `/multas`, `/notificacoes`, `/chamados`. Encomendas é kanban (já tem ação por card); bulk pulado.
+- [x] E2. Bulk em `/multas` (arquivar), `/notificacoes` (arquivar), `/chamados` (cancelar), `/encomendas` (devolver — checkbox por card aguardando no kanban e lista de comidas)
 - [x] E3. Foto na ocorrência — já estava implementado (bucket `ocorrencia-fotos`, upload em OcorrenciaNova, exibição em OcorrenciaDetalhe). Verificado.
 
 ### Leva F — Polish UI
 - [x] F1. `Skeleton` component criado + `TableSkeleton` + `CardListSkeleton`; aplicado em Multas, Notificações (via DataTable), Ocorrências, Chamados, Encomendas, EmailsLog, Chat. Outras listas seguem com texto "Carregando..." e podem migrar progressivamente.
 - [x] F2. TemplatePicker passa a usar `w-[90vw]` em mobile (mantém `max-w-xl` + `max-h-[80vh]`).
-- [ ] F3. Padronização Button: identificados ~20 arquivos com botões inline. Pendente refactor manual em massa; sem impacto funcional, só consistência visual.
+- [x] F3. Padronização Button: refatorados 13 botões inline em 10 arquivos (PessoasImport, FornecedoresImport, VeiculosImport, UnidadesImport, CondominioAnexosManager, TwoFactorPanel, EsqueciSenha, MeuPerfil, AuthCallback, Encomendas — kanban + lista comidas). AuthProvider/RecoveryScreen mantido inline pra evitar dependência circular. Botões violeta "✨ Sugerir/Melhorar com Agente" mantidos com estilo próprio (semantic IA).
 - [x] F4. Rate limit IA (30/hora/user) via tabela `ia_rate_limit` + RPC `ia_consume_rate_limit`; plugado em `analyze-ocorrencia`, `improve-template` e `suggest-chat-reply`.

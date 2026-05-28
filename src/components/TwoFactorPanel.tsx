@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import Button from './ui/Button'
 
 type Factor = { id: string; friendly_name?: string; factor_type: string; status: 'verified' | 'unverified' }
 
@@ -123,13 +124,9 @@ export default function TwoFactorPanel() {
       )}
 
       {!loading && ativos.length === 0 && !enrollment && (
-        <button
-          onClick={iniciarEnroll}
-          disabled={busy}
-          className="mt-4 px-4 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-medium transition disabled:opacity-50"
-        >
+        <Button onClick={iniciarEnroll} disabled={busy} className="mt-4">
           🔐 Configurar 2FA
-        </button>
+        </Button>
       )}
 
       {enrollment && (
@@ -158,13 +155,9 @@ export default function TwoFactorPanel() {
             />
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={confirmarEnroll}
-              disabled={busy || code.length !== 6}
-              className="px-4 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-medium transition disabled:opacity-50"
-            >
+            <Button onClick={confirmarEnroll} disabled={busy || code.length !== 6}>
               Confirmar e ativar
-            </button>
+            </Button>
             <button
               onClick={() => { setEnrollment(null); setCode(''); setError(null) }}
               disabled={busy}

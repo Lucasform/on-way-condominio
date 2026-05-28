@@ -6,6 +6,7 @@ import { roleLabel } from '../lib/nav'
 import PushToggle from '../components/PushToggle'
 import TwoFactorPanel from '../components/TwoFactorPanel'
 import PageHeader from '../components/ui/PageHeader'
+import Button from '../components/ui/Button'
 
 interface Pessoa {
   id: string
@@ -380,13 +381,9 @@ export default function MeuPerfil() {
               <div className="mt-1 text-right text-[11px] text-slate-400">{form.bio.length}/280</div>
             </Field>
 
-            <button
-              type="submit"
-              disabled={savingProfile}
-              className="px-5 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white font-medium text-sm transition disabled:opacity-50"
-            >
+            <Button type="submit" disabled={savingProfile}>
               {savingProfile ? 'Salvando...' : 'Salvar alterações'}
-            </button>
+            </Button>
           </form>
         </div>
       </Section>
@@ -597,13 +594,9 @@ export default function MeuPerfil() {
           >
             📥 Baixar meus dados
           </button>
-          <button
-            type="button"
-            onClick={solicitarExclusao}
-            className="px-4 py-2 rounded-md bg-red-700 hover:bg-red-600 text-white text-sm font-medium transition"
-          >
+          <Button type="button" variant="danger" onClick={solicitarExclusao}>
             🗑 Solicitar exclusão da conta
-          </button>
+          </Button>
         </div>
       </Section>
     </div>

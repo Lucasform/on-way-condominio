@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import AuthShell from '../components/AuthShell'
+import Button from '../components/ui/Button'
 
 /**
  * Página de callback do Supabase Auth — recebe o redirect depois de:
@@ -59,12 +60,9 @@ export default function AuthCallback() {
         <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
           {error}
         </p>
-        <button
-          onClick={() => navigate('/entrar')}
-          className="mt-4 w-full py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-sm"
-        >
+        <Button onClick={() => navigate('/entrar')} className="mt-4 w-full">
           Voltar pra tela inicial
-        </button>
+        </Button>
       </AuthShell>
     )
   }

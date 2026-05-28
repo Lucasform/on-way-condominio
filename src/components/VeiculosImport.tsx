@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import Button from './ui/Button'
 import {
   applyHeaderMap,
   digitsOrNull,
@@ -214,21 +215,12 @@ export default function VeiculosImport({ condominio_id, onDone }: Props) {
       </p>
 
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={parsing || importando}
-          className="px-4 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-medium disabled:opacity-50"
-        >
+        <Button type="button" onClick={() => inputRef.current?.click()} disabled={parsing || importando}>
           {parsing ? 'Lendo...' : '📂 Escolher arquivo'}
-        </button>
-        <button
-          type="button"
-          onClick={baixarTemplate}
-          className="px-4 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium hover:bg-slate-700"
-        >
+        </Button>
+        <Button type="button" variant="secondary" onClick={baixarTemplate}>
           ⬇ Baixar modelo
-        </button>
+        </Button>
         <input
           ref={inputRef}
           type="file"
@@ -257,14 +249,9 @@ export default function VeiculosImport({ condominio_id, onDone }: Props) {
             </button>
           </div>
           <Preview rows={rows} max={6} />
-          <button
-            type="button"
-            onClick={importar}
-            disabled={importando}
-            className="mt-3 px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium disabled:opacity-50"
-          >
+          <Button type="button" onClick={importar} disabled={importando} className="mt-3">
             {importando ? 'Importando...' : `✓ Importar ${rows.length} veículos`}
-          </button>
+          </Button>
         </div>
       )}
 

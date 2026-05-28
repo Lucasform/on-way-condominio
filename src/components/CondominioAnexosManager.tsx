@@ -10,6 +10,7 @@ import {
   type TipoAnexo,
 } from '../lib/condominioAnexos'
 import DeleteButton from './ui/DeleteButton'
+import Button from './ui/Button'
 
 interface Props {
   condominio_id: string
@@ -138,14 +139,9 @@ export default function CondominioAnexosManager({
           className="flex-1 min-w-[200px] px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-sm text-slate-100"
           maxLength={80}
         />
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className="px-4 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-medium disabled:opacity-50"
-        >
+        <Button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}>
           {uploading ? 'Enviando...' : '+ Anexar PDF'}
-        </button>
+        </Button>
         <input
           ref={inputRef}
           type="file"

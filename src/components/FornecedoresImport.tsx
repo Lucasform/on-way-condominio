@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import Button from './ui/Button'
 import {
   applyHeaderMap,
   digitsOrNull,
@@ -200,14 +201,14 @@ export default function FornecedoresImport({ condominio_id, onDone }: Props) {
             </button>
           </div>
           <Preview rows={rows} max={6} />
-          <button
+          <Button
             type="button"
             onClick={importar}
             disabled={importando}
-            className="mt-3 px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium disabled:opacity-50"
+            className="mt-3"
           >
             {importando ? 'Importando...' : `✓ Importar ${rows.length} fornecedores`}
-          </button>
+          </Button>
         </div>
       )}
 
