@@ -35,8 +35,10 @@ export default function EsqueciSenha() {
       }
     >
       {sent ? (
-        <div className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/30 rounded-md px-4 py-3">
-          ✓ Se houver conta com esse e-mail, enviamos o link de recuperação. Cheque sua caixa de entrada (e spam).
+        <div className="text-sm text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/30 rounded-md px-4 py-3 space-y-2">
+          <p className="font-medium">✓ Tudo certo!</p>
+          <p>Se existe uma conta com esse e-mail, você vai receber um link pra criar uma nova senha em alguns minutos.</p>
+          <p className="text-emerald-600 dark:text-emerald-400">Não esqueça de conferir a caixa de spam.</p>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
