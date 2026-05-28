@@ -27,8 +27,8 @@ create policy comentarios_publicacao_select on comentarios_publicacao for select
       select 1 from publicacoes p
       where p.id = comentarios_publicacao.publicacao_id
         and (
-          p.condominio_id in (select condominio_id from perfis where user_id = auth.uid())
-          or exists (select 1 from perfis pf where pf.user_id = auth.uid() and pf.role = 'admin_onway')
+          p.condominio_id in (select condominio_id from perfis where id = auth.uid())
+          or exists (select 1 from perfis pf where pf.id = auth.uid() and pf.role = 'admin_onway')
         )
     )
   );
@@ -43,8 +43,8 @@ create policy comentarios_publicacao_insert on comentarios_publicacao for insert
       where p.id = publicacao_id
         and p.ativo = true
         and (
-          p.condominio_id in (select condominio_id from perfis where user_id = auth.uid())
-          or exists (select 1 from perfis pf where pf.user_id = auth.uid() and pf.role = 'admin_onway')
+          p.condominio_id in (select condominio_id from perfis where id = auth.uid())
+          or exists (select 1 from perfis pf where pf.id = auth.uid() and pf.role = 'admin_onway')
         )
     )
   );
@@ -58,7 +58,7 @@ create policy comentarios_publicacao_delete on comentarios_publicacao for delete
       select 1 from publicacoes p
       join perfis pf on pf.condominio_id = p.condominio_id
       where p.id = publicacao_id
-        and pf.user_id = auth.uid()
+        and pf.id = auth.uid()
         and pf.role in ('admin_onway','administradora','sindico','subsindico')
     )
   );

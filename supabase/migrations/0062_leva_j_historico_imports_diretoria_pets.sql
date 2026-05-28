@@ -35,7 +35,7 @@ drop policy if exists import_batches_select on import_batches;
 create policy import_batches_select on import_batches for select
   using (
     user_id = auth.uid()
-    or exists (select 1 from perfis p where p.user_id = auth.uid() and p.role = 'admin_onway')
+    or exists (select 1 from perfis p where p.id = auth.uid() and p.role = 'admin_onway')
     or condominio_id in (
       select condominio_id from perfis
       where user_id = auth.uid() and role in ('administradora','sindico','subsindico')
@@ -47,7 +47,7 @@ create policy import_batches_insert on import_batches for insert
   with check (
     user_id = auth.uid()
     and (
-      exists (select 1 from perfis p where p.user_id = auth.uid() and p.role = 'admin_onway')
+      exists (select 1 from perfis p where p.id = auth.uid() and p.role = 'admin_onway')
       or condominio_id in (
         select condominio_id from perfis
         where user_id = auth.uid() and role in ('administradora','sindico','subsindico')
@@ -60,7 +60,7 @@ create policy import_batches_update on import_batches for update
   using (
     user_id = auth.uid()
     and (
-      exists (select 1 from perfis p where p.user_id = auth.uid() and p.role = 'admin_onway')
+      exists (select 1 from perfis p where p.id = auth.uid() and p.role = 'admin_onway')
       or condominio_id in (
         select condominio_id from perfis
         where user_id = auth.uid() and role in ('administradora','sindico','subsindico')
@@ -96,8 +96,8 @@ alter table diretoria_mandatos enable row level security;
 drop policy if exists diretoria_mandatos_select on diretoria_mandatos;
 create policy diretoria_mandatos_select on diretoria_mandatos for select
   using (
-    condominio_id in (select condominio_id from perfis where user_id = auth.uid())
-    or exists (select 1 from perfis p where p.user_id = auth.uid() and p.role = 'admin_onway')
+    condominio_id in (select condominio_id from perfis where id = auth.uid())
+    or exists (select 1 from perfis p where p.id = auth.uid() and p.role = 'admin_onway')
   );
 
 drop policy if exists diretoria_mandatos_write on diretoria_mandatos;
@@ -105,7 +105,7 @@ create policy diretoria_mandatos_write on diretoria_mandatos for all
   using (
     exists (
       select 1 from perfis p
-      where p.user_id = auth.uid()
+      where p.id = auth.uid()
         and (
           p.role = 'admin_onway'
           or (p.role in ('administradora','sindico','subsindico') and p.condominio_id = diretoria_mandatos.condominio_id)
@@ -115,7 +115,7 @@ create policy diretoria_mandatos_write on diretoria_mandatos for all
   with check (
     exists (
       select 1 from perfis p
-      where p.user_id = auth.uid()
+      where p.id = auth.uid()
         and (
           p.role = 'admin_onway'
           or (p.role in ('administradora','sindico','subsindico') and p.condominio_id = diretoria_mandatos.condominio_id)
@@ -154,8 +154,8 @@ alter table pet_circulacoes enable row level security;
 drop policy if exists pet_circulacoes_select on pet_circulacoes;
 create policy pet_circulacoes_select on pet_circulacoes for select
   using (
-    condominio_id in (select condominio_id from perfis where user_id = auth.uid())
-    or exists (select 1 from perfis p where p.user_id = auth.uid() and p.role = 'admin_onway')
+    condominio_id in (select condominio_id from perfis where id = auth.uid())
+    or exists (select 1 from perfis p where p.id = auth.uid() and p.role = 'admin_onway')
   );
 
 drop policy if exists pet_circulacoes_insert on pet_circulacoes;
@@ -163,7 +163,7 @@ create policy pet_circulacoes_insert on pet_circulacoes for insert
   with check (
     exists (
       select 1 from perfis p
-      where p.user_id = auth.uid()
+      where p.id = auth.uid()
         and (
           p.role = 'admin_onway'
           or (p.role in ('administradora','sindico','subsindico','portaria','ronda') and p.condominio_id = pet_circulacoes.condominio_id)
@@ -180,8 +180,12 @@ create table if not exists pet_vacina_lembretes_enviados (
   pet_id uuid not null references pets(id) on delete cascade,
   tipo text not null check (tipo in ('antirabica_30d', 'antirabica_vencida')),
   enviado_em timestamptz not null default now(),
-  unique (pet_id, tipo, enviado_em::date)
+  enviado_data date not null default (current_date)
 );
+
+-- Idempotencia por dia: nao envia o mesmo tipo de lembrete duas vezes no mesmo dia
+create unique index if not exists ux_pet_vacina_lembretes_dia
+  on pet_vacina_lembretes_enviados (pet_id, tipo, enviado_data);
 
 alter table pet_vacina_lembretes_enviados enable row level security;
 
@@ -192,8 +196,8 @@ create policy pet_vacina_lembretes_select on pet_vacina_lembretes_enviados for s
       select 1 from pets pt
       where pt.id = pet_vacina_lembretes_enviados.pet_id
         and (
-          pt.condominio_id in (select condominio_id from perfis where user_id = auth.uid())
-          or exists (select 1 from perfis p where p.user_id = auth.uid() and p.role = 'admin_onway')
+          pt.condominio_id in (select condominio_id from perfis where id = auth.uid())
+          or exists (select 1 from perfis p where p.id = auth.uid() and p.role = 'admin_onway')
         )
     )
   );

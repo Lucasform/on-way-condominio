@@ -40,8 +40,8 @@ create policy multa_status_log_select on multa_status_log for select
       select 1 from multas m
       where m.id = multa_status_log.multa_id
         and (
-          m.condominio_id in (select condominio_id from perfis where user_id = auth.uid())
-          or exists (select 1 from perfis p where p.user_id = auth.uid() and p.role = 'admin_onway')
+          m.condominio_id in (select condominio_id from perfis where id = auth.uid())
+          or exists (select 1 from perfis p where p.id = auth.uid() and p.role = 'admin_onway')
           or m.pessoa_id in (select id from pessoas where user_id = auth.uid())
         )
     )
@@ -107,8 +107,8 @@ create policy multa_lembretes_select on multa_lembretes_enviados for select
       select 1 from multas m
       where m.id = multa_lembretes_enviados.multa_id
         and (
-          m.condominio_id in (select condominio_id from perfis where user_id = auth.uid())
-          or exists (select 1 from perfis p where p.user_id = auth.uid() and p.role = 'admin_onway')
+          m.condominio_id in (select condominio_id from perfis where id = auth.uid())
+          or exists (select 1 from perfis p where p.id = auth.uid() and p.role = 'admin_onway')
         )
     )
   );
@@ -146,8 +146,8 @@ create policy assembleia_presencas_select on assembleia_presencas for select
       select 1 from assembleias a
       where a.id = assembleia_presencas.assembleia_id
         and (
-          a.condominio_id in (select condominio_id from perfis where user_id = auth.uid())
-          or exists (select 1 from perfis p where p.user_id = auth.uid() and p.role = 'admin_onway')
+          a.condominio_id in (select condominio_id from perfis where id = auth.uid())
+          or exists (select 1 from perfis p where p.id = auth.uid() and p.role = 'admin_onway')
         )
     )
   );
@@ -161,7 +161,7 @@ create policy assembleia_presencas_insert on assembleia_presencas for insert
       select 1 from assembleias a
       join perfis p on p.condominio_id = a.condominio_id
       where a.id = assembleia_id
-        and p.user_id = auth.uid()
+        and p.id = auth.uid()
         and p.role in ('admin_onway','administradora','sindico','subsindico')
     )
   );
@@ -174,7 +174,7 @@ create policy assembleia_presencas_update on assembleia_presencas for update
       select 1 from assembleias a
       join perfis p on p.condominio_id = a.condominio_id
       where a.id = assembleia_id
-        and p.user_id = auth.uid()
+        and p.id = auth.uid()
         and p.role in ('admin_onway','administradora','sindico','subsindico')
     )
   );
@@ -188,7 +188,7 @@ create policy assembleia_presencas_delete on assembleia_presencas for delete
       select 1 from assembleias a
       join perfis p on p.condominio_id = a.condominio_id
       where a.id = assembleia_id
-        and p.user_id = auth.uid()
+        and p.id = auth.uid()
         and p.role in ('admin_onway','administradora','sindico','subsindico')
     )
   );
@@ -214,8 +214,8 @@ create policy assembleia_lembretes_select on assembleia_lembretes_enviados for s
       select 1 from assembleias a
       where a.id = assembleia_lembretes_enviados.assembleia_id
         and (
-          a.condominio_id in (select condominio_id from perfis where user_id = auth.uid())
-          or exists (select 1 from perfis p where p.user_id = auth.uid() and p.role = 'admin_onway')
+          a.condominio_id in (select condominio_id from perfis where id = auth.uid())
+          or exists (select 1 from perfis p where p.id = auth.uid() and p.role = 'admin_onway')
         )
     )
   );
@@ -241,8 +241,8 @@ create policy votacao_eventos_select on votacao_eventos_enviados for select
       select 1 from votacoes v
       where v.id = votacao_eventos_enviados.votacao_id
         and (
-          v.condominio_id in (select condominio_id from perfis where user_id = auth.uid())
-          or exists (select 1 from perfis p where p.user_id = auth.uid() and p.role = 'admin_onway')
+          v.condominio_id in (select condominio_id from perfis where id = auth.uid())
+          or exists (select 1 from perfis p where p.id = auth.uid() and p.role = 'admin_onway')
         )
     )
   );

@@ -22,8 +22,8 @@ alter table regimento_versoes enable row level security;
 drop policy if exists regimento_versoes_select on regimento_versoes;
 create policy regimento_versoes_select on regimento_versoes for select
   using (
-    condominio_id in (select condominio_id from perfis where user_id = auth.uid())
-    or exists (select 1 from perfis p where p.user_id = auth.uid() and p.role = 'admin_onway')
+    condominio_id in (select condominio_id from perfis where id = auth.uid())
+    or exists (select 1 from perfis p where p.id = auth.uid() and p.role = 'admin_onway')
   );
 
 drop policy if exists regimento_versoes_insert on regimento_versoes;
@@ -31,7 +31,7 @@ create policy regimento_versoes_insert on regimento_versoes for insert
   with check (
     exists (
       select 1 from perfis p
-      where p.user_id = auth.uid()
+      where p.id = auth.uid()
         and (
           p.role = 'admin_onway'
           or (p.role in ('administradora','sindico','subsindico') and p.condominio_id = regimento_versoes.condominio_id)
