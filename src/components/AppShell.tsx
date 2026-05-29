@@ -106,9 +106,11 @@ export default function AppShell() {
             <div className="text-sm font-bold leading-tight truncate text-slate-900 dark:text-slate-100">
               {condoNome ?? 'OnWay'}
             </div>
-            <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-              {condoNome ? 'via OnWay Condomínio' : 'Condomínio'}
-            </div>
+            {!condoNome && (
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                Condomínio
+              </div>
+            )}
           </div>
         </div>
 

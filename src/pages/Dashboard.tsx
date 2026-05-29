@@ -16,6 +16,7 @@ import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import { Select } from '../components/ui/Input'
 import HeatmapOcorrencias from '../components/HeatmapOcorrencias'
+import HotspotsPanel from '../components/HotspotsPanel'
 
 // Lazy: o chunk do recharts so e baixado quando o Dashboard abre de fato
 const DashboardCharts = lazy(() => import('../components/DashboardCharts'))
@@ -196,6 +197,12 @@ export default function Dashboard() {
           }>
             <DashboardCharts monthly={stats.monthly} multasByStatus={stats.multasByStatus} />
           </Suspense>
+
+          {(isAdmin && scopeId ? scopeId : perfil?.condominio_id) && (
+            <div className="mt-4">
+              <HotspotsPanel condominioId={isAdmin && scopeId ? scopeId! : perfil!.condominio_id!} />
+            </div>
+          )}
 
           <div className="mt-4">
             <HeatmapOcorrencias condominio_id={isAdmin && scopeId ? scopeId : (perfil?.condominio_id ?? undefined)} dias={90} />

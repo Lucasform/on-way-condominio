@@ -34,7 +34,15 @@ export async function createChamado(input: ChamadoInput, aberto_por: string): Pr
     .select('*')
     .single()
   if (error) throw error
-  return data as Chamado
+  const chamado = data as Chamado
+  // Triagem IA em background: ajusta prioridade quando default 'media'.
+  // Fire-and-forget — falhas silenciosas (sem ANTHROPIC_API_KEY etc).
+  if (chamado.prioridade === 'media') {
+    supabase.functions
+      .invoke('triage-chamado', { body: { chamado_id: chamado.id } })
+      .catch((e) => console.warn('[chamado] triagem IA falhou:', e))
+  }
+  return chamado
 }
 
 export async function updateChamadoStatus(
