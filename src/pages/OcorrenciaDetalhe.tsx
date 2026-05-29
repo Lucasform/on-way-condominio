@@ -394,6 +394,7 @@ export default function OcorrenciaDetalhe() {
 
       <AIAnalysisPanel
         ocorrenciaId={ocorrencia.id}
+        createdAt={ocorrencia.created_at}
         canAnalyse={!!canChangeStatus}
         canGenerateMulta={!!canGenerateMulta}
       />

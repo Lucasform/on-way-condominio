@@ -1,0 +1,264 @@
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useAuth } from '../components/AuthProvider'
+import {
+  deleteAcesso,
+  getAcesso,
+  listEventos,
+  registrarEvento,
+} from '../lib/acessos'
+import { getUnidade } from '../lib/unidades'
+import { isGestor, isStaff } from '../lib/permissions'
+import type { AcessoAutorizado, AcessoEvento, StatusAcesso, TipoEventoAcesso } from '../types/acesso'
+import type { Unidade } from '../types/unidade'
+import PageHeader from '../components/ui/PageHeader'
+import Button from '../components/ui/Button'
+import DeleteButton from '../components/ui/DeleteButton'
+
+const STATUS_LABEL: Record<StatusAcesso, string> = {
+  ativo: 'Ativo',
+  usado: 'Entrou',
+  expirado: 'Expirado',
+  revogado: 'Revogado',
+  negado: 'Negado',
+}
+
+const STATUS_CLASS: Record<StatusAcesso, string> = {
+  ativo: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
+  usado: 'bg-sky-500/10 text-sky-300 border-sky-500/30',
+  expirado: 'bg-slate-700/40 text-slate-400 border-slate-700',
+  revogado: 'bg-red-500/10 text-red-300 border-red-500/30',
+  negado: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
+}
+
+const EVENTO_LABEL: Record<TipoEventoAcesso, string> = {
+  entrada: '✓ Entrada registrada',
+  saida: '↩ Saída registrada',
+  negada: '✗ Acesso negado',
+  revogada: '⛔ Autorização revogada',
+}
+
+export default function AcessoDetalhe() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const { user, perfil } = useAuth()
+  const staff = isStaff(perfil?.role)
+  const podeApagar = isGestor(perfil?.role)
+
+  const [acesso, setAcesso] = useState<AcessoAutorizado | null>(null)
+  const [unidade, setUnidade] = useState<Unidade | null>(null)
+  const [eventos, setEventos] = useState<AcessoEvento[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [working, setWorking] = useState(false)
+
+  async function load() {
+    if (!id) return
+    setLoading(true)
+    try {
+      const a = await getAcesso(id)
+      if (!a) {
+        setError('Acesso não encontrado.')
+        setLoading(false)
+        return
+      }
+      setAcesso(a)
+      const [un, evs] = await Promise.all([
+        a.unidade_id ? getUnidade(a.unidade_id) : Promise.resolve(null),
+        listEventos(a.id),
+      ])
+      setUnidade(un)
+      setEventos(evs)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao carregar.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
+
+  async function handleEvento(tipo: TipoEventoAcesso, askMotivo = false) {
+    if (!acesso || !user) return
+    let motivo: string | null = null
+    if (askMotivo) {
+      const m = window.prompt(tipo === 'negada' ? 'Motivo da negativa:' : 'Motivo (opcional):')
+      if (m === null) return
+      motivo = m || null
+    }
+    if (!window.confirm(`Confirmar: ${EVENTO_LABEL[tipo]}?`)) return
+    setWorking(true)
+    try {
+      await registrarEvento({
+        acesso_id: acesso.id,
+        condominio_id: acesso.condominio_id,
+        tipo,
+        registrado_por: user.id,
+        motivo,
+      })
+      await load()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao registrar.')
+    } finally {
+      setWorking(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!acesso) return
+    if (!window.confirm('Apagar esse registro DEFINITIVAMENTE?')) return
+    setWorking(true)
+    try {
+      await deleteAcesso(acesso.id)
+      navigate('/acessos')
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao excluir.')
+      setWorking(false)
+    }
+  }
+
+  if (loading) {
+    return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando...</div>
+  }
+
+  if (error || !acesso) {
+    return (
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+        <PageHeader
+          title="Acesso"
+          actions={
+            <Link to="/acessos">
+              <Button variant="ghost">← Voltar</Button>
+            </Link>
+          }
+        />
+        <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
+          {error ?? 'Não encontrado.'}
+        </div>
+      </div>
+    )
+  }
+
+  const podeRegistrarEvento = staff && acesso.status === 'ativo'
+  const podeRevogar = acesso.status === 'ativo' && (staff || acesso.criado_por === user?.id)
+
+  return (
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+      <PageHeader
+        title="Acesso autorizado"
+        actions={
+          <div className="flex items-center gap-2">
+            {podeApagar && <DeleteButton onClick={handleDelete} disabled={working} />}
+            <Link to="/acessos">
+              <Button variant="ghost">← Voltar</Button>
+            </Link>
+          </div>
+        }
+      />
+
+      <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-6 space-y-4">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <div className="text-lg font-medium text-slate-100">{acesso.nome}</div>
+            <div className="text-xs text-slate-400 mt-1 capitalize">{acesso.tipo}</div>
+          </div>
+          <span className={`shrink-0 px-2 py-0.5 rounded text-xs border ${STATUS_CLASS[acesso.status]}`}>
+            {STATUS_LABEL[acesso.status]}
+          </span>
+        </div>
+
+        <dl className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-y-2 gap-x-4 text-sm">
+          <dt className="text-slate-500">Unidade</dt>
+          <dd className="text-slate-200">
+            {unidade ? (unidade.bloco ? `${unidade.bloco}-${unidade.numero}` : unidade.numero) : '—'}
+          </dd>
+
+          {acesso.documento_numero && (
+            <>
+              <dt className="text-slate-500">Documento</dt>
+              <dd className="text-slate-200">
+                {acesso.documento_tipo?.toUpperCase() ?? 'DOC'} {acesso.documento_numero}
+              </dd>
+            </>
+          )}
+
+          {acesso.telefone && (
+            <>
+              <dt className="text-slate-500">Telefone</dt>
+              <dd className="text-slate-200">{acesso.telefone}</dd>
+            </>
+          )}
+
+          <dt className="text-slate-500">Início</dt>
+          <dd className="text-slate-200">
+            {new Date(acesso.vigencia_inicio).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'short' })}
+          </dd>
+
+          <dt className="text-slate-500">Fim</dt>
+          <dd className="text-slate-200">
+            {acesso.vigencia_fim
+              ? new Date(acesso.vigencia_fim).toLocaleString('pt-BR', { dateStyle: 'long', timeStyle: 'short' })
+              : <span className="text-slate-500 italic">Sem prazo</span>}
+          </dd>
+        </dl>
+
+        {acesso.observacao && (
+          <div className="border-t border-slate-800 pt-4">
+            <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Observação</div>
+            <p className="text-sm text-slate-200 whitespace-pre-wrap">{acesso.observacao}</p>
+          </div>
+        )}
+      </div>
+
+      {(podeRegistrarEvento || podeRevogar) && (
+        <div className="mt-6 rounded-lg border border-slate-700 bg-slate-900/40 p-5">
+          <div className="text-sm font-medium text-slate-200 mb-3">Ações</div>
+          <div className="flex flex-wrap gap-2">
+            {podeRegistrarEvento && (
+              <>
+                <Button onClick={() => handleEvento('entrada')} disabled={working}>
+                  ✓ Liberar entrada
+                </Button>
+                <Button variant="ghost" onClick={() => handleEvento('saida')} disabled={working}>
+                  ↩ Registrar saída
+                </Button>
+                <Button variant="ghost" onClick={() => handleEvento('negada', true)} disabled={working}>
+                  ✗ Negar
+                </Button>
+              </>
+            )}
+            {podeRevogar && (
+              <Button variant="ghost" onClick={() => handleEvento('revogada', true)} disabled={working}>
+                ⛔ Revogar
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="mt-6 rounded-lg border border-slate-800 bg-slate-900/40 p-5">
+        <div className="text-sm font-medium text-slate-200 mb-3">Linha do tempo</div>
+        {eventos.length === 0 ? (
+          <div className="text-sm text-slate-500 italic">Nenhum evento ainda.</div>
+        ) : (
+          <ul className="space-y-3">
+            {eventos.map((ev) => (
+              <li key={ev.id} className="text-sm border-l-2 border-slate-700 pl-3">
+                <div className="text-slate-200">{EVENTO_LABEL[ev.tipo]}</div>
+                <div className="text-xs text-slate-500">
+                  {new Date(ev.created_at).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}
+                </div>
+                {ev.motivo && (
+                  <div className="text-xs text-slate-400 mt-1 italic">{ev.motivo}</div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  )
+}

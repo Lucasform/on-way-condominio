@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   analisarOcorrenciaIA,
@@ -8,13 +8,21 @@ import {
   type IAAnalysis,
   type IAResult,
 } from '../lib/iaAnalysis'
+import { supabase } from '../lib/supabase'
 import Button from './ui/Button'
 
 interface Props {
   ocorrenciaId: string
+  createdAt: string         // pra detectar análise rodando em background
   canAnalyse: boolean       // só admin/adm/sindico
   canGenerateMulta: boolean // se ocorrência está em status que permite
 }
+
+// Janela em que assumimos que o fire-and-forget do createOcorrencia ainda pode
+// estar rodando. Passado isso, exibimos botão manual.
+const BACKGROUND_WINDOW_MS = 5 * 60 * 1000
+// Timeout pra mostrar fallback manual mesmo dentro da janela de background.
+const BACKGROUND_TIMEOUT_MS = 90 * 1000
 
 const CONFIANCA_COLOR = {
   alta: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40',
@@ -22,7 +30,7 @@ const CONFIANCA_COLOR = {
   baixa: 'bg-slate-700/40 text-slate-400 border-slate-700',
 }
 
-export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateMulta }: Props) {
+export default function AIAnalysisPanel({ ocorrenciaId, createdAt, canAnalyse, canGenerateMulta }: Props) {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [loadingPersist, setLoadingPersist] = useState(true)
@@ -31,11 +39,17 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
   const [comentario, setComentario] = useState('')
   const [showComment, setShowComment] = useState(false)
   const [analisadaEm, setAnalisadaEm] = useState<string | null>(null)
+  // Quando o background dispara fire-and-forget e ainda não voltou.
+  const [waitingBackground, setWaitingBackground] = useState(false)
+  const [backgroundTimedOut, setBackgroundTimedOut] = useState(false)
 
   // Edição manual
   const [editando, setEditando] = useState(false)
   const [editForm, setEditForm] = useState<IAAnalysis | null>(null)
   const [salvandoEdit, setSalvandoEdit] = useState(false)
+
+  const resultRef = useRef<IAResult | null>(null)
+  resultRef.current = result
 
   // Carrega análise persistida ao montar
   useEffect(() => {
@@ -53,6 +67,11 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
             tokens: { input: null, output: null },
           })
           setAnalisadaEm(persistida.analisada_em)
+        } else {
+          const ageMs = Date.now() - new Date(createdAt).getTime()
+          if (ageMs >= 0 && ageMs < BACKGROUND_WINDOW_MS) {
+            setWaitingBackground(true)
+          }
         }
       } catch (e) {
         console.warn('[AIAnalysisPanel] erro ao ler análise persistida:', e)
@@ -61,7 +80,75 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
       }
     })()
     return () => { mounted = false }
-  }, [ocorrenciaId])
+  }, [ocorrenciaId, createdAt])
+
+  // Realtime: ouve UPDATE no row da ocorrência. Quando o background termina
+  // e a edge grava ia_analysis, refletimos na hora sem polling.
+  useEffect(() => {
+    if (!waitingBackground) return
+    const suffix = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2)
+    const channel = supabase
+      .channel(`ocorrencia_ia:${ocorrenciaId}:${suffix}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'ocorrencias',
+          filter: `id=eq.${ocorrenciaId}`,
+        },
+        async () => {
+          if (resultRef.current) return
+          const persistida = await getOcorrenciaIaAnalysis(ocorrenciaId)
+          if (!persistida) return
+          setResult({
+            ocorrencia_id: ocorrenciaId,
+            analysis: persistida.analysis,
+            artigos_consultados: persistida.artigos_consultados,
+            modelo: persistida.modelo,
+            tokens: { input: null, output: null },
+          })
+          setAnalisadaEm(persistida.analisada_em)
+          setWaitingBackground(false)
+          setBackgroundTimedOut(false)
+        },
+      )
+      .subscribe()
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [waitingBackground, ocorrenciaId])
+
+  // Polling de segurança: se realtime cair ou a edge demorar, tenta a cada 8s
+  // por até BACKGROUND_TIMEOUT_MS; depois libera fallback manual.
+  useEffect(() => {
+    if (!waitingBackground) return
+    const start = Date.now()
+    const interval = setInterval(async () => {
+      if (resultRef.current) return
+      const persistida = await getOcorrenciaIaAnalysis(ocorrenciaId)
+      if (persistida) {
+        setResult({
+          ocorrencia_id: ocorrenciaId,
+          analysis: persistida.analysis,
+          artigos_consultados: persistida.artigos_consultados,
+          modelo: persistida.modelo,
+          tokens: { input: null, output: null },
+        })
+        setAnalisadaEm(persistida.analisada_em)
+        setWaitingBackground(false)
+        setBackgroundTimedOut(false)
+        return
+      }
+      if (Date.now() - start > BACKGROUND_TIMEOUT_MS) {
+        setBackgroundTimedOut(true)
+        setWaitingBackground(false)
+      }
+    }, 8000)
+    return () => clearInterval(interval)
+  }, [waitingBackground, ocorrenciaId])
 
   if (!canAnalyse) return null
 
@@ -69,6 +156,8 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
     setLoading(true)
     setError(null)
     setEditando(false)
+    setWaitingBackground(false)
+    setBackgroundTimedOut(false)
     try {
       const r = await analisarOcorrenciaIA(ocorrenciaId, comentario.trim() || undefined)
       setResult(r)
@@ -125,26 +214,28 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
     )
   }
 
+  const subtitle = analisadaEm
+    ? `Última análise em ${new Date(analisadaEm).toLocaleString('pt-BR')}.`
+    : waitingBackground
+      ? 'Análise rodando em segundo plano. A multa é montada automaticamente quando o agente termina.'
+      : 'Análise com base no regimento e histórico da unidade. Apenas sugestão.'
+
   return (
     <div className="mt-6 rounded-lg border border-sky-500/30 bg-sky-500/5 p-5">
       <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
         <div>
           <div className="text-sm font-medium text-sky-200">🧑‍💼 Análise do Gestor</div>
-          <div className="text-xs text-slate-400 mt-0.5">
-            {analisadaEm
-              ? `Última análise em ${new Date(analisadaEm).toLocaleString('pt-BR')}.`
-              : 'Análise com base no regimento e histórico da unidade. Apenas sugestão.'}
-          </div>
+          <div className="text-xs text-slate-400 mt-0.5">{subtitle}</div>
         </div>
         <div className="flex gap-2 items-start flex-wrap">
-          {!showComment && !editando && (
+          {!showComment && !editando && (result || backgroundTimedOut) && (
             <Button variant="ghost" onClick={() => setShowComment(true)} disabled={loading}>
               + Comentário
             </Button>
           )}
-          {!result && !showComment && (
+          {!result && !showComment && !waitingBackground && (
             <Button onClick={handleAnalyze} disabled={loading}>
-              {loading ? 'Analisando...' : 'Analisar'}
+              {loading ? 'Analisando...' : backgroundTimedOut ? 'Analisar agora' : 'Analisar'}
             </Button>
           )}
           {result && !showComment && !editando && (
@@ -198,6 +289,29 @@ export default function AIAnalysisPanel({ ocorrenciaId, canAnalyse, canGenerateM
       {loading && !result && (
         <div className="text-sm text-slate-400 italic">
           Aguardando análise... Aguarde um momento
+        </div>
+      )}
+
+      {waitingBackground && !loading && !result && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm text-sky-200">
+            <span className="inline-block h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
+            Analisando em segundo plano…
+          </div>
+          <div className="space-y-2">
+            <div className="h-3 w-1/3 rounded bg-slate-800/70 animate-pulse" />
+            <div className="h-3 w-2/3 rounded bg-slate-800/70 animate-pulse" />
+            <div className="h-3 w-1/2 rounded bg-slate-800/70 animate-pulse" />
+          </div>
+          <div className="text-xs text-slate-500">
+            Pode levar alguns segundos. A tela atualiza sozinha quando o agente terminar.
+          </div>
+        </div>
+      )}
+
+      {backgroundTimedOut && !loading && !result && (
+        <div className="text-sm text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-md px-3 py-2">
+          A análise em segundo plano demorou mais que o esperado. Clique em <strong>Analisar agora</strong> pra rodar manualmente.
         </div>
       )}
 

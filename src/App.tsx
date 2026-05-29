@@ -68,6 +68,10 @@ const ChatConversa = lazy(() => import('./pages/ChatConversa'))
 const WhatsappConfig = lazy(() => import('./pages/WhatsappConfig'))
 const AuditLog = lazy(() => import('./pages/AuditLog'))
 const Servicos = lazy(() => import('./pages/Servicos'))
+const Acessos = lazy(() => import('./pages/Acessos'))
+const AcessoNovo = lazy(() => import('./pages/AcessoNovo'))
+const AcessoDetalhe = lazy(() => import('./pages/AcessoDetalhe'))
+const CondominioFornecedoresPage = lazy(() => import('./pages/CondominioFornecedoresPage'))
 
 export default function App() {
   return (
@@ -507,6 +511,38 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
                   <Servicos />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/acessos"
+              element={
+                <ProtectedRoute>
+                  <Acessos />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/acessos/novo"
+              element={
+                <ProtectedRoute>
+                  <AcessoNovo />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/acessos/:id"
+              element={
+                <ProtectedRoute>
+                  <AcessoDetalhe />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/classificados"
+              element={
+                <ProtectedRoute>
+                  <CondominioFornecedoresPage />
                 </ProtectedRoute>
               }
             />

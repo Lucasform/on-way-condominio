@@ -50,6 +50,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/multas', label: 'Multas' },
         { to: '/chamados', label: 'Chamados' },
         { to: '/encomendas', label: 'Serviços de Portaria' },
+        { to: '/acessos', label: 'Acessos autorizados' },
         { to: '/servicos', label: 'Prestação de Serviços' },
       ],
     },
@@ -59,6 +60,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/mural', label: 'Mural informativo' },
         { to: '/calendario', label: 'Calendário' },
         { to: '/chat', label: 'Chat interno' },
+        { to: '/classificados', label: 'Classificados' },
         { to: '/emails-log', label: 'E-mail' },
         { to: '/whatsapp-config', label: 'WhatsApp' },
       ],
@@ -105,6 +107,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/multas', label: 'Multas' },
         { to: '/chamados', label: 'Chamados' },
         { to: '/encomendas', label: 'Serviços de Portaria' },
+        { to: '/acessos', label: 'Acessos autorizados' },
         { to: '/servicos', label: 'Prestação de Serviços' },
       ],
     },
@@ -114,6 +117,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/mural', label: 'Mural informativo' },
         { to: '/calendario', label: 'Calendário' },
         { to: '/chat', label: 'Chat interno' },
+        { to: '/classificados', label: 'Classificados' },
       ],
     },
     {
@@ -158,6 +162,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/multas', label: 'Multas' },
         { to: '/chamados', label: 'Chamados' },
         { to: '/encomendas', label: 'Serviços de Portaria' },
+        { to: '/acessos', label: 'Acessos autorizados' },
         { to: '/servicos', label: 'Prestação de Serviços' },
       ],
     },
@@ -167,6 +172,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/mural', label: 'Mural informativo' },
         { to: '/calendario', label: 'Calendário' },
         { to: '/chat', label: 'Chat interno' },
+        { to: '/classificados', label: 'Classificados' },
       ],
     },
     {
@@ -211,6 +217,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/multas', label: 'Multas' },
         { to: '/chamados', label: 'Chamados' },
         { to: '/encomendas', label: 'Serviços de Portaria' },
+        { to: '/acessos', label: 'Acessos autorizados' },
         { to: '/servicos', label: 'Prestação de Serviços' },
       ],
     },
@@ -220,6 +227,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/mural', label: 'Mural informativo' },
         { to: '/calendario', label: 'Calendário' },
         { to: '/chat', label: 'Chat interno' },
+        { to: '/classificados', label: 'Classificados' },
       ],
     },
     {
@@ -275,6 +283,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
       label: 'Atendimento',
       children: [
         { to: '/encomendas', label: 'Serviços de Portaria' },
+        { to: '/acessos', label: 'Acessos autorizados' },
       ],
     },
     {
@@ -325,6 +334,13 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/multas', label: 'Minhas multas' },
         { to: '/encomendas', label: 'Minhas encomendas' },
         { to: '/notificacoes', label: 'Minhas notificações' },
+      ],
+    },
+    {
+      label: 'Acesso',
+      children: [
+        { to: '/acessos', label: 'Liberar acesso' },
+        { to: '/classificados', label: 'Classificados' },
       ],
     },
     {
