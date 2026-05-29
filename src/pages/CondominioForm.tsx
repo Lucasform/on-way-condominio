@@ -15,6 +15,7 @@ import ConfirmarExclusaoCondominio from '../components/ConfirmarExclusaoCondomin
 import { Field, TextInput, TextArea } from '../components/ui/Input'
 import ConvitesPanel from '../components/ConvitesPanel'
 import LogoUpload from '../components/LogoUpload'
+import LoginBgUpload from '../components/LoginBgUpload'
 import BrandPreview from '../components/BrandPreview'
 import CondominioAnexosManager from '../components/CondominioAnexosManager'
 import CondominioDiretoria from '../components/CondominioDiretoria'
@@ -481,13 +482,15 @@ export default function CondominioForm() {
               />
             </Field>
 
-            <Field label="Imagem de fundo" hint="URL pública. Aparece como background da tela de login.">
-              <TextInput
-                value={form.imagem_login_url ?? ''}
-                onChange={(e) => update('imagem_login_url', e.target.value || null)}
-                placeholder="https://..."
-              />
-            </Field>
+            {id && (
+              <Field label="Imagem de fundo">
+                <LoginBgUpload
+                  condominio_id={id}
+                  current={form.imagem_login_url}
+                  onChange={(url) => update('imagem_login_url', url)}
+                />
+              </Field>
+            )}
 
             <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer">
               <input

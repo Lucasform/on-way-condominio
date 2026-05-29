@@ -5,6 +5,7 @@ import { useAuth } from '../components/AuthProvider'
 import { roleLabel } from '../lib/nav'
 import PushToggle from '../components/PushToggle'
 import TwoFactorPanel from '../components/TwoFactorPanel'
+import MeusCondominios from '../components/MeusCondominios'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 
@@ -303,6 +304,8 @@ export default function MeuPerfil() {
           {feedback.msg}
         </div>
       )}
+
+      <MeusCondominios />
 
       {/* ============================================================ */}
       {/* Identidade */}

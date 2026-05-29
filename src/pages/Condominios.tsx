@@ -4,6 +4,7 @@ import { listCondominios, setCondominioAtivo } from '../lib/condominios'
 import type { Condominio } from '../types/condominio'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import Pill from '../components/ui/Pill'
 import DataTable, { type Column } from '../components/ui/DataTable'
 import { useAuth } from '../components/AuthProvider'
 
@@ -43,8 +44,8 @@ export default function Condominios() {
   async function handleToggleAtivo(row: Condominio) {
     const novoEstado = !row.ativo
     const msg = novoEstado
-      ? `Reativar "${row.nome}"?`
-      : `Desativar "${row.nome}"? (soft delete, pode ser revertido depois)`
+      ? `Restaurar "${row.nome}"? Volta a aparecer pra todos.`
+      : `Arquivar "${row.nome}"? Os dados ficam preservados, mas o condomínio some da operação.`
     if (!window.confirm(msg)) return
     try {
       await setCondominioAtivo(row.id, novoEstado)
@@ -53,6 +54,9 @@ export default function Condominios() {
       alert(e instanceof Error ? e.message : 'Erro ao atualizar.')
     }
   }
+
+  const ativosCount = rows.filter((r) => r.ativo).length
+  const arquivadosCount = rows.length - ativosCount
 
   const columns: Column<Condominio>[] = [
     { key: 'nome', header: 'Nome', render: (r) => <span className="font-medium text-slate-100">{r.nome}</span> },
@@ -63,20 +67,21 @@ export default function Condominios() {
   return (
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-6xl mx-auto">
       <PageHeader
-        title="Condomínios"
+        title={`Condomínios (${ativosCount}${showInactive && arquivadosCount > 0 ? ` + ${arquivadosCount} arquivados` : ''})`}
         subtitle="Gestão dos condomínios cadastrados na plataforma."
         actions={
-          <>
+          <div className="flex gap-2">
             <Button
-              variant="secondary"
+              variant={showInactive ? 'secondary' : 'ghost'}
+              size="sm"
               onClick={() => setShowInactive((v) => !v)}
             >
-              {showInactive ? 'Ocultar inativos' : 'Mostrar inativos'}
+              {showInactive ? '✓ Mostrando arquivados' : '📦 Mostrar arquivados'}
             </Button>
             <Link to="/condominios/novo">
               <Button>+ Novo condomínio</Button>
             </Link>
-          </>
+          </div>
         }
       />
 
@@ -96,13 +101,14 @@ export default function Condominios() {
         actions={(r) => (
           <div className="flex gap-1 justify-end">
             <Link to={`/condominios/${r.id}`}>
-              <Button variant="ghost">Editar</Button>
+              <Button variant="ghost" size="sm">Editar</Button>
             </Link>
             <Button
-              variant={r.ativo ? 'danger' : 'secondary'}
+              variant="secondary"
+              size="sm"
               onClick={() => handleToggleAtivo(r)}
             >
-              {r.ativo ? 'Desativar' : 'Reativar'}
+              {r.ativo ? '📦 Arquivar' : '↻ Restaurar'}
             </Button>
           </div>
         )}
@@ -117,13 +123,7 @@ function formatCidade(r: Condominio): string {
 }
 
 function StatusBadge({ ativo }: { ativo: boolean }) {
-  return ativo ? (
-    <span className="px-2 py-0.5 rounded text-xs bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
-      Ativo
-    </span>
-  ) : (
-    <span className="px-2 py-0.5 rounded text-xs bg-slate-700/40 text-slate-400">
-      Inativo
-    </span>
-  )
+  return ativo
+    ? <Pill tone="success" dot>Ativo</Pill>
+    : <Pill tone="neutral">📦 Arquivado</Pill>
 }

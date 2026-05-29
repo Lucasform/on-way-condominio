@@ -12,6 +12,7 @@ import { listUnidades } from '../lib/unidades'
 import type { Unidade } from '../types/unidade'
 import Button from './ui/Button'
 import DeleteButton from './ui/DeleteButton'
+import Pill from './ui/Pill'
 import { Field, TextInput, Select } from './ui/Input'
 
 interface Props {
@@ -126,13 +127,11 @@ export default function ConvitesPanel({ condominio_id }: Props) {
     }
   }
 
-  function statusDe(c: Convite): { label: string; cls: string } {
-    if (c.revogado) return { label: 'Revogado', cls: 'bg-slate-700/40 text-slate-400' }
-    if (new Date(c.expira_em) < new Date())
-      return { label: 'Expirado', cls: 'bg-red-500/10 text-red-300 border border-red-500/30' }
-    if (c.usos >= c.usos_max)
-      return { label: 'Esgotado', cls: 'bg-amber-500/10 text-amber-300 border border-amber-500/30' }
-    return { label: 'Ativo', cls: 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' }
+  function statusDe(c: Convite): { label: string; tone: 'neutral' | 'success' | 'warning' | 'danger' } {
+    if (c.revogado) return { label: 'Revogado', tone: 'neutral' }
+    if (new Date(c.expira_em) < new Date()) return { label: 'Expirado', tone: 'danger' }
+    if (c.usos >= c.usos_max) return { label: 'Esgotado', tone: 'warning' }
+    return { label: 'Ativo', tone: 'success' }
   }
 
   return (
@@ -186,13 +185,14 @@ export default function ConvitesPanel({ condominio_id }: Props) {
       </div>
 
       <div>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={() => setMaisOpcoes((v) => !v)}
-          className="text-xs text-brand-700 dark:text-brand-400 hover:underline"
         >
           {maisOpcoes ? '− Menos opções' : '+ Vincular já (unidade / setor / nome)'}
-        </button>
+        </Button>
       </div>
 
       {maisOpcoes && (
@@ -255,7 +255,7 @@ export default function ConvitesPanel({ condominio_id }: Props) {
                   <td className="py-2">{c.usos}/{c.usos_max}</td>
                   <td className="py-2 text-xs">{formatDate(c.expira_em)}</td>
                   <td className="py-2">
-                    <span className={`px-2 py-0.5 rounded text-xs ${st.cls}`}>{st.label}</span>
+                    <Pill tone={st.tone}>{st.label}</Pill>
                   </td>
                   <td className="py-2 text-right">
                     <div className="inline-flex items-center gap-1 flex-wrap justify-end">
@@ -296,7 +296,7 @@ export default function ConvitesPanel({ condominio_id }: Props) {
             <div key={c.id} className="rounded-md border border-slate-700 bg-slate-900/40 p-3 space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono text-brand-400 text-sm">{c.codigo}</span>
-                <span className={`px-2 py-0.5 rounded text-xs ${st.cls}`}>{st.label}</span>
+                <Pill tone={st.tone}>{st.label}</Pill>
               </div>
               <div className="text-xs text-slate-400 grid grid-cols-2 gap-x-2 gap-y-0.5">
                 <span>Tipo: <span className="capitalize text-slate-200">{c.role}</span></span>
