@@ -6,6 +6,7 @@ import { isGestor } from '../lib/permissions'
 import type { Comunicado, StatusComunicado } from '../types/comunicado'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import CondominioAnexosManager from '../components/CondominioAnexosManager'
 
 const STATUS_LABEL: Record<StatusComunicado, string> = {
   rascunho: 'Rascunho',
@@ -50,6 +51,26 @@ export default function Comunicados() {
           )
         }
       />
+
+      {gestor && perfil?.condominio_id && (
+        <details className="mb-6 rounded-lg border border-slate-800 bg-slate-900/40 overflow-hidden">
+          <summary className="cursor-pointer px-5 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800/40 transition">
+            📣 Modelos de comunicado
+            <span className="text-xs text-slate-500 font-normal ml-2">
+              (modelo que a IA segue ao gerar)
+            </span>
+          </summary>
+          <div className="px-5 pb-5 pt-2">
+            <CondominioAnexosManager
+              condominio_id={perfil.condominio_id}
+              tipo="modelo_comunicado"
+              titulo="Modelos de comunicado"
+              emoji="📣"
+              descricao="Anexe modelos PDF (aviso de manutenção, festa, regra nova). O agente IA segue o tom e a estrutura desses modelos."
+            />
+          </div>
+        </details>
+      )}
 
       {loading && <div className="text-slate-400 text-sm">Carregando...</div>}
 
