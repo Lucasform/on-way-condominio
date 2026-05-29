@@ -319,6 +319,11 @@ export default function Mural() {
                     📌 Fixado
                   </div>
                 )}
+                {pub.ativo && pub.expira_em && (
+                  <div className="bg-purple-500/10 text-purple-300 text-xs px-4 py-1.5 border-b border-purple-500/30 flex items-center gap-1">
+                    ⏱ Story · expira {formatExpira(pub.expira_em)}
+                  </div>
+                )}
 
                 {thumbs[pub.id] && (
                   <a href={thumbs[pub.id]} target="_blank" rel="noreferrer">
@@ -473,4 +478,13 @@ export default function Mural() {
       )}
     </div>
   )
+}
+
+function formatExpira(iso: string): string {
+  const ms = new Date(iso).getTime() - Date.now()
+  if (ms <= 0) return 'em instantes'
+  const horas = Math.floor(ms / 3600_000)
+  const minutos = Math.floor((ms % 3600_000) / 60_000)
+  if (horas >= 1) return `em ${horas}h${minutos ? ` ${minutos}min` : ''}`
+  return `em ${minutos}min`
 }

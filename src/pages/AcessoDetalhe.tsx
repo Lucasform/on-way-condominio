@@ -31,6 +31,16 @@ const STATUS_CLASS: Record<StatusAcesso, string> = {
   negado: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
 }
 
+function vigenciaExpirou(r: { status: StatusAcesso; vigencia_fim: string | null }): boolean {
+  if (r.status !== 'ativo') return false
+  if (!r.vigencia_fim) return false
+  return new Date(r.vigencia_fim).getTime() < Date.now()
+}
+
+function statusEfetivo(r: { status: StatusAcesso; vigencia_fim: string | null }): StatusAcesso {
+  return vigenciaExpirou(r) ? 'expirado' : r.status
+}
+
 const EVENTO_LABEL: Record<TipoEventoAcesso, string> = {
   entrada: '✓ Entrada registrada',
   saida: '↩ Saída registrada',
@@ -142,8 +152,9 @@ export default function AcessoDetalhe() {
     )
   }
 
-  const podeRegistrarEvento = staff && acesso.status === 'ativo'
-  const podeRevogar = acesso.status === 'ativo' && (staff || acesso.criado_por === user?.id)
+  const efetivo = statusEfetivo(acesso)
+  const podeRegistrarEvento = staff && efetivo === 'ativo'
+  const podeRevogar = efetivo === 'ativo' && (staff || acesso.criado_por === user?.id)
 
   return (
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
@@ -165,8 +176,8 @@ export default function AcessoDetalhe() {
             <div className="text-lg font-medium text-slate-100">{acesso.nome}</div>
             <div className="text-xs text-slate-400 mt-1 capitalize">{acesso.tipo}</div>
           </div>
-          <span className={`shrink-0 px-2 py-0.5 rounded text-xs border ${STATUS_CLASS[acesso.status]}`}>
-            {STATUS_LABEL[acesso.status]}
+          <span className={`shrink-0 px-2 py-0.5 rounded text-xs border ${STATUS_CLASS[efetivo]}`}>
+            {STATUS_LABEL[efetivo]}
           </span>
         </div>
 

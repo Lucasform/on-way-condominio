@@ -9,6 +9,7 @@ export interface Publicacao {
   imagem_url: string | null
   fixado: boolean
   ativo: boolean
+  expira_em: string | null
   created_at: string
   updated_at: string
 }
@@ -19,6 +20,7 @@ export interface PublicacaoInput {
   conteudo: string
   imagem_url: string | null
   fixado: boolean
+  expira_em?: string | null
 }
 
 export interface Reacao {

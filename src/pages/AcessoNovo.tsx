@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import { createAcesso, getMyUnidadeIds } from '../lib/acessos'
+import { verificarBloqueio } from '../lib/listaNegra'
 import { listUnidades } from '../lib/unidades'
 import { isStaff } from '../lib/permissions'
 import type { Unidade } from '../types/unidade'
@@ -221,6 +222,20 @@ export default function AcessoNovo() {
     setSubmitting(true)
     setError(null)
     try {
+      // Bloqueio por lista negra do condominio (a funcao SQL tolera ausencia
+      // da migration via fallback no catch da lib).
+      const bloqueado = await verificarBloqueio({
+        condominio_id: form.condominio_id,
+        documento_numero: form.documento_numero ?? null,
+        nome: form.nome,
+      })
+      if (bloqueado) {
+        setSubmitting(false)
+        setError(
+          'Esta pessoa está na lista de bloqueio do condomínio. Procure a síndica pra mais informações.',
+        )
+        return
+      }
       let vigenciaInicio: string
       let vigenciaFim: string | null = null
       const agora = new Date().toISOString()

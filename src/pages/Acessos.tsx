@@ -41,6 +41,17 @@ function isHoje(iso: string): boolean {
   return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
 }
 
+// Verdade derivada: ativo no banco mas vigencia_fim ja passou = expirado pra UI.
+function vigenciaExpirou(r: { status: StatusAcesso; vigencia_fim: string | null }): boolean {
+  if (r.status !== 'ativo') return false
+  if (!r.vigencia_fim) return false
+  return new Date(r.vigencia_fim).getTime() < Date.now()
+}
+
+function statusEfetivo(r: { status: StatusAcesso; vigencia_fim: string | null }): StatusAcesso {
+  return vigenciaExpirou(r) ? 'expirado' : r.status
+}
+
 export default function Acessos() {
   const { perfil } = useAuth()
   const staff = isStaff(perfil?.role)
@@ -73,12 +84,13 @@ export default function Acessos() {
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
-      if (filtro === 'ativos') return r.status === 'ativo'
+      const efetivo = statusEfetivo(r)
+      if (filtro === 'ativos') return efetivo === 'ativo'
       if (filtro === 'hoje') {
-        if (r.status !== 'ativo') return false
+        if (efetivo !== 'ativo') return false
         return isHoje(r.vigencia_inicio) || (r.vigencia_fim && isHoje(r.vigencia_fim))
       }
-      if (filtro === 'historico') return r.status !== 'ativo'
+      if (filtro === 'historico') return efetivo !== 'ativo'
       return true
     })
   }, [rows, filtro])
@@ -153,8 +165,8 @@ export default function Acessos() {
                       <div className="text-xs text-slate-500 mt-1 italic line-clamp-1">{r.observacao}</div>
                     )}
                   </div>
-                  <span className={`shrink-0 px-2 py-0.5 rounded text-xs border ${STATUS_CLASS[r.status]}`}>
-                    {STATUS_LABEL[r.status]}
+                  <span className={`shrink-0 px-2 py-0.5 rounded text-xs border ${STATUS_CLASS[statusEfetivo(r)]}`}>
+                    {STATUS_LABEL[statusEfetivo(r)]}
                   </span>
                 </div>
               </Link>

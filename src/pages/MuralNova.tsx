@@ -18,7 +18,10 @@ const EMPTY: PublicacaoInput = {
   conteudo: '',
   imagem_url: null,
   fixado: false,
+  expira_em: null,
 }
+
+const STORY_TTL_HOURS = 24
 
 export default function MuralNova() {
   const navigate = useNavigate()
@@ -30,6 +33,7 @@ export default function MuralNova() {
   const [imagem, setImagem] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [enviarEmail, setEnviarEmail] = useState(false)
+  const [isStory, setIsStory] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -84,7 +88,13 @@ export default function MuralNova() {
       if (imagem) {
         imgPath = await uploadMuralImagem(form.condominio_id, imagem)
       }
-      await createPublicacao({ ...form, imagem_url: imgPath }, { enviarEmail })
+      const expira_em = isStory
+        ? new Date(Date.now() + STORY_TTL_HOURS * 3600_000).toISOString()
+        : null
+      await createPublicacao(
+        { ...form, imagem_url: imgPath, expira_em },
+        { enviarEmail },
+      )
       navigate('/mural')
     } catch (e) {
       console.warn('[mural] falha ao publicar:', e)
@@ -161,9 +171,27 @@ export default function MuralNova() {
               type="checkbox"
               checked={form.fixado}
               onChange={(e) => update('fixado', e.target.checked)}
+              disabled={isStory}
               className="rounded border-slate-700 bg-slate-950 text-brand-700 focus:ring-brand-700"
             />
             📌 Fixar no topo do mural
+          </label>
+          <label className="flex items-start gap-2 text-sm text-slate-300 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isStory}
+              onChange={(e) => {
+                setIsStory(e.target.checked)
+                if (e.target.checked) update('fixado', false)
+              }}
+              className="mt-0.5 rounded border-slate-700 bg-slate-950 text-brand-700 focus:ring-brand-700"
+            />
+            <span>
+              ⏱ Story (24h)
+              <span className="block text-xs text-slate-500">
+                Avisos rápidos que somem automaticamente após {STORY_TTL_HOURS} horas. Ideal pra "luz vai cair às 14h", "água amanhã".
+              </span>
+            </span>
           </label>
           <label className="flex items-start gap-2 text-sm text-slate-300 cursor-pointer">
             <input

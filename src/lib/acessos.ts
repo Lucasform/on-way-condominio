@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { sendPush } from './push'
 import type {
   AcessoAutorizado,
   AcessoAutorizadoInput,
@@ -178,5 +179,35 @@ export async function registrarEvento(input: {
     .select('*')
     .single()
   if (error) throw error
-  return data as AcessoEvento
+  const evento = data as AcessoEvento
+  // Push pro morador na entrada quando a autorização tiver notificar_entrada=true.
+  // Fire-and-forget — não bloqueia o fluxo da portaria se push falhar.
+  if (evento.tipo === 'entrada') {
+    notifyMoradorEntrada(input.acesso_id).catch((e) =>
+      console.warn('[acesso] push de entrada falhou:', e?.message),
+    )
+  }
+  return evento
+}
+
+async function notifyMoradorEntrada(acesso_id: string): Promise<void> {
+  const acesso = await getAcesso(acesso_id)
+  if (!acesso || !acesso.notificar_entrada) return
+  // Resolve user_ids dos moradores ativos da unidade
+  const { data: pessoas } = await supabase
+    .from('pessoas')
+    .select('user_id')
+    .eq('unidade_id', acesso.unidade_id)
+    .eq('ativo', true)
+    .not('user_id', 'is', null)
+  const user_ids = Array.from(
+    new Set(((pessoas ?? []) as Array<{ user_id: string }>).map((p) => p.user_id)),
+  )
+  if (user_ids.length === 0) return
+  await sendPush({
+    user_ids,
+    titulo: `${acesso.nome} entrou no condomínio`,
+    corpo: `A portaria liberou a entrada do seu autorizado.`,
+    link: `/acessos/${acesso.id}`,
+  })
 }

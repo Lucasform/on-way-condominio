@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../components/AuthProvider'
+import { supabase } from '../lib/supabase'
 import {
   aprovarFornecedor,
   createFornecedor,
@@ -9,6 +10,13 @@ import {
   recusarFornecedor,
 } from '../lib/condominioFornecedores'
 import { isStaff, isGestor } from '../lib/permissions'
+import {
+  agregar,
+  listAvaliacoes,
+  upsertAvaliacao,
+} from '../lib/fornecedorAvaliacoes'
+import type { AgregadoAvaliacao, FornecedorAvaliacao } from '../types/fornecedorAvaliacao'
+import StarRating from '../components/ui/StarRating'
 import type {
   CondominioFornecedor,
   CondominioFornecedorInput,
@@ -79,6 +87,9 @@ export default function CondominioFornecedoresPage() {
 
   const [aba, setAba] = useState<Aba>('aprovados')
   const [rows, setRows] = useState<CondominioFornecedor[]>([])
+  const [indicadoPorMap, setIndicadoPorMap] = useState<Record<string, string>>({})
+  const [avaliacoes, setAvaliacoes] = useState<FornecedorAvaliacao[]>([])
+  const [agregadoMap, setAgregadoMap] = useState<Record<string, AgregadoAvaliacao>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [working, setWorking] = useState(false)
@@ -98,6 +109,44 @@ export default function CondominioFornecedoresPage() {
     try {
       const data = await listFornecedores({ condominio_id: perfil.condominio_id })
       setRows(data)
+      // Resolve "indicado por Apto X" via pessoas.user_id + unidades.
+      const cadastrantes = Array.from(
+        new Set(data.map((r) => r.cadastrado_por).filter(Boolean) as string[]),
+      )
+      if (cadastrantes.length > 0) {
+        try {
+          const { data: pessoas } = await supabase
+            .from('pessoas')
+            .select('user_id, unidade_id, unidades(bloco, numero)')
+            .in('user_id', cadastrantes)
+            .eq('ativo', true)
+            .not('unidade_id', 'is', null)
+          const map: Record<string, string> = {}
+          for (const p of (pessoas ?? []) as unknown as Array<{
+            user_id: string | null
+            unidades: { bloco: string | null; numero: string } | Array<{ bloco: string | null; numero: string }> | null
+          }>) {
+            if (!p.user_id) continue
+            const u = Array.isArray(p.unidades) ? p.unidades[0] : p.unidades
+            if (!u) continue
+            const label = u.bloco ? `${u.bloco}-${u.numero}` : u.numero
+            if (!map[p.user_id]) map[p.user_id] = label
+          }
+          setIndicadoPorMap(map)
+        } catch {
+          // tolera falha — só não mostra a indicação
+        }
+      }
+      // Avaliacoes em paralelo, tolera ausencia da migration 0077
+      try {
+        const fIds = data.map((r) => r.id)
+        const avals = await listAvaliacoes(fIds)
+        setAvaliacoes(avals)
+        setAgregadoMap(agregar(avals))
+      } catch {
+        setAvaliacoes([])
+        setAgregadoMap({})
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar.')
     } finally {
@@ -190,6 +239,23 @@ export default function CondominioFornecedoresPage() {
       await load()
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Erro ao inativar.')
+    } finally {
+      setWorking(false)
+    }
+  }
+
+  async function handleAvaliar(r: CondominioFornecedor, estrelas: number) {
+    if (!user || !perfil?.condominio_id) return
+    setWorking(true)
+    try {
+      await upsertAvaliacao({
+        fornecedor_id: r.id,
+        condominio_id: perfil.condominio_id,
+        estrelas,
+      })
+      await load()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao avaliar.')
     } finally {
       setWorking(false)
     }
@@ -394,6 +460,32 @@ export default function CondominioFornecedoresPage() {
                     {r.telefone && <span>📞 {r.telefone} · </span>}
                     {r.agenda && <span>{fmtAgenda(r.agenda)}</span>}
                   </div>
+                  {r.cadastrado_por && indicadoPorMap[r.cadastrado_por] && (
+                    <div className="text-xs text-emerald-300 mt-1 flex items-center gap-1">
+                      <span>🤝</span>
+                      <span>Indicado por Apto {indicadoPorMap[r.cadastrado_por]}</span>
+                    </div>
+                  )}
+                  {r.status === 'aprovado' && (() => {
+                    const agg = agregadoMap[r.id]
+                    const minha = avaliacoes.find(
+                      (a) => a.fornecedor_id === r.id && a.user_id === user?.id,
+                    )
+                    return (
+                      <div className="mt-2 flex items-center gap-3 flex-wrap">
+                        <StarRating value={agg?.media ?? 0} total={agg?.total ?? 0} />
+                        {user && (
+                          <span className="flex items-center gap-1 text-xs text-slate-400">
+                            <span>Sua avaliação:</span>
+                            <StarRating
+                              value={minha?.estrelas ?? 0}
+                              onChange={(n) => handleAvaliar(r, n)}
+                            />
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })()}
                   {r.motivo_recusa && r.status === 'recusado' && (
                     <div className="text-xs text-red-300 mt-1 italic">Recusa: {r.motivo_recusa}</div>
                   )}

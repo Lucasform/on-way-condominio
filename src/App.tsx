@@ -72,6 +72,7 @@ const Acessos = lazy(() => import('./pages/Acessos'))
 const AcessoNovo = lazy(() => import('./pages/AcessoNovo'))
 const AcessoDetalhe = lazy(() => import('./pages/AcessoDetalhe'))
 const CondominioFornecedoresPage = lazy(() => import('./pages/CondominioFornecedoresPage'))
+const ListaNegraPage = lazy(() => import('./pages/ListaNegraPage'))
 
 export default function App() {
   return (
@@ -543,6 +544,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <CondominioFornecedoresPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/lista-negra"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico', 'portaria', 'ronda']}>
+                  <ListaNegraPage />
                 </ProtectedRoute>
               }
             />

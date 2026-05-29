@@ -11,7 +11,11 @@ const BUCKET = 'mural-imagens'
 // Publicacoes
 // ============================================================
 
-export async function listPublicacoes(opts: { condominio_id?: string; apenas_ativas?: boolean } = {}): Promise<Publicacao[]> {
+export async function listPublicacoes(opts: {
+  condominio_id?: string
+  apenas_ativas?: boolean
+  incluir_expiradas?: boolean
+} = {}): Promise<Publicacao[]> {
   let q = supabase
     .from('publicacoes')
     .select('*')
@@ -19,6 +23,9 @@ export async function listPublicacoes(opts: { condominio_id?: string; apenas_ati
     .order('created_at', { ascending: false })
   if (opts.apenas_ativas !== false) q = q.eq('ativo', true)
   if (opts.condominio_id) q = q.eq('condominio_id', opts.condominio_id)
+  if (!opts.incluir_expiradas) {
+    q = q.or(`expira_em.is.null,expira_em.gt.${new Date().toISOString()}`)
+  }
   const { data, error } = await q
   if (error) throw error
   return (data ?? []) as Publicacao[]
