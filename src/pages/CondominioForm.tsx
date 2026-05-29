@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom'
 import {
   createCondominio,
   deleteCondominio,
+  setCondominioAtivo,
   getCondominio,
   updateCondominio,
 } from '../lib/condominios'
@@ -10,7 +11,7 @@ import type { CondominioInput } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
-import DeleteButton from '../components/ui/DeleteButton'
+import ConfirmarExclusaoCondominio from '../components/ConfirmarExclusaoCondominio'
 import { Field, TextInput, TextArea } from '../components/ui/Input'
 import ConvitesPanel from '../components/ConvitesPanel'
 import LogoUpload from '../components/LogoUpload'
@@ -49,30 +50,57 @@ export default function CondominioForm() {
   const navigate = useNavigate()
   const { perfil } = useAuth()
   const isNew = !id || id === 'novo'
-  // Apenas admin_onway pode excluir um condomínio (efeito em cascata pesado)
-  const canDelete = !isNew && perfil?.role === 'admin_onway'
+  const isAdmin = perfil?.role === 'admin_onway'
+  const isSindico = ['administradora', 'sindico', 'subsindico'].includes(perfil?.role ?? '')
 
   const [form, setForm] = useState<CondominioInput>(EMPTY)
+  const [ativo, setAtivo] = useState(true)
   const [loading, setLoading] = useState(!isNew)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [arquivando, setArquivando] = useState(false)
+  const [showExcluirModal, setShowExcluirModal] = useState(false)
 
-  async function handleDelete() {
+  async function handleArquivar() {
     if (!id) return
-    const nomeAlvo = form.nome || 'esse condomínio'
-    const conf = window.prompt(
-      `Excluir "${nomeAlvo}" DEFINITIVAMENTE remove todos os dados associados (unidades, pessoas, multas, ocorrências, mural, calendário, chat, etc).\n\nEsta ação é irreversível.\n\nDigite EXCLUIR para confirmar:`,
-    )
-    if (conf !== 'EXCLUIR') return
+    if (!window.confirm(`Arquivar "${form.nome}"?\n\nO condomínio fica oculto da operação mas os dados ficam preservados. O administrador OnWay pode restaurar ou excluir definitivamente depois.`)) return
+    setArquivando(true)
+    try {
+      await setCondominioAtivo(id, false)
+      setAtivo(false)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao arquivar.')
+    } finally {
+      setArquivando(false)
+    }
+  }
+
+  async function handleRestaurar() {
+    if (!id) return
+    setArquivando(true)
+    try {
+      await setCondominioAtivo(id, true)
+      setAtivo(true)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao restaurar.')
+    } finally {
+      setArquivando(false)
+    }
+  }
+
+  async function handleExcluirDefinitivo() {
+    if (!id) return
     setDeleting(true)
     setError(null)
     try {
-      await deleteCondominio(id)
+      const r = await deleteCondominio(id)
+      alert(`✓ Excluído. ${r.users} usuários removidos.`)
       navigate('/condominios')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao excluir.')
       setDeleting(false)
+      setShowExcluirModal(false)
     }
   }
 
@@ -108,6 +136,7 @@ export default function CondominioForm() {
             mensagem_boas_vindas: c.mensagem_boas_vindas,
             plano: c.plano,
           })
+          setAtivo(c.ativo)
         }
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Erro ao carregar.')
@@ -154,8 +183,30 @@ export default function CondominioForm() {
         subtitle={isNew ? 'Cadastre um novo condomínio na plataforma.' : 'Atualize os dados.'}
         actions={
           <div className="flex items-center gap-2">
-            {canDelete && (
-              <DeleteButton onClick={handleDelete} disabled={deleting} />
+            {!isNew && ativo && isSindico && !isAdmin && (
+              <Button variant="secondary" size="sm" onClick={handleArquivar} loading={arquivando}>
+                📦 Arquivar
+              </Button>
+            )}
+            {!isNew && ativo && isAdmin && (
+              <>
+                <Button variant="secondary" size="sm" onClick={handleArquivar} loading={arquivando}>
+                  📦 Arquivar
+                </Button>
+                <Button variant="danger" size="sm" onClick={() => setShowExcluirModal(true)}>
+                  Excluir definitivamente
+                </Button>
+              </>
+            )}
+            {!isNew && !ativo && isAdmin && (
+              <>
+                <Button variant="secondary" size="sm" onClick={handleRestaurar} loading={arquivando}>
+                  ↻ Restaurar
+                </Button>
+                <Button variant="danger" size="sm" onClick={() => setShowExcluirModal(true)}>
+                  Excluir definitivamente
+                </Button>
+              </>
             )}
             <Link to="/condominios">
               <Button variant="ghost">← Voltar</Button>
@@ -163,6 +214,19 @@ export default function CondominioForm() {
           </div>
         }
       />
+
+      {!isNew && !ativo && (
+        <div className="mb-6 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200 flex items-start gap-3">
+          <span className="text-base leading-none">📦</span>
+          <div>
+            <div className="font-medium">Este condomínio está arquivado.</div>
+            <div className="text-xs text-amber-200/80 mt-0.5">
+              Dados preservados, mas o condomínio fica oculto da operação.
+              {isAdmin && ' Você pode restaurar ou excluir definitivamente nos botões acima.'}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ============================================================ */}
       {/* 1) FOTO DO CONDOMÍNIO — primeira coisa */}
@@ -455,6 +519,17 @@ export default function CondominioForm() {
             <ConvitesPanel condominio_id={id} />
           </div>
         </>
+      )}
+
+      {id && (
+        <ConfirmarExclusaoCondominio
+          open={showExcluirModal}
+          onClose={() => setShowExcluirModal(false)}
+          onConfirm={handleExcluirDefinitivo}
+          condominioId={id}
+          condominioNome={form.nome || 'esse condomínio'}
+          loading={deleting}
+        />
       )}
     </div>
   )

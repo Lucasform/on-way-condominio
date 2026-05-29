@@ -11,6 +11,8 @@ import {
 } from '../lib/condominioAnexos'
 import DeleteButton from './ui/DeleteButton'
 import Button from './ui/Button'
+import Pill from './ui/Pill'
+import { TextInput } from './ui/Input'
 
 interface Props {
   condominio_id: string
@@ -131,16 +133,15 @@ export default function CondominioAnexosManager({
 
       {/* Upload */}
       <div className="flex flex-wrap items-center gap-2">
-        <input
-          type="text"
+        <TextInput
           value={novoNome}
           onChange={(e) => setNovoNome(e.target.value)}
           placeholder='Nome do anexo (ex.: "Convenção 2024")'
-          className="flex-1 min-w-[200px] px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-sm text-slate-100"
           maxLength={80}
+          className="flex-1 min-w-[200px]"
         />
-        <Button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}>
-          {uploading ? 'Enviando...' : '+ Anexar PDF'}
+        <Button type="button" onClick={() => inputRef.current?.click()} loading={uploading}>
+          + Anexar PDF
         </Button>
         <input
           ref={inputRef}
@@ -190,23 +191,19 @@ export default function CondominioAnexosManager({
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   {processandoIds.has(a.id) && (
-                    <span className="px-2 text-[11px] text-emerald-300 italic">processando...</span>
+                    <Pill tone="success" dot>processando</Pill>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => handleRenomear(a)}
-                    className="text-[11px] text-slate-500 hover:text-slate-300 px-2"
-                  >
-                    renomear
-                  </button>
-                  <button
-                    type="button"
+                  <Button variant="ghost" size="sm" onClick={() => handleRenomear(a)}>
+                    Renomear
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleToggleAtivo(a)}
-                    className="text-[11px] text-slate-500 hover:text-slate-300 px-2"
                     title={a.ativo ? 'Desativar (não usar na IA)' : 'Reativar'}
                   >
-                    {a.ativo ? 'desativar' : 'reativar'}
-                  </button>
+                    {a.ativo ? 'Desativar' : 'Reativar'}
+                  </Button>
                   <DeleteButton label="" onClick={() => handleApagar(a)} />
                 </div>
               </div>
