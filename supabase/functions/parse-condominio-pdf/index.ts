@@ -102,11 +102,26 @@ Deno.serve(async (req: Request) => {
     }
 
     // tipo === 'regimento' — divide em artigos
-    const artigos = dividirEmArtigos(texto)
+    // 1) tenta regex (rápido, gratuito)
+    let artigos = dividirEmArtigos(texto)
+    let usouIA = false
+
+    // 2) fallback: IA divide quando regex falha mas tem texto util
+    if (artigos.length < 3 && texto.trim().length > 400) {
+      console.log(`[parse] regex achou ${artigos.length} artigos. Tentando IA fallback...`)
+      const artigosIA = await dividirComIA(texto)
+      if (artigosIA.length > artigos.length) {
+        artigos = artigosIA
+        usouIA = true
+      }
+    }
+
     if (artigos.length === 0) {
-      return jsonResponse({
-        error: 'Não encontramos padrões "Art. X" no PDF. Cadastre artigos manualmente.',
-      }, 422)
+      // diagnóstico melhor pra distinguir PDF escaneado de formato exótico
+      const motivo = texto.trim().length < 100
+        ? 'O PDF parece estar escaneado (sem texto extraível). Rode num OCR antes de subir (Adobe Acrobat, ilovepdf.com).'
+        : 'Não conseguimos dividir o conteúdo em artigos. Cadastre manualmente em /regimento ou tente um PDF com estrutura "Art. 1", "Art. 2" etc.'
+      return jsonResponse({ error: motivo, chars_extraidos: texto.length }, 422)
     }
 
     // Gera titulos contextuais com Claude Haiku (uma unica chamada em batch).
@@ -294,5 +309,75 @@ O array DEVE ter exatamente ${artigos.length} elementos na mesma ordem da entrad
   } catch (e) {
     console.warn('[parse-condominio-pdf] falha titulos Haiku:', (e as Error).message)
     return fallback
+  }
+}
+
+/**
+ * Fallback: pede pra Haiku dividir o texto em "artigos lógicos" quando o
+ * regex de "Art. X" falha. Cobre regimentos em formato de lista numerada
+ * ("1. Cadastro", "2. Responsabilidade") e seções em CAIXA ALTA. Custo
+ * baixo (Haiku, 1 chamada). Retorna [] em caso de erro/sem chave.
+ */
+async function dividirComIA(texto: string): Promise<ArtigoBruto[]> {
+  const key = Deno.env.get('ANTHROPIC_API_KEY')
+  if (!key) {
+    console.log('[parse] sem ANTHROPIC_API_KEY, IA fallback desabilitado')
+    return []
+  }
+  const truncado = texto.slice(0, 60_000) // ~15k tokens
+  const system = `Voce e um parser de documentos legais condominiais (regimento interno, regulamento, convencao, regras de uso).
+Sua tarefa: dividir o texto em "artigos logicos" — uma lista numerada de regras, cada uma com numero, titulo curto e conteudo.
+
+Como decidir o que e um artigo:
+- Se o texto tem "Art. 1", "Art. 2", use isso como divisor.
+- Se o texto tem secoes em CAIXA ALTA ("CADASTRO DE LOCATARIOS", "RESPONSABILIDADE CIVIL"), cada secao vira 1 artigo.
+- Se o texto tem lista numerada por topico ("1. Cadastro dos hospedes", "2. Responsabilidade civil"), cada item da lista vira 1 artigo.
+- Se um topico tem subitens (1.1, 1.2 ou "- item"), agrupe tudo dentro do mesmo artigo.
+- Ignore cabecalhos repetidos, paginacao, assinaturas e rodapes.
+
+Responda SOMENTE com JSON valido no formato:
+{"artigos":[{"numero":"Art. 1","titulo":"Cadastro dos hospedes","conteudo":"texto completo da regra..."}]}
+
+Numero: "Art. 1", "Art. 2", etc. (sempre nesse formato, mesmo que o original use "1." ou "Secao 1").
+Titulo: ate 80 chars, descritivo (nao copie a frase inteira).
+Conteudo: texto completo do bloco daquela regra, ate 2000 chars.
+Maximo 50 artigos. Nao invente conteudo. Se nao for um regimento estruturado, retorne {"artigos":[]}.`
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 8000,
+        system,
+        messages: [{ role: 'user', content: truncado }],
+      }),
+    })
+    if (!resp.ok) {
+      console.warn('[parse] IA fallback HTTP', resp.status)
+      return []
+    }
+    const data = await resp.json()
+    const txt: string = data?.content?.[0]?.text ?? ''
+    const match = txt.match(/\{[\s\S]*\}/)
+    if (!match) return []
+    const parsed = JSON.parse(match[0])
+    if (!Array.isArray(parsed?.artigos)) return []
+    return parsed.artigos
+      .filter((a: { numero?: string; titulo?: string; conteudo?: string }) => a?.numero && a?.titulo && a?.conteudo)
+      .slice(0, 50)
+      .map((a: { numero: string; titulo: string; conteudo: string }) => ({
+        numero: String(a.numero).trim(),
+        titulo: String(a.titulo).trim().slice(0, 200),
+        conteudo: String(a.conteudo).trim().slice(0, MAX_ARTIGO_CHARS),
+      }))
+  } catch (e) {
+    console.warn('[parse] IA fallback falhou:', (e as Error).message)
+    return []
   }
 }

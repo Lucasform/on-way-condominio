@@ -16,6 +16,7 @@ import { Field, TextInput, TextArea } from '../components/ui/Input'
 import ConvitesPanel from '../components/ConvitesPanel'
 import LogoUpload from '../components/LogoUpload'
 import LoginBgUpload from '../components/LoginBgUpload'
+import { supabase } from '../lib/supabase'
 import BrandPreview from '../components/BrandPreview'
 import CondominioAnexosManager from '../components/CondominioAnexosManager'
 import CondominioDiretoria from '../components/CondominioDiretoria'
@@ -62,6 +63,8 @@ export default function CondominioForm() {
   const [deleting, setDeleting] = useState(false)
   const [arquivando, setArquivando] = useState(false)
   const [showExcluirModal, setShowExcluirModal] = useState(false)
+  const [brandSaving, setBrandSaving] = useState(false)
+  const [brandSavedAt, setBrandSavedAt] = useState<number | null>(null)
 
   async function handleArquivar() {
     if (!id) return
@@ -153,6 +156,41 @@ export default function CondominioForm() {
   function update<K extends keyof CondominioInput>(key: K, value: CondominioInput[K]) {
     setForm((f) => ({ ...f, [key]: value }))
   }
+
+  // Auto-save dos campos da Identidade Visual com debounce 700ms. Não dispara
+  // no primeiro mount (depende de form.nome ter sido populado pela load).
+  useEffect(() => {
+    if (isNew || !id || loading) return
+    const t = setTimeout(async () => {
+      setBrandSaving(true)
+      try {
+        const { error } = await supabase
+          .from('condominios')
+          .update({
+            slug: form.slug?.trim() || null,
+            cor_primaria: form.cor_primaria?.trim() || null,
+            texto_login: form.texto_login?.trim() || null,
+            mensagem_boas_vindas: form.mensagem_boas_vindas?.trim() || null,
+            permite_signup: form.permite_signup ?? true,
+          })
+          .eq('id', id)
+        if (error) throw error
+        setBrandSavedAt(Date.now())
+      } catch (e) {
+        console.warn('[brand auto-save] falhou:', e)
+      } finally {
+        setBrandSaving(false)
+      }
+    }, 700)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    form.slug,
+    form.cor_primaria,
+    form.texto_login,
+    form.mensagem_boas_vindas,
+    form.permite_signup,
+  ])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -409,8 +447,12 @@ export default function CondominioForm() {
           {/* 2.5) IDENTIDADE VISUAL (white-label) */}
           {/* ============================================================ */}
           <fieldset className="mt-10 border border-slate-700 rounded-md p-4 space-y-4">
-            <legend className="px-2 text-sm font-semibold text-slate-200">
+            <legend className="px-2 text-sm font-semibold text-slate-200 flex items-center gap-2">
               Identidade visual (área de acesso)
+              {brandSaving && <span className="text-xs text-sky-300 font-normal">Salvando…</span>}
+              {!brandSaving && brandSavedAt && Date.now() - brandSavedAt < 3000 && (
+                <span className="text-xs text-emerald-300 font-normal">✓ Salvo</span>
+              )}
             </legend>
             <p className="text-xs text-slate-400 -mt-2">
               Personaliza a tela de login pros moradores acessarem por subdomínio próprio (ex.:{' '}
