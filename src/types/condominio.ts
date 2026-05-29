@@ -15,6 +15,12 @@ export interface Condominio {
   modelo_notificacao_url: string | null
   modelo_notificacao_texto: string | null
   ai_instrucoes: string | null
+  slug: string | null
+  cor_primaria: string | null
+  texto_login: string | null
+  imagem_login_url: string | null
+  permite_signup: boolean
+  mensagem_boas_vindas: string | null
   plano: Plano
   ativo: boolean
   created_at: string

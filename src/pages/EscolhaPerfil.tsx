@@ -1,6 +1,7 @@
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import AuthShell from '../components/AuthShell'
 import { useAuth } from '../components/AuthProvider'
+import { useTenant } from '../components/TenantProvider'
 
 interface Opcao {
   to: string
@@ -11,6 +12,7 @@ interface Opcao {
 
 export default function EscolhaPerfil() {
   const { user, loading } = useAuth()
+  const { brand } = useTenant()
   const location = useLocation()
 
   if (loading) {
@@ -43,11 +45,22 @@ export default function EscolhaPerfil() {
     },
   ]
 
+  const title = brand ? `Bem-vindo a ${brand.nome}` : 'Quem está entrando?'
+  const subtitle = brand?.mensagem_boas_vindas ?? 'Escolha o tipo de acesso pra continuar.'
+
   return (
-    <AuthShell
-      title="Quem está entrando?"
-      subtitle="Escolha o tipo de acesso pra continuar."
-    >
+    <AuthShell title={title} subtitle={subtitle}>
+      {brand?.logo_url && (
+        <div className="flex justify-center mb-4">
+          <img
+            src={brand.logo_url}
+            alt={brand.nome}
+            className="max-h-20 w-auto"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+          />
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {opcoes.map((o) => (
           <Link
@@ -67,20 +80,24 @@ export default function EscolhaPerfil() {
         ))}
       </div>
 
-      <div className="mt-6 text-center text-xs text-slate-500 dark:text-slate-500 space-y-1">
-        <div>Ainda não tem cadastro?</div>
-        <div>Peça à administração do seu condomínio um código de convite.</div>
-      </div>
+      {(brand?.permite_signup ?? true) && (
+        <div className="mt-6 text-center text-xs text-slate-500 dark:text-slate-500 space-y-1">
+          <div>Ainda não tem cadastro?</div>
+          <div>Peça à administração do seu condomínio um código de convite.</div>
+        </div>
+      )}
 
-      <div className="mt-6 flex justify-end">
-        <Link
-          to="/login?tipo=admin_onway"
-          className="text-[10px] text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-300 transition tracking-wide"
-          title="Acesso interno OnWay"
-        >
-          · admin do app
-        </Link>
-      </div>
+      {!brand && (
+        <div className="mt-6 flex justify-end">
+          <Link
+            to="/login?tipo=admin_onway"
+            className="text-[10px] text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-300 transition tracking-wide"
+            title="Acesso interno OnWay"
+          >
+            · admin do app
+          </Link>
+        </div>
+      )}
     </AuthShell>
   )
 }

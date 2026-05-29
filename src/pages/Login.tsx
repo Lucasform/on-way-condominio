@@ -7,6 +7,7 @@ import {
   GOOGLE_AUTH_ENABLED,
 } from '../lib/auth'
 import { useAuth } from '../components/AuthProvider'
+import { useTenant } from '../components/TenantProvider'
 import AuthShell from '../components/AuthShell'
 import { supabase } from '../lib/supabase'
 
@@ -49,7 +50,19 @@ export default function Login() {
   const location = useLocation()
   const [searchParams] = useSearchParams()
   const tipo = parseTipo(searchParams.get('tipo'))
-  const copy = tipo ? COPY_POR_TIPO[tipo] : { title: 'Entrar', subtitle: 'Acesse com sua conta do condomínio.' }
+  const { brand } = useTenant()
+  const baseCopy = tipo ? COPY_POR_TIPO[tipo] : { title: 'Entrar', subtitle: 'Acesse com sua conta do condomínio.' }
+  // Quando estamos num tenant, prefere o nome do condo no titulo
+  const copy = brand
+    ? {
+        title: tipo === 'admin'
+          ? `Administração · ${brand.nome}`
+          : tipo === 'morador'
+            ? `Morador · ${brand.nome}`
+            : brand.nome,
+        subtitle: brand.texto_login ?? baseCopy.subtitle,
+      }
+    : baseCopy
   const { user, loading } = useAuth()
   const [modo, setModo] = useState<Modo>('senha')
   const [email, setEmail] = useState('')
@@ -140,7 +153,7 @@ export default function Login() {
       subtitle={copy.subtitle}
       footer={
         <div className="space-y-3">
-          {TIPOS_COM_CONVITE.includes(tipo) && (
+          {TIPOS_COM_CONVITE.includes(tipo) && (brand?.permite_signup ?? true) && (
             <div className="text-center">
               <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Primeiro acesso?</div>
               <Link
@@ -159,6 +172,17 @@ export default function Login() {
         </div>
       }
     >
+      {brand?.logo_url && (
+        <div className="flex justify-center mb-4">
+          <img
+            src={brand.logo_url}
+            alt={brand.nome}
+            className="max-h-16 w-auto"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none' }}
+          />
+        </div>
+      )}
+
       {/* Toggle senha / entrar por e-mail */}
       <div className="flex bg-slate-100 dark:bg-slate-800/60 rounded-md p-1 mb-5">
         <button

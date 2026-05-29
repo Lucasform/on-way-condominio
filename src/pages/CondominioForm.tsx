@@ -11,7 +11,7 @@ import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
-import { Field, TextInput } from '../components/ui/Input'
+import { Field, TextInput, TextArea } from '../components/ui/Input'
 import ConvitesPanel from '../components/ConvitesPanel'
 import LogoUpload from '../components/LogoUpload'
 import CondominioAnexosManager from '../components/CondominioAnexosManager'
@@ -34,6 +34,12 @@ const EMPTY: CondominioInput = {
   modelo_notificacao_url: null,
   modelo_notificacao_texto: null,
   ai_instrucoes: null,
+  slug: null,
+  cor_primaria: null,
+  texto_login: null,
+  imagem_login_url: null,
+  permite_signup: true,
+  mensagem_boas_vindas: null,
   plano: 'free',
 }
 
@@ -93,6 +99,12 @@ export default function CondominioForm() {
             modelo_notificacao_url: c.modelo_notificacao_url,
             modelo_notificacao_texto: c.modelo_notificacao_texto,
             ai_instrucoes: c.ai_instrucoes,
+            slug: c.slug,
+            cor_primaria: c.cor_primaria,
+            texto_login: c.texto_login,
+            imagem_login_url: c.imagem_login_url,
+            permite_signup: c.permite_signup,
+            mensagem_boas_vindas: c.mensagem_boas_vindas,
             plano: c.plano,
           })
         }
@@ -319,6 +331,100 @@ export default function CondominioForm() {
               />
             </div>
           </div>
+
+          {/* ============================================================ */}
+          {/* 2.5) IDENTIDADE VISUAL (white-label) */}
+          {/* ============================================================ */}
+          <fieldset className="mt-10 border border-slate-700 rounded-md p-4 space-y-4">
+            <legend className="px-2 text-sm font-semibold text-slate-200">
+              Identidade visual (área de acesso)
+            </legend>
+            <p className="text-xs text-slate-400 -mt-2">
+              Personaliza a tela de login pros moradores acessarem por subdomínio próprio (ex.:{' '}
+              <code className="text-slate-300">jardim-paulista.onwaytech.com.br</code>) ou por link path{' '}
+              (<code className="text-slate-300">/c/jardim-paulista</code>).
+            </p>
+
+            <Field
+              label="Slug do condomínio"
+              hint="Letras minúsculas, números e hífen. Usado como subdomínio e como link. Não usar acentos ou espaços."
+            >
+              <TextInput
+                value={form.slug ?? ''}
+                onChange={(e) =>
+                  update(
+                    'slug',
+                    e.target.value
+                      .toLowerCase()
+                      .normalize('NFD')
+                      .replace(/[̀-ͯ]/g, '')
+                      .replace(/[^a-z0-9-]/g, '-')
+                      .replace(/-+/g, '-')
+                      .replace(/^-|-$/g, '') || null,
+                  )
+                }
+                placeholder="ex.: jardim-paulista"
+              />
+            </Field>
+
+            <Field label="Cor primária" hint="Hex (ex.: #1D4ED8). Aparece nos botões principais da tela de login.">
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={form.cor_primaria ?? '#1D4ED8'}
+                  onChange={(e) => update('cor_primaria', e.target.value)}
+                  className="h-9 w-12 rounded border border-slate-700 bg-slate-900 cursor-pointer"
+                />
+                <TextInput
+                  value={form.cor_primaria ?? ''}
+                  onChange={(e) => update('cor_primaria', e.target.value || null)}
+                  placeholder="#1D4ED8"
+                  className="flex-1"
+                />
+              </div>
+            </Field>
+
+            <Field label="Mensagem de boas-vindas" hint="Aparece abaixo do título na tela de escolha de perfil. Mantenha curto.">
+              <TextInput
+                value={form.mensagem_boas_vindas ?? ''}
+                onChange={(e) => update('mensagem_boas_vindas', e.target.value || null)}
+                placeholder="Ex.: Acesse a sua conta do condomínio."
+                maxLength={140}
+              />
+            </Field>
+
+            <Field label="Texto na tela de login" hint="Subtítulo personalizado da tela de login. Opcional.">
+              <TextArea
+                value={form.texto_login ?? ''}
+                onChange={(e) => update('texto_login', e.target.value || null)}
+                rows={2}
+                placeholder="Ex.: Bem-vindo ao portal do Condomínio Jardim Paulista."
+                maxLength={280}
+              />
+            </Field>
+
+            <Field label="Imagem de fundo" hint="URL pública. Aparece como background da tela de login.">
+              <TextInput
+                value={form.imagem_login_url ?? ''}
+                onChange={(e) => update('imagem_login_url', e.target.value || null)}
+                placeholder="https://..."
+              />
+            </Field>
+
+            <label className="flex items-center gap-2 text-sm text-slate-200 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.permite_signup ?? true}
+                onChange={(e) => update('permite_signup', e.target.checked)}
+              />
+              <span>
+                Permitir auto-cadastro via código de convite{' '}
+                <span className="text-slate-500 text-xs">
+                  (desligue se a administração quiser criar todas as contas manualmente)
+                </span>
+              </span>
+            </label>
+          </fieldset>
 
           {/* ============================================================ */}
           {/* 3) DIRETORIA */}

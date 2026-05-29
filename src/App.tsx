@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import { AuthProvider } from './components/AuthProvider'
+import { TenantProvider } from './components/TenantProvider'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppShell from './components/AppShell'
 import Logo from './components/Logo'
@@ -75,6 +76,7 @@ const CondominioFornecedoresPage = lazy(() => import('./pages/CondominioForneced
 
 export default function App() {
   return (
+    <TenantProvider>
     <AuthProvider>
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
@@ -552,6 +554,7 @@ export default function App() {
         </Suspense>
       </BrowserRouter>
     </AuthProvider>
+    </TenantProvider>
   )
 }
 
