@@ -13,7 +13,7 @@ if (!file) {
 }
 
 const password = process.env.SUPABASE_DB_PASSWORD
-const host = process.env.SUPABASE_DB_HOST || 'aws-0-sa-east-1.pooler.supabase.com'
+const host = process.env.SUPABASE_DB_HOST || 'aws-1-sa-east-1.pooler.supabase.com'
 const projectRef = process.env.SUPABASE_PROJECT_REF
 if (!password || !projectRef) {
   console.error('Defina SUPABASE_DB_PASSWORD e SUPABASE_PROJECT_REF no ambiente.')
