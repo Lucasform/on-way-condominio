@@ -322,6 +322,13 @@ export default function CondominioForm() {
                 emoji="💰"
                 descricao="Anexe modelos PDF de multa formal. Padrão que será usado na emissão."
               />
+              <CondominioAnexosManager
+                condominio_id={id}
+                tipo="modelo_comunicado"
+                titulo="Modelos de comunicado"
+                emoji="📣"
+                descricao="Anexe modelos PDF de comunicados (aviso de manutenção, festa, regra nova). O agente IA segue o tom e a estrutura desses modelos ao gerar comunicados novos."
+              />
             </div>
 
             <div className="mt-3">

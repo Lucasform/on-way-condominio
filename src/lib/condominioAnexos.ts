@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 
-export type TipoAnexo = 'regimento' | 'modelo_notificacao' | 'modelo_multa' | 'outro'
+export type TipoAnexo = 'regimento' | 'modelo_notificacao' | 'modelo_multa' | 'modelo_comunicado' | 'outro'
 
 export interface CondominioAnexo {
   id: string
@@ -20,6 +20,7 @@ export const TIPO_LABEL: Record<TipoAnexo, string> = {
   regimento: 'Regimento interno',
   modelo_notificacao: 'Modelo de notificação',
   modelo_multa: 'Modelo de multa',
+  modelo_comunicado: 'Modelo de comunicado',
   outro: 'Outro',
 }
 

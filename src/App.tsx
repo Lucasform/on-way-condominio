@@ -74,6 +74,9 @@ const AcessoNovo = lazy(() => import('./pages/AcessoNovo'))
 const AcessoDetalhe = lazy(() => import('./pages/AcessoDetalhe'))
 const AcessoEvento = lazy(() => import('./pages/AcessoEvento'))
 const CondominioFornecedoresPage = lazy(() => import('./pages/CondominioFornecedoresPage'))
+const Comunicados = lazy(() => import('./pages/Comunicados'))
+const ComunicadoNovo = lazy(() => import('./pages/ComunicadoNovo'))
+const ComunicadoDetalhe = lazy(() => import('./pages/ComunicadoDetalhe'))
 
 export default function App() {
   return (
@@ -554,6 +557,30 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <CondominioFornecedoresPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/comunicados"
+              element={
+                <ProtectedRoute>
+                  <Comunicados />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/comunicados/novo"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
+                  <ComunicadoNovo />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/comunicados/:id"
+              element={
+                <ProtectedRoute>
+                  <ComunicadoDetalhe />
                 </ProtectedRoute>
               }
             />
