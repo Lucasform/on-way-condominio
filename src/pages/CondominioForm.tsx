@@ -14,6 +14,7 @@ import DeleteButton from '../components/ui/DeleteButton'
 import { Field, TextInput, TextArea } from '../components/ui/Input'
 import ConvitesPanel from '../components/ConvitesPanel'
 import LogoUpload from '../components/LogoUpload'
+import BrandPreview from '../components/BrandPreview'
 import CondominioAnexosManager from '../components/CondominioAnexosManager'
 import CondominioDiretoria from '../components/CondominioDiretoria'
 import CondominioMandatos from '../components/CondominioMandatos'
@@ -367,7 +368,7 @@ export default function CondominioForm() {
               />
             </Field>
 
-            <Field label="Cor primária" hint="Hex (ex.: #1D4ED8). Aparece nos botões principais da tela de login.">
+            <Field label="Cor primária" hint="A partir dela geramos toda a paleta usada no app (botões, header, links).">
               <div className="flex items-center gap-3">
                 <input
                   type="color"
@@ -383,6 +384,12 @@ export default function CondominioForm() {
                 />
               </div>
             </Field>
+
+            <BrandPreview
+              cor={form.cor_primaria}
+              nome={form.nome}
+              logoUrl={form.logo_url}
+            />
 
             <Field label="Mensagem de boas-vindas" hint="Aparece abaixo do título na tela de escolha de perfil. Mantenha curto.">
               <TextInput

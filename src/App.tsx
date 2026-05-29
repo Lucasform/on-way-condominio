@@ -76,8 +76,8 @@ const CondominioFornecedoresPage = lazy(() => import('./pages/CondominioForneced
 
 export default function App() {
   return (
-    <TenantProvider>
     <AuthProvider>
+    <TenantProvider>
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -553,8 +553,8 @@ export default function App() {
         </Routes>
         </Suspense>
       </BrowserRouter>
-    </AuthProvider>
     </TenantProvider>
+    </AuthProvider>
   )
 }
 

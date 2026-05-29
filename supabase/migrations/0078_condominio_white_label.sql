@@ -52,3 +52,33 @@ $$;
 
 -- Permite chamar anon (pre-login)
 grant execute on function public.condominio_brand_by_slug(text) to anon, authenticated;
+
+-- Variante por id pra resolver tema do condo ativo do user logado
+-- (admin OnWay navegando entre condominios, morador acessando dominio raiz).
+create or replace function public.condominio_brand_by_id(p_id uuid)
+returns table (
+  id                  uuid,
+  nome                text,
+  slug                text,
+  logo_url            text,
+  cor_primaria        text,
+  texto_login         text,
+  imagem_login_url    text,
+  permite_signup      boolean,
+  mensagem_boas_vindas text
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    c.id, c.nome, c.slug, c.logo_url, c.cor_primaria,
+    c.texto_login, c.imagem_login_url, c.permite_signup, c.mensagem_boas_vindas
+  from public.condominios c
+  where c.ativo = true
+    and c.id = p_id
+  limit 1;
+$$;
+
+grant execute on function public.condominio_brand_by_id(uuid) to authenticated;

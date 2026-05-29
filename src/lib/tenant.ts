@@ -108,16 +108,112 @@ export function clearTenantCache(): void {
 }
 
 /**
+ * Resolve brand pelo id (usado quando o user logado tem condominio_id mas
+ * acessou pelo dominio raiz ou trocou de condo via view-as).
+ */
+export async function loadTenantBrandById(id: string): Promise<TenantBrand | null> {
+  try {
+    const { data, error } = await supabase.rpc('condominio_brand_by_id', { p_id: id })
+    if (!error && Array.isArray(data) && data.length > 0) {
+      return data[0] as TenantBrand
+    }
+  } catch (e) {
+    console.warn('[tenant] brand by id falhou:', e)
+  }
+  return null
+}
+
+/**
  * Converte hex (#1D4ED8) em "29 78 216" pra usar em rgb() do Tailwind via CSS var.
  * Aceita 3 ou 6 chars (com ou sem #). Retorna null em formato invalido.
  */
 export function hexToRgbTriplet(hex: string | null): string | null {
+  const rgb = hexToRgb(hex)
+  return rgb ? `${rgb[0]} ${rgb[1]} ${rgb[2]}` : null
+}
+
+function hexToRgb(hex: string | null): [number, number, number] | null {
   if (!hex) return null
   let h = hex.replace('#', '').trim()
   if (h.length === 3) h = h.split('').map((c) => c + c).join('')
   if (!/^[0-9a-f]{6}$/i.test(h)) return null
-  const r = parseInt(h.slice(0, 2), 16)
-  const g = parseInt(h.slice(2, 4), 16)
-  const b = parseInt(h.slice(4, 6), 16)
-  return `${r} ${g} ${b}`
+  return [
+    parseInt(h.slice(0, 2), 16),
+    parseInt(h.slice(2, 4), 16),
+    parseInt(h.slice(4, 6), 16),
+  ]
+}
+
+function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
+  r /= 255; g /= 255; b /= 255
+  const max = Math.max(r, g, b), min = Math.min(r, g, b)
+  let h = 0, s = 0
+  const l = (max + min) / 2
+  if (max !== min) {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break
+      case g: h = (b - r) / d + 2; break
+      case b: h = (r - g) / d + 4; break
+    }
+    h /= 6
+  }
+  return [h * 360, s * 100, l * 100]
+}
+
+function hslToRgb(h: number, s: number, l: number): [number, number, number] {
+  h /= 360; s /= 100; l /= 100
+  if (s === 0) {
+    const v = Math.round(l * 255)
+    return [v, v, v]
+  }
+  const hue2rgb = (p: number, q: number, t: number) => {
+    if (t < 0) t += 1
+    if (t > 1) t -= 1
+    if (t < 1 / 6) return p + (q - p) * 6 * t
+    if (t < 1 / 2) return q
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
+    return p
+  }
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s
+  const p = 2 * l - q
+  return [
+    Math.round(hue2rgb(p, q, h + 1 / 3) * 255),
+    Math.round(hue2rgb(p, q, h) * 255),
+    Math.round(hue2rgb(p, q, h - 1 / 3) * 255),
+  ]
+}
+
+/**
+ * Gera paleta brand-50..950 a partir de uma cor base, ajustando luminosidade.
+ * A cor base e usada como brand-700 (cor principal). Demais tons saem dela.
+ */
+export function gerarPaletaBrand(hex: string | null): Record<number, string> | null {
+  const rgb = hexToRgb(hex)
+  if (!rgb) return null
+  const [h, s] = rgbToHsl(rgb[0], rgb[1], rgb[2])
+  // Mapa tom -> luminosidade alvo (% L em HSL). Calibrado pelos defaults Tailwind.
+  const Ls: Record<number, number> = {
+    50: 97,
+    100: 93,
+    200: 86,
+    300: 76,
+    400: 65,
+    500: 53,
+    600: 45,
+    700: 38,   // base (cor escolhida)
+    800: 31,
+    900: 24,
+    950: 14,
+  }
+  const out: Record<number, string> = {}
+  for (const [tomStr, L] of Object.entries(Ls)) {
+    const tom = Number(tomStr)
+    // Pra tons claros, reduz saturacao um pouco; pra tons escuros, mantem.
+    const sAjustada = tom <= 200 ? Math.max(s * 0.6, 20) : s
+    const [r, g, b] = hslToRgb(h, sAjustada, L)
+    out[tom] = `${r} ${g} ${b}`
+  }
+  return out
 }
