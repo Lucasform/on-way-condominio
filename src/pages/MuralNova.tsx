@@ -4,7 +4,7 @@ import { useAuth } from '../components/AuthProvider'
 import { listCondominios } from '../lib/condominios'
 import { createPublicacao, uploadMuralImagem } from '../lib/mural'
 import type { Condominio } from '../types/condominio'
-import type { PublicacaoInput } from '../types/mural'
+import type { Enquete, PublicacaoInput } from '../types/mural'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
@@ -34,6 +34,9 @@ export default function MuralNova() {
   const [preview, setPreview] = useState<string | null>(null)
   const [enviarEmail, setEnviarEmail] = useState(false)
   const [isStory, setIsStory] = useState(false)
+  const [comEnquete, setComEnquete] = useState(false)
+  const [enquetePergunta, setEnquetePergunta] = useState('')
+  const [enqueteOpcoes, setEnqueteOpcoes] = useState<string[]>(['', ''])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -91,8 +94,20 @@ export default function MuralNova() {
       const expira_em = isStory
         ? new Date(Date.now() + STORY_TTL_HOURS * 3600_000).toISOString()
         : null
+      let enquete: Enquete | null = null
+      if (comEnquete) {
+        const opcoes = enqueteOpcoes.map((o) => o.trim()).filter((o) => o.length > 0)
+        if (opcoes.length < 2) {
+          setSubmitting(false)
+          return setError('A enquete precisa de pelo menos 2 opções preenchidas.')
+        }
+        enquete = {
+          pergunta: enquetePergunta.trim() || undefined,
+          opcoes,
+        }
+      }
       await createPublicacao(
-        { ...form, imagem_url: imgPath, expira_em },
+        { ...form, imagem_url: imgPath, expira_em, enquete },
         { enviarEmail },
       )
       navigate('/mural')
@@ -176,6 +191,63 @@ export default function MuralNova() {
             />
             📌 Fixar no topo do mural
           </label>
+          <label className="flex items-start gap-2 text-sm text-slate-300 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={comEnquete}
+              onChange={(e) => setComEnquete(e.target.checked)}
+              className="mt-0.5 rounded border-slate-700 bg-slate-950 text-brand-700 focus:ring-brand-700"
+            />
+            <span>
+              📊 Adicionar enquete
+              <span className="block text-xs text-slate-500">
+                Pergunta com 2 a 4 opções. Moradores votam e veem o resultado em tempo real.
+              </span>
+            </span>
+          </label>
+          {comEnquete && (
+            <div className="ml-6 mt-2 space-y-2 p-3 rounded-md border border-slate-700 bg-slate-900/40">
+              <TextInput
+                value={enquetePergunta}
+                onChange={(e) => setEnquetePergunta(e.target.value)}
+                placeholder="Pergunta (opcional, ex.: Concordam com a obra do salão?)"
+                maxLength={140}
+              />
+              {enqueteOpcoes.map((opt, i) => (
+                <div key={i} className="flex gap-2">
+                  <TextInput
+                    value={opt}
+                    onChange={(e) => {
+                      const next = [...enqueteOpcoes]
+                      next[i] = e.target.value
+                      setEnqueteOpcoes(next)
+                    }}
+                    placeholder={`Opção ${i + 1}`}
+                    maxLength={80}
+                  />
+                  {enqueteOpcoes.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => setEnqueteOpcoes(enqueteOpcoes.filter((_, idx) => idx !== i))}
+                      className="px-2 text-xs text-slate-400 hover:text-red-400"
+                      title="Remover"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+              {enqueteOpcoes.length < 4 && (
+                <button
+                  type="button"
+                  onClick={() => setEnqueteOpcoes([...enqueteOpcoes, ''])}
+                  className="text-xs text-brand-400 hover:text-brand-300"
+                >
+                  + Adicionar opção
+                </button>
+              )}
+            </div>
+          )}
           <label className="flex items-start gap-2 text-sm text-slate-300 cursor-pointer">
             <input
               type="checkbox"

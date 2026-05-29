@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthProvider'
+import { getPushStatus } from '../lib/push'
 
 interface Step {
   done: boolean
@@ -10,15 +11,28 @@ interface Step {
   to: string
 }
 
+const DISMISS_STAFF = 'onboarding_dismissed'
+const DISMISS_MORADOR = 'onboarding_morador_dismissed'
+
 export default function OnboardingChecklist() {
-  const { perfil } = useAuth()
+  const { user, perfil } = useAuth()
   const [steps, setSteps] = useState<Step[] | null>(null)
   const [dismissed, setDismissed] = useState(false)
+  const [titulo, setTitulo] = useState('🚀 Configure seu condomínio')
+  const [dismissKey, setDismissKey] = useState(DISMISS_STAFF)
 
   useEffect(() => {
-    if (!perfil || !['administradora', 'sindico', 'subsindico'].includes(perfil.role)) return
+    if (!perfil) return
+
+    const isStaff = ['administradora', 'sindico', 'subsindico'].includes(perfil.role)
+    const isMorador = perfil.role === 'morador'
+
+    if (!isStaff && !isMorador) return
     if (!perfil.condominio_id) return
-    if (localStorage.getItem('onboarding_dismissed') === '1') {
+
+    const key = isStaff ? DISMISS_STAFF : DISMISS_MORADOR
+    setDismissKey(key)
+    if (localStorage.getItem(key) === '1') {
       setDismissed(true)
       return
     }
@@ -26,22 +40,99 @@ export default function OnboardingChecklist() {
     let mounted = true
     ;(async () => {
       const cid = perfil.condominio_id!
-      const [{ count: unidades }, { count: pessoas }, { count: convites }, { count: regimento }] = await Promise.all([
-        supabase.from('unidades').select('*', { count: 'exact', head: true }).eq('condominio_id', cid),
-        supabase.from('pessoas').select('*', { count: 'exact', head: true }).eq('condominio_id', cid),
-        supabase.from('convites_condominio').select('*', { count: 'exact', head: true }).eq('condominio_id', cid),
-        supabase.from('regimento_artigos').select('*', { count: 'exact', head: true }).eq('condominio_id', cid),
-      ])
+
+      if (isStaff) {
+        setTitulo('🚀 Configure seu condomínio')
+        const [{ count: unidades }, { count: pessoas }, { count: convites }, { count: regimento }] = await Promise.all([
+          supabase.from('unidades').select('*', { count: 'exact', head: true }).eq('condominio_id', cid),
+          supabase.from('pessoas').select('*', { count: 'exact', head: true }).eq('condominio_id', cid),
+          supabase.from('convites_condominio').select('*', { count: 'exact', head: true }).eq('condominio_id', cid),
+          supabase.from('regimento_artigos').select('*', { count: 'exact', head: true }).eq('condominio_id', cid),
+        ])
+        if (!mounted) return
+        setSteps([
+          { done: (unidades ?? 0) > 0, label: 'Cadastrar unidades do condomínio', cta: 'Cadastrar unidades', to: '/unidades/novo' },
+          { done: (pessoas ?? 0) > 0, label: 'Cadastrar primeiras pessoas (moradores/funcionários)', cta: 'Cadastrar pessoa', to: '/pessoas/novo' },
+          { done: (convites ?? 0) > 0, label: 'Gerar código de convite pros moradores se cadastrarem sozinhos', cta: 'Gerar código', to: `/condominios/${cid}` },
+          { done: (regimento ?? 0) > 0, label: 'Cadastrar regimento interno (pra IA analisar ocorrências)', cta: 'Adicionar artigo', to: '/regimento/novo' },
+        ])
+        return
+      }
+
+      // Morador: tarefas de onboarding pessoal
+      setTitulo('👋 Bem-vindo! Complete seu cadastro')
+      if (!user) return
+      // 1. Perfil: avatar + telefone preenchidos
+      const perfilCompleto = Boolean(perfil.telefone) && Boolean(perfil.avatar_url)
+      // 2. Veiculo cadastrado pra unidade
+      let veiculoOk = false
+      try {
+        const { data: pessoaUser } = await supabase
+          .from('pessoas')
+          .select('id, unidade_id')
+          .eq('user_id', user.id)
+          .eq('condominio_id', cid)
+          .maybeSingle()
+        if (pessoaUser?.unidade_id) {
+          const { count } = await supabase
+            .from('veiculos')
+            .select('*', { count: 'exact', head: true })
+            .eq('unidade_id', pessoaUser.unidade_id)
+          veiculoOk = (count ?? 0) > 0
+        }
+      } catch {
+        // ignora
+      }
+      // 3. Push ativado
+      let pushOk = false
+      try {
+        const status = await getPushStatus()
+        pushOk = status.subscribed
+      } catch {
+        // ignora
+      }
+      // 4. Primeira interacao no chat (mensagem propria OU conversa iniciada)
+      let chatOk = false
+      try {
+        const { count } = await supabase
+          .from('mensagens')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+        chatOk = (count ?? 0) > 0
+      } catch {
+        // ignora
+      }
+
       if (!mounted) return
       setSteps([
-        { done: (unidades ?? 0) > 0, label: 'Cadastrar unidades do condomínio', cta: 'Cadastrar unidades', to: '/unidades/novo' },
-        { done: (pessoas ?? 0) > 0, label: 'Cadastrar primeiras pessoas (moradores/funcionários)', cta: 'Cadastrar pessoa', to: '/pessoas/novo' },
-        { done: (convites ?? 0) > 0, label: 'Gerar código de convite pros moradores se cadastrarem sozinhos', cta: 'Gerar código', to: `/condominios/${cid}` },
-        { done: (regimento ?? 0) > 0, label: 'Cadastrar regimento interno (pra IA analisar ocorrências)', cta: 'Adicionar artigo', to: '/regimento/novo' },
+        {
+          done: perfilCompleto,
+          label: 'Completar perfil (foto e telefone)',
+          cta: 'Editar perfil',
+          to: '/meu-perfil',
+        },
+        {
+          done: veiculoOk,
+          label: 'Cadastrar seu veículo (opcional, ajuda a portaria)',
+          cta: 'Cadastrar',
+          to: '/veiculos/novo',
+        },
+        {
+          done: pushOk,
+          label: 'Ativar notificações push (avisos da administração)',
+          cta: 'Ativar',
+          to: '/meu-perfil',
+        },
+        {
+          done: chatOk,
+          label: 'Mandar a primeira mensagem no chat com a administração',
+          cta: 'Abrir chat',
+          to: '/chat',
+        },
       ])
     })()
     return () => { mounted = false }
-  }, [perfil])
+  }, [perfil, user])
 
   if (dismissed || !steps) return null
   const completed = steps.filter((s) => s.done).length
@@ -53,14 +144,14 @@ export default function OnboardingChecklist() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="text-sm font-semibold text-brand-700 dark:text-brand-300">
-            🚀 Configure seu condomínio
+            {titulo}
           </div>
           <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
             {completed} de {total} etapas concluídas. Termine pra liberar todos os recursos.
           </p>
         </div>
         <button
-          onClick={() => { localStorage.setItem('onboarding_dismissed', '1'); setDismissed(true) }}
+          onClick={() => { localStorage.setItem(dismissKey, '1'); setDismissed(true) }}
           className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
           title="Esconder permanentemente"
         >

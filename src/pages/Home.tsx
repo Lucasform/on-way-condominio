@@ -132,6 +132,7 @@ function MoradorHome() {
       <p className="mt-1 text-sm text-slate-400">
         Resumo do que está acontecendo pra você no condomínio.
       </p>
+      <OnboardingChecklist />
 
       {loading ? (
         <div className="mt-8 text-slate-400">Carregando...</div>

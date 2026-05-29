@@ -15,9 +15,11 @@ import {
   deleteComentario,
   listMinhasLeituras,
   marcarPublicacaoLida,
+  listVotosEnquete,
+  votarEnquete,
 } from '../lib/mural'
 import { listCondominios } from '../lib/condominios'
-import type { Publicacao, Reacao, ComentarioPublicacao } from '../types/mural'
+import type { Publicacao, Reacao, ComentarioPublicacao, PublicacaoVoto } from '../types/mural'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
@@ -35,6 +37,7 @@ export default function Mural() {
   const [rows, setRows] = useState<Publicacao[]>([])
   const [reacoesByPub, setReacoesByPub] = useState<Map<string, Reacao[]>>(new Map())
   const [comentsByPub, setComentsByPub] = useState<Map<string, ComentarioPublicacao[]>>(new Map())
+  const [votosByPub, setVotosByPub] = useState<Map<string, PublicacaoVoto[]>>(new Map())
   const [lidasIds, setLidasIds] = useState<Set<string>>(new Set())
   const [expandidas, setExpandidas] = useState<Set<string>>(new Set())
   const [novoComent, setNovoComent] = useState<Record<string, string>>({})
@@ -68,12 +71,13 @@ export default function Mural() {
       // Comentarios e leituras dependem das migrations 0061 — se ainda nao
       // foram aplicadas, falham silenciosamente sem derrubar o mural.
       const pubIds = pubs.map((p) => p.id)
-      const [reacs, coments, leituras] = await Promise.all([
+      const [reacs, coments, leituras, votos] = await Promise.all([
         listReacoes(pubIds),
         listComentarios(pubIds).catch(() => [] as ComentarioPublicacao[]),
         user
           ? listMinhasLeituras(user.id).catch(() => [])
           : Promise.resolve([]),
+        listVotosEnquete(pubIds).catch(() => [] as PublicacaoVoto[]),
       ])
       const map = new Map<string, Reacao[]>()
       for (const r of reacs) {
@@ -89,6 +93,13 @@ export default function Mural() {
         cmap.set(c.publicacao_id, list)
       }
       setComentsByPub(cmap)
+      const vmap = new Map<string, PublicacaoVoto[]>()
+      for (const v of votos) {
+        const list = vmap.get(v.publicacao_id) ?? []
+        list.push(v)
+        vmap.set(v.publicacao_id, list)
+      }
+      setVotosByPub(vmap)
       setLidasIds(new Set(leituras.map((l) => l.publicacao_id)))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar.')
@@ -206,6 +217,29 @@ export default function Mural() {
       setNovoComent((prev) => ({ ...prev, [pub.id]: '' }))
     } catch (e) {
       alert(e instanceof Error ? e.message : 'Erro ao comentar.')
+    }
+  }
+
+  async function handleVotar(pub: Publicacao, idx: number) {
+    if (!user) return
+    try {
+      await votarEnquete(pub.id, user.id, idx)
+      // Atualiza local sem reload completo
+      setVotosByPub((prev) => {
+        const next = new Map(prev)
+        const lista = (next.get(pub.id) ?? []).filter((v) => v.user_id !== user.id)
+        lista.push({
+          publicacao_id: pub.id,
+          user_id: user.id,
+          opcao_idx: idx,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        next.set(pub.id, lista)
+        return next
+      })
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Erro ao votar.')
     }
   }
 
@@ -340,6 +374,63 @@ export default function Mural() {
                     <h3 className="text-lg font-semibold text-slate-100 mb-2">{pub.titulo}</h3>
                   )}
                   <p className="text-slate-200 whitespace-pre-wrap">{pub.conteudo}</p>
+
+                  {pub.enquete && (() => {
+                    const votos = votosByPub.get(pub.id) ?? []
+                    const total = votos.length
+                    const meuVoto = user ? votos.find((v) => v.user_id === user.id) : null
+                    return (
+                      <div className="mt-4 pt-3 border-t border-slate-800">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+                            📊 Enquete
+                          </span>
+                          {pub.enquete.pergunta && (
+                            <span className="text-sm text-slate-200">{pub.enquete.pergunta}</span>
+                          )}
+                        </div>
+                        <div className="space-y-1.5">
+                          {pub.enquete.opcoes.map((opt, idx) => {
+                            const count = votos.filter((v) => v.opcao_idx === idx).length
+                            const pct = total > 0 ? Math.round((count / total) * 100) : 0
+                            const escolhida = meuVoto?.opcao_idx === idx
+                            return (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => handleVotar(pub, idx)}
+                                disabled={!user}
+                                className={`relative w-full text-left rounded-md border overflow-hidden transition ${
+                                  escolhida
+                                    ? 'border-brand-500 bg-brand-700/20'
+                                    : 'border-slate-700 bg-slate-900/40 hover:border-slate-600'
+                                }`}
+                              >
+                                <div
+                                  className={`absolute inset-y-0 left-0 ${
+                                    escolhida ? 'bg-brand-700/30' : 'bg-slate-700/30'
+                                  }`}
+                                  style={{ width: `${pct}%`, transition: 'width 250ms' }}
+                                />
+                                <div className="relative flex items-center justify-between px-3 py-2 text-sm">
+                                  <span className="text-slate-100">
+                                    {escolhida && '✓ '}{opt}
+                                  </span>
+                                  <span className="text-xs text-slate-300">
+                                    {pct}% <span className="text-slate-500">({count})</span>
+                                  </span>
+                                </div>
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <div className="mt-1.5 text-xs text-slate-500">
+                          {total} {total === 1 ? 'voto' : 'votos'}
+                          {!user && ' · entre pra votar'}
+                        </div>
+                      </div>
+                    )
+                  })()}
 
                   <div className="mt-4 pt-3 border-t border-slate-800 flex items-center gap-4 text-sm">
                     <button

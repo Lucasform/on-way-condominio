@@ -100,9 +100,14 @@ export default function Acessos() {
       <PageHeader
         title={`Acessos autorizados (${filtered.length})`}
         actions={
-          <Link to="/acessos/novo">
-            <Button>+ Liberar acesso</Button>
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/acessos/evento">
+              <Button variant="ghost">🎉 Em lote</Button>
+            </Link>
+            <Link to="/acessos/novo">
+              <Button>+ Liberar acesso</Button>
+            </Link>
+          </div>
         }
       />
 

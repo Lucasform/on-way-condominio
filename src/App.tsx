@@ -72,6 +72,7 @@ const Servicos = lazy(() => import('./pages/Servicos'))
 const Acessos = lazy(() => import('./pages/Acessos'))
 const AcessoNovo = lazy(() => import('./pages/AcessoNovo'))
 const AcessoDetalhe = lazy(() => import('./pages/AcessoDetalhe'))
+const AcessoEvento = lazy(() => import('./pages/AcessoEvento'))
 const CondominioFornecedoresPage = lazy(() => import('./pages/CondominioFornecedoresPage'))
 
 export default function App() {
@@ -529,6 +530,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <AcessoNovo />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/acessos/evento"
+              element={
+                <ProtectedRoute>
+                  <AcessoEvento />
                 </ProtectedRoute>
               }
             />

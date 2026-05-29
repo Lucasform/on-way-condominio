@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import type {
   Publicacao, PublicacaoInput, Reacao, TipoReacao,
-  ComentarioPublicacao, PublicacaoLeitura,
+  ComentarioPublicacao, PublicacaoLeitura, PublicacaoVoto,
 } from '../types/mural'
 import { sendEmail } from './email'
 
@@ -45,6 +45,8 @@ export async function createPublicacao(
       conteudo: input.conteudo.trim(),
       imagem_url: input.imagem_url || null,
       fixado: input.fixado,
+      expira_em: input.expira_em ?? null,
+      enquete: input.enquete ?? null,
       ...(userId ? { autor_id: userId } : {}),
     })
     .select('*')
@@ -215,6 +217,37 @@ export async function marcarPublicacaoLida(publicacao_id: string, user_id: strin
     .from('publicacao_leituras')
     .upsert(
       { publicacao_id, user_id, lida_em: new Date().toISOString() },
+      { onConflict: 'publicacao_id,user_id' },
+    )
+  if (error) throw error
+}
+
+// ============================================================
+// Enquete
+// ============================================================
+
+export async function listVotosEnquete(publicacoesIds: string[]): Promise<PublicacaoVoto[]> {
+  if (publicacoesIds.length === 0) return []
+  const { data, error } = await supabase
+    .from('publicacao_votos')
+    .select('*')
+    .in('publicacao_id', publicacoesIds)
+  if (error) {
+    if (error.code === '42P01' || error.code === 'PGRST205') return []
+    throw error
+  }
+  return (data ?? []) as PublicacaoVoto[]
+}
+
+export async function votarEnquete(
+  publicacao_id: string,
+  user_id: string,
+  opcao_idx: number,
+): Promise<void> {
+  const { error } = await supabase
+    .from('publicacao_votos')
+    .upsert(
+      { publicacao_id, user_id, opcao_idx },
       { onConflict: 'publicacao_id,user_id' },
     )
   if (error) throw error

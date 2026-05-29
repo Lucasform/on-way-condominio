@@ -96,4 +96,73 @@ function applyBrand(brand: TenantBrand | null) {
   if (brand?.nome) {
     document.title = `${brand.nome} · OnWay`
   }
+  applyManifest(brand)
+  applyThemeColor(brand?.cor_primaria ?? null)
+  applyFavicon(brand?.logo_url ?? null)
+}
+
+let lastManifestUrl: string | null = null
+
+function applyManifest(brand: TenantBrand | null) {
+  if (typeof document === 'undefined') return
+  if (!brand) {
+    // volta pro manifest estatico se houver
+    const link = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null
+    if (link && lastManifestUrl) {
+      link.href = '/manifest.webmanifest'
+      try { URL.revokeObjectURL(lastManifestUrl) } catch {}
+      lastManifestUrl = null
+    }
+    return
+  }
+  const manifest = {
+    name: brand.nome,
+    short_name: brand.nome.slice(0, 12),
+    description: brand.mensagem_boas_vindas ?? `App do condomínio ${brand.nome}`,
+    start_url: typeof window !== 'undefined' ? `${window.location.origin}/` : '/',
+    display: 'standalone',
+    background_color: brand.cor_primaria ?? '#0F172A',
+    theme_color: brand.cor_primaria ?? '#1D4ED8',
+    icons: brand.logo_url
+      ? [
+          { src: brand.logo_url, sizes: '192x192', type: 'image/png' },
+          { src: brand.logo_url, sizes: '512x512', type: 'image/png' },
+        ]
+      : [],
+  }
+  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' })
+  const url = URL.createObjectURL(blob)
+  let link = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null
+  if (!link) {
+    link = document.createElement('link')
+    link.rel = 'manifest'
+    document.head.appendChild(link)
+  }
+  link.href = url
+  if (lastManifestUrl) {
+    try { URL.revokeObjectURL(lastManifestUrl) } catch {}
+  }
+  lastManifestUrl = url
+}
+
+function applyThemeColor(hex: string | null) {
+  if (typeof document === 'undefined') return
+  let meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null
+  if (!meta) {
+    meta = document.createElement('meta')
+    meta.name = 'theme-color'
+    document.head.appendChild(meta)
+  }
+  meta.content = hex ?? '#1D4ED8'
+}
+
+function applyFavicon(url: string | null) {
+  if (typeof document === 'undefined' || !url) return
+  let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null
+  if (!link) {
+    link = document.createElement('link')
+    link.rel = 'icon'
+    document.head.appendChild(link)
+  }
+  link.href = url
 }
