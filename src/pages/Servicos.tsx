@@ -6,6 +6,7 @@ import type { Condominio } from '../types/condominio'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
+import Pill from '../components/ui/Pill'
 import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
 import {
   createPrestador,
@@ -19,8 +20,8 @@ import {
 } from '../lib/servicos'
 import {
   CATEGORIA_LABEL,
-  STATUS_CLASS,
   STATUS_LABEL,
+  STATUS_TONE,
   type CategoriaServico,
   type Prestador,
   type Servico,
@@ -297,9 +298,7 @@ function ServicoList({
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="font-semibold text-slate-900 dark:text-slate-100">{s.titulo}</h3>
-                <span className={`shrink-0 px-2 py-0.5 rounded text-[11px] border ${STATUS_CLASS[s.status]}`}>
-                  {STATUS_LABEL[s.status]}
-                </span>
+                <Pill tone={STATUS_TONE[s.status]}>{STATUS_LABEL[s.status]}</Pill>
               </div>
               <div className="text-xs text-slate-500 dark:text-slate-400">
                 {CATEGORIA_LABEL[s.categoria]} · {prestadorNome(s.prestador_id)}

@@ -89,3 +89,10 @@ export const STATUS_CLASS: Record<StatusServico, string> = {
   concluido: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
   cancelado: 'bg-slate-700/40 text-slate-500 border-slate-700',
 }
+
+export const STATUS_TONE: Record<StatusServico, 'warning' | 'info' | 'success' | 'neutral'> = {
+  agendado: 'warning',
+  em_andamento: 'info',
+  concluido: 'success',
+  cancelado: 'neutral',
+}

@@ -21,6 +21,7 @@ import BrandPreview from '../components/BrandPreview'
 import CondominioAnexosManager from '../components/CondominioAnexosManager'
 import CondominioDiretoria from '../components/CondominioDiretoria'
 import CondominioMandatos from '../components/CondominioMandatos'
+import VincularUserAoCondo from '../components/VincularUserAoCondo'
 import AgenteTreinamento from '../components/AgenteTreinamento'
 import { traduzErro } from '../lib/errorMessages'
 
@@ -552,9 +553,13 @@ export default function CondominioForm() {
           {/* ============================================================ */}
           {/* 3) DIRETORIA */}
           {/* ============================================================ */}
-          <div className="mt-10">
+          <div className="mt-10 space-y-6">
             <CondominioDiretoria condominio_id={id} />
             <CondominioMandatos condominio_id={id} />
+            <VincularUserAoCondo
+              condominio_id={id}
+              condominio_nome={form.nome}
+            />
           </div>
 
           {/* ============================================================ */}

@@ -1,0 +1,81 @@
+name: Deploy Supabase Edge Functions
+
+# Auto-deploy quando supabase/functions/** muda no main.
+# Só faz redeploy das edges efetivamente alteradas no push (diff vs HEAD~1).
+#
+# Pré-requisitos: secrets do repo
+#   SUPABASE_ACCESS_TOKEN  -> token pessoal (sbp_...)
+#   SUPABASE_PROJECT_REF   -> lkxnngzgmyfqgbbpmjvc
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/**'
+  workflow_dispatch:
+    inputs:
+      function:
+        description: 'Nome da edge específica (vazio = todas as alteradas)'
+        required: false
+        type: string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Detectar edges alteradas
+        id: changed
+        run: |
+          set -e
+          if [ -n "${{ github.event.inputs.function }}" ]; then
+            echo "list=${{ github.event.inputs.function }}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Pega diff do push e extrai nomes únicos de funções tocadas
+          changed=$(git diff --name-only HEAD~1 HEAD -- 'supabase/functions/' \
+            | awk -F/ 'NF>=3 && $3 != "_shared" {print $3}' \
+            | sort -u)
+          if [ -z "$changed" ]; then
+            # Touch em _shared/* → redeploy de todas as edges (mais seguro)
+            shared_touched=$(git diff --name-only HEAD~1 HEAD -- 'supabase/functions/_shared/' | head -1)
+            if [ -n "$shared_touched" ]; then
+              changed=$(ls supabase/functions \
+                | grep -v '^_shared$' \
+                | sort -u)
+            fi
+          fi
+          echo "Edges a deployar:"
+          echo "$changed"
+          # Converte pra lista separada por espaços
+          flat=$(echo "$changed" | tr '\n' ' ')
+          echo "list=$flat" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy cada edge
+        if: steps.changed.outputs.list != ''
+        run: |
+          set -e
+          for fn in ${{ steps.changed.outputs.list }}; do
+            echo "::group::deploy $fn"
+            supabase functions deploy "$fn" \
+              --project-ref "$PROJECT_REF" \
+              --no-verify-jwt
+            echo "::endgroup::"
+          done
+
+      - name: Nada a deployar
+        if: steps.changed.outputs.list == ''
+        run: echo "Nenhuma edge alterada neste push."
