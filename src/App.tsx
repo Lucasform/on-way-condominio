@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import { AuthProvider } from './components/AuthProvider'
 import { TenantProvider } from './components/TenantProvider'
+import { ToastProvider } from './components/ui/Toast'
+import { ConfirmProvider } from './components/ui/ConfirmProvider'
 import ProtectedRoute from './components/ProtectedRoute'
 import AppShell from './components/AppShell'
 import Logo from './components/Logo'
@@ -82,6 +84,8 @@ export default function App() {
   return (
     <AuthProvider>
     <TenantProvider>
+    <ToastProvider>
+    <ConfirmProvider>
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -589,6 +593,8 @@ export default function App() {
         </Routes>
         </Suspense>
       </BrowserRouter>
+    </ConfirmProvider>
+    </ToastProvider>
     </TenantProvider>
     </AuthProvider>
   )

@@ -11,6 +11,8 @@ import { getUnidade } from '../lib/unidades'
 import { isGestor, isStaff } from '../lib/permissions'
 import type { AcessoAutorizado, AcessoEvento, StatusAcesso, TipoEventoAcesso } from '../types/acesso'
 import type { Unidade } from '../types/unidade'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -52,6 +54,8 @@ export default function AcessoDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user, perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const staff = isStaff(perfil?.role)
   const podeApagar = isGestor(perfil?.role)
 
@@ -99,7 +103,11 @@ export default function AcessoDetalhe() {
       if (m === null) return
       motivo = m || null
     }
-    if (!window.confirm(`Confirmar: ${EVENTO_LABEL[tipo]}?`)) return
+    const ok = await confirm({
+      message: `Confirmar: ${EVENTO_LABEL[tipo]}?`,
+      tone: tipo === 'negada' || tipo === 'revogada' ? 'danger' : 'primary',
+    })
+    if (!ok) return
     setWorking(true)
     try {
       await registrarEvento({
@@ -109,9 +117,10 @@ export default function AcessoDetalhe() {
         registrado_por: user.id,
         motivo,
       })
+      toast.success(EVENTO_LABEL[tipo])
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao registrar.')
+      toast.error('Erro ao registrar', e instanceof Error ? e.message : '')
     } finally {
       setWorking(false)
     }
@@ -119,13 +128,20 @@ export default function AcessoDetalhe() {
 
   async function handleDelete() {
     if (!acesso) return
-    if (!window.confirm('Apagar esse registro DEFINITIVAMENTE?')) return
+    const ok = await confirm({
+      title: 'Excluir registro',
+      message: 'Apagar esse registro DEFINITIVAMENTE?',
+      tone: 'danger',
+      confirmText: 'Excluir',
+    })
+    if (!ok) return
     setWorking(true)
     try {
       await deleteAcesso(acesso.id)
+      toast.success('Acesso excluído.')
       navigate('/acessos')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao excluir.')
+      toast.error('Erro ao excluir', e instanceof Error ? e.message : '')
       setWorking(false)
     }
   }

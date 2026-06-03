@@ -18,6 +18,8 @@ import type { Pessoa } from '../types/pessoa'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import { isGestor } from '../lib/permissions'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import ContestacaoThread from '../components/ContestacaoThread'
@@ -40,6 +42,8 @@ export default function MultaDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
 
   const [multa, setMulta] = useState<Multa | null>(null)
   const [unidade, setUnidade] = useState<Unidade | null>(null)
@@ -89,23 +93,30 @@ export default function MultaDetalhe() {
 
   async function handleDelete() {
     if (!multa) return
-    const ok = window.confirm(
-      'Excluir esta multa DEFINITIVAMENTE? Esta ação não pode ser desfeita.',
-    )
+    const ok = await confirm({
+      title: 'Excluir multa',
+      message: 'Excluir esta multa DEFINITIVAMENTE? Esta ação não pode ser desfeita.',
+      tone: 'danger',
+      confirmText: 'Excluir',
+    })
     if (!ok) return
     setChanging(true)
     try {
       await deleteMulta(multa.id)
+      toast.success('Multa excluída.')
       navigate('/multas')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao excluir.')
+      toast.error('Erro ao excluir', e instanceof Error ? e.message : '')
       setChanging(false)
     }
   }
 
   async function handleChange(newStatus: StatusMulta) {
     if (!multa) return
-    if (!window.confirm(`Mudar status para "${MULTA_STATUS_LABEL[newStatus]}"?`)) return
+    const ok = await confirm({
+      message: `Mudar status para "${MULTA_STATUS_LABEL[newStatus]}"?`,
+    })
+    if (!ok) return
     setChanging(true)
     try {
       await changeMultaStatus(multa.id, newStatus)
@@ -126,7 +137,7 @@ export default function MultaDetalhe() {
         }
       }
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao mudar status.')
+      toast.error('Erro ao mudar status', e instanceof Error ? e.message : '')
     } finally {
       setChanging(false)
     }
@@ -140,7 +151,7 @@ export default function MultaDetalhe() {
       setEditVenc(false)
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao salvar.')
+      toast.error('Erro ao salvar', e instanceof Error ? e.message : '')
     } finally {
       setChanging(false)
     }
@@ -184,7 +195,7 @@ export default function MultaDetalhe() {
                 condominio,
                 assinaturaUrl: perfil?.assinatura_url ?? null,
                 emissorNome: perfil?.nome_exibicao ?? null,
-              }).catch((e) => alert(e.message))}
+              }).catch((e) => toast.error('Erro no PDF', e.message))}
               disabled={!condominio}
               title="Gerar PDF de notificação"
             >
@@ -200,7 +211,7 @@ export default function MultaDetalhe() {
                   condominio,
                   assinaturaUrl: perfil?.assinatura_url ?? null,
                   emissorNome: perfil?.nome_exibicao ?? null,
-                }).catch((e) => alert(e.message))}
+                }).catch((e) => toast.error('Erro no PDF', e.message))}
                 disabled={!condominio}
                 title="Recibo de quitação"
               >
