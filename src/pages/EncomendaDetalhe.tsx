@@ -15,6 +15,8 @@ import type { Pessoa } from '../types/pessoa'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import { isGestor } from '../lib/permissions'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -52,6 +54,8 @@ export default function EncomendaDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user, perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const canDelete = isGestor(perfil?.role)
 
   const [encomenda, setEncomenda] = useState<Encomenda | null>(null)
@@ -103,7 +107,7 @@ export default function EncomendaDetalhe() {
     e.preventDefault()
     if (!encomenda || !user) return
     if (!entreguePara.trim()) {
-      alert('Informe quem retirou a encomenda.')
+      toast.warning('Informe quem retirou a encomenda.')
       return
     }
     setSubmittingBaixa(true)
@@ -111,8 +115,9 @@ export default function EncomendaDetalhe() {
       await darBaixaEncomenda(encomenda.id, entreguePara, user.id)
       await load()
       setShowBaixaForm(false)
+      toast.success('Encomenda entregue.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao dar baixa.')
+      toast.error('Erro ao dar baixa', e instanceof Error ? e.message : '')
     } finally {
       setSubmittingBaixa(false)
     }
@@ -120,23 +125,35 @@ export default function EncomendaDetalhe() {
 
   async function handleDelete() {
     if (!encomenda) return
-    if (!window.confirm('Excluir essa encomenda DEFINITIVAMENTE? Esta ação não pode ser desfeita.')) return
+    const ok = await confirm({
+      title: 'Excluir encomenda',
+      message: 'Excluir essa encomenda DEFINITIVAMENTE? Esta ação não pode ser desfeita.',
+      tone: 'danger',
+      confirmText: 'Excluir',
+    })
+    if (!ok) return
     try {
       await deleteEncomenda(encomenda.id)
+      toast.success('Encomenda excluída.')
       navigate('/encomendas')
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Erro ao excluir.')
+      toast.error('Erro ao excluir', err instanceof Error ? err.message : '')
     }
   }
 
   async function handleDevolver() {
     if (!encomenda) return
-    if (!window.confirm('Marcar como devolvida? Esta ação registra que a encomenda foi devolvida ao remetente.')) return
+    const ok = await confirm({
+      title: 'Marcar como devolvida',
+      message: 'Confirma que a encomenda foi devolvida ao remetente?',
+    })
+    if (!ok) return
     try {
       await devolverEncomenda(encomenda.id)
       await load()
+      toast.success('Encomenda marcada como devolvida.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 

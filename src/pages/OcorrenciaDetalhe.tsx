@@ -18,6 +18,8 @@ import type { Condominio } from '../types/condominio'
 import type { Multa } from '../types/multa'
 import { useAuth } from '../components/AuthProvider'
 import { isGestor } from '../lib/permissions'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -55,6 +57,8 @@ export default function OcorrenciaDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const canDelete = isGestor(perfil?.role)
 
   const [ocorrencia, setOcorrencia] = useState<Ocorrencia | null>(null)
@@ -141,7 +145,7 @@ export default function OcorrenciaDetalhe() {
       setEditingDados(false)
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao salvar.')
+      toast.error('Erro ao salvar', e instanceof Error ? e.message : '')
     } finally {
       setSavingDados(false)
     }
@@ -162,8 +166,9 @@ export default function OcorrenciaDetalhe() {
       })
       setOcorrencia(updated)
       setEditingComentario(false)
+      toast.success('Comentário salvo.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao salvar comentário.')
+      toast.error('Erro ao salvar comentário', e instanceof Error ? e.message : '')
     } finally {
       setSavingComentario(false)
     }
@@ -171,13 +176,14 @@ export default function OcorrenciaDetalhe() {
 
   async function handleChangeStatus(newStatus: StatusOcorrencia) {
     if (!ocorrencia) return
-    if (!window.confirm(`Mudar status para "${STATUS_LABEL[newStatus]}"?`)) return
+    const ok = await confirm({ message: `Mudar status para "${STATUS_LABEL[newStatus]}"?` })
+    if (!ok) return
     setChanging(true)
     try {
       await updateOcorrenciaStatus(ocorrencia.id, newStatus)
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao mudar status.')
+      toast.error('Erro ao mudar status', e instanceof Error ? e.message : '')
     } finally {
       setChanging(false)
     }
@@ -185,13 +191,20 @@ export default function OcorrenciaDetalhe() {
 
   async function handleDelete() {
     if (!ocorrencia) return
-    if (!window.confirm('Excluir essa ocorrência DEFINITIVAMENTE? Esta ação não pode ser desfeita.')) return
+    const ok = await confirm({
+      title: 'Excluir ocorrência',
+      message: 'Excluir essa ocorrência DEFINITIVAMENTE? Esta ação não pode ser desfeita.',
+      tone: 'danger',
+      confirmText: 'Excluir',
+    })
+    if (!ok) return
     setChanging(true)
     try {
       await deleteOcorrencia(ocorrencia.id)
+      toast.success('Ocorrência excluída.')
       navigate('/ocorrencias')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao excluir.')
+      toast.error('Erro ao excluir', e instanceof Error ? e.message : '')
       setChanging(false)
     }
   }

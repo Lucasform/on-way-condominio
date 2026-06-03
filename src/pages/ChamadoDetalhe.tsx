@@ -6,6 +6,8 @@ import type { Chamado, StatusChamado } from '../types/chamado'
 import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
 import { isGestor } from '../lib/permissions'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -42,6 +44,8 @@ export default function ChamadoDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const canManage = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
   const canDelete = isGestor(perfil?.role)
 
@@ -86,13 +90,14 @@ export default function ChamadoDetalhe() {
       setShowResolForm(true)
       return
     }
-    if (!window.confirm(`Mudar status para "${STATUS_LABEL[newStatus]}"?`)) return
+    const ok = await confirm({ message: `Mudar status para "${STATUS_LABEL[newStatus]}"?` })
+    if (!ok) return
     setChanging(true)
     try {
       await updateChamadoStatus(chamado.id, newStatus)
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     } finally {
       setChanging(false)
     }
@@ -100,13 +105,20 @@ export default function ChamadoDetalhe() {
 
   async function handleDelete() {
     if (!chamado) return
-    if (!window.confirm('Excluir esse chamado DEFINITIVAMENTE? Esta ação não pode ser desfeita.')) return
+    const ok = await confirm({
+      title: 'Excluir chamado',
+      message: 'Excluir esse chamado DEFINITIVAMENTE? Esta ação não pode ser desfeita.',
+      tone: 'danger',
+      confirmText: 'Excluir',
+    })
+    if (!ok) return
     setChanging(true)
     try {
       await deleteChamado(chamado.id)
+      toast.success('Chamado excluído.')
       navigate('/chamados')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao excluir.')
+      toast.error('Erro ao excluir', e instanceof Error ? e.message : '')
       setChanging(false)
     }
   }
@@ -119,8 +131,9 @@ export default function ChamadoDetalhe() {
       setShowResolForm(false)
       setResolNota('')
       await load()
+      toast.success('Chamado resolvido.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     } finally {
       setChanging(false)
     }

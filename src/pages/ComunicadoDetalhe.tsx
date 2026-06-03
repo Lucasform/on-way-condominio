@@ -14,6 +14,8 @@ import type { Comunicado, StatusComunicado } from '../types/comunicado'
 import type { Condominio } from '../types/condominio'
 import type { Perfil } from '../types/database'
 import { supabase } from '../lib/supabase'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -36,6 +38,8 @@ export default function ComunicadoDetalhe() {
   const navigate = useNavigate()
   const { user, perfil } = useAuth()
   const gestor = isGestor(perfil?.role)
+  const toast = useToast()
+  const confirm = useConfirm()
 
   const [comunicado, setComunicado] = useState<Comunicado | null>(null)
   const [condominio, setCondominio] = useState<Condominio | null>(null)
@@ -84,8 +88,9 @@ export default function ComunicadoDetalhe() {
       })
       setComunicado(updated)
       setEditando(false)
+      toast.success('Salvo.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao salvar.')
+      toast.error('Erro ao salvar', e instanceof Error ? e.message : '')
     } finally {
       setWorking(false)
     }
@@ -114,7 +119,7 @@ export default function ComunicadoDetalhe() {
         emissorNome,
       })
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao gerar PDF.')
+      toast.error('Erro ao gerar PDF', e instanceof Error ? e.message : '')
     } finally {
       setWorking(false)
     }
@@ -122,14 +127,19 @@ export default function ComunicadoDetalhe() {
 
   async function handleEnviar() {
     if (!comunicado) return
-    if (!window.confirm(`Enviar comunicado por e-mail pra todos os moradores ativos?`)) return
+    const ok = await confirm({
+      title: 'Enviar comunicado',
+      message: 'Enviar este comunicado por e-mail para todos os moradores ativos?',
+      confirmText: 'Enviar',
+    })
+    if (!ok) return
     setWorking(true)
     try {
       const r = await enviarComunicadoPorEmail(comunicado)
-      alert(`Enviado pra ${r.destinatarios} destinatários.`)
+      toast.success(`Enviado para ${r.destinatarios} destinatários.`)
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao enviar.')
+      toast.error('Erro ao enviar', e instanceof Error ? e.message : '')
     } finally {
       setWorking(false)
     }
@@ -137,11 +147,13 @@ export default function ComunicadoDetalhe() {
 
   async function handleArquivar() {
     if (!comunicado) return
-    if (!window.confirm('Arquivar comunicado?')) return
+    const ok = await confirm({ message: 'Arquivar este comunicado?' })
+    if (!ok) return
     setWorking(true)
     try {
       const updated = await updateComunicado(comunicado.id, { status: 'arquivado' })
       setComunicado(updated)
+      toast.success('Arquivado.')
     } finally {
       setWorking(false)
     }
@@ -149,13 +161,20 @@ export default function ComunicadoDetalhe() {
 
   async function handleDelete() {
     if (!comunicado) return
-    if (!window.confirm('Apagar comunicado DEFINITIVAMENTE?')) return
+    const ok = await confirm({
+      title: 'Excluir comunicado',
+      message: 'Apagar este comunicado DEFINITIVAMENTE?',
+      tone: 'danger',
+      confirmText: 'Excluir',
+    })
+    if (!ok) return
     setWorking(true)
     try {
       await deleteComunicado(comunicado.id)
+      toast.success('Comunicado excluído.')
       navigate('/comunicados')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao excluir.')
+      toast.error('Erro ao excluir', e instanceof Error ? e.message : '')
       setWorking(false)
     }
   }
