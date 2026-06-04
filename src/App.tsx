@@ -79,6 +79,7 @@ const CondominioFornecedoresPage = lazy(() => import('./pages/CondominioForneced
 const Comunicados = lazy(() => import('./pages/Comunicados'))
 const ComunicadoNovo = lazy(() => import('./pages/ComunicadoNovo'))
 const ComunicadoDetalhe = lazy(() => import('./pages/ComunicadoDetalhe'))
+const Help = lazy(() => import('./pages/Help'))
 
 export default function App() {
   return (
@@ -561,6 +562,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <CondominioFornecedoresPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/ajuda"
+              element={
+                <ProtectedRoute>
+                  <Help />
                 </ProtectedRoute>
               }
             />

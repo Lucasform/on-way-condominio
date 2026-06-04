@@ -10,6 +10,8 @@ import type { Unidade } from '../types/unidade'
 import type { Pessoa } from '../types/pessoa'
 import { useAuth } from '../components/AuthProvider'
 import { isGestor } from '../lib/permissions'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -30,6 +32,8 @@ export default function VeiculoForm() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const isNew = !id || id === 'novo'
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const canDelete = !isNew && isGestor(perfil?.role)
@@ -45,10 +49,17 @@ export default function VeiculoForm() {
 
   async function handleDelete() {
     if (!id) return
-    if (!window.confirm(`Excluir o veículo ${form.placa || ''} DEFINITIVAMENTE?`)) return
+    const ok = await confirm({
+      title: 'Excluir veículo',
+      message: `Excluir o veículo ${form.placa || ''} DEFINITIVAMENTE?`,
+      tone: 'danger',
+      confirmText: 'Excluir',
+    })
+    if (!ok) return
     setDeleting(true)
     try {
       await deleteVeiculo(id)
+      toast.success('Veículo excluído.')
       navigate('/veiculos')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao excluir.')

@@ -6,6 +6,8 @@ import type { UnidadeInput, TipoUnidade } from '../types/unidade'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import { isGestor } from '../lib/permissions'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -24,6 +26,8 @@ export default function UnidadeForm() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const isNew = !id || id === 'novo'
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const canDelete = !isNew && isGestor(perfil?.role)
@@ -37,11 +41,18 @@ export default function UnidadeForm() {
 
   async function handleDelete() {
     if (!id) return
-    if (!window.confirm('Excluir essa unidade DEFINITIVAMENTE? Esta ação não pode ser desfeita. Se houver multas, ocorrências ou outros registros vinculados, a exclusão pode falhar.')) return
+    const ok = await confirm({
+      title: 'Excluir unidade',
+      message: 'Excluir essa unidade DEFINITIVAMENTE? Esta ação não pode ser desfeita. Se houver multas, ocorrências ou outros registros vinculados, a exclusão pode falhar.',
+      tone: 'danger',
+      confirmText: 'Excluir',
+    })
+    if (!ok) return
     setDeleting(true)
     setError(null)
     try {
       await deleteUnidade(id)
+      toast.success('Unidade excluída.')
       navigate('/unidades')
     } catch (e) {
       setError(traduzErro(e))

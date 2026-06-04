@@ -9,6 +9,8 @@ import type { Condominio } from '../types/condominio'
 import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
 import { isGestor } from '../lib/permissions'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -33,6 +35,8 @@ export default function PessoaForm() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const isNew = !id || id === 'novo'
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const canDelete = !isNew && isGestor(perfil?.role)
@@ -54,11 +58,18 @@ export default function PessoaForm() {
 
   async function handleDelete() {
     if (!id) return
-    if (!window.confirm(`Excluir "${form.nome || 'essa pessoa'}" DEFINITIVAMENTE? Esta ação não pode ser desfeita.`)) return
+    const ok = await confirm({
+      title: 'Excluir pessoa',
+      message: `Excluir "${form.nome || 'essa pessoa'}" DEFINITIVAMENTE? Esta ação não pode ser desfeita.`,
+      tone: 'danger',
+      confirmText: 'Excluir',
+    })
+    if (!ok) return
     setDeleting(true)
     setError(null)
     try {
       await deletePessoa(id)
+      toast.success('Pessoa excluída.')
       navigate('/pessoas')
     } catch (e) {
       setError(traduzErro(e))
@@ -125,7 +136,8 @@ export default function PessoaForm() {
 
   async function handleRemoverFoto() {
     if (!form.foto_url) return
-    if (!window.confirm('Remover a foto?')) return
+    const ok = await confirm({ message: 'Remover a foto?', tone: 'danger', confirmText: 'Remover' })
+    if (!ok) return
     const prevPath = extrairPathDoPublicUrl(form.foto_url)
     if (prevPath) {
       supabase.storage.from(FOTO_BUCKET).remove([prevPath]).catch(() => {})
