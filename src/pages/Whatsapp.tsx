@@ -5,13 +5,14 @@ import { listCondominios } from '../lib/condominios'
 import type { Condominio } from '../types/condominio'
 import {
   listWaConversas, getWaThread, sendWaMessage, markWaLida, ensureWaConversa,
-  listContatosComTelefone,
+  listContatosComTelefone, deleteWaConversa,
   type WaConversa, type WaMensagem, type PessoaContato,
 } from '../lib/whatsappInbox'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import TemplatePicker from '../components/TemplatePicker'
 import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 
 function horaCurta(iso: string | null): string {
   if (!iso) return ''
@@ -22,6 +23,7 @@ function horaCurta(iso: string | null): string {
 export default function Whatsapp() {
   const { perfil, user } = useAuth()
   const toast = useToast()
+  const confirm = useConfirm()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
   const [condos, setCondos] = useState<Condominio[]>([])
@@ -106,6 +108,25 @@ export default function Whatsapp() {
       toast.error('Erro', e instanceof Error ? e.message : '')
     } finally {
       setEnviando(false)
+    }
+  }
+
+  async function handleApagarConversa() {
+    if (!ativa) return
+    const ok = await confirm({
+      title: 'Apagar conversa?',
+      message: 'A conversa e todo o histórico dela serão removidos do app. Não desconecta o WhatsApp.',
+      tone: 'danger',
+      confirmText: 'Apagar',
+    })
+    if (!ok) return
+    try {
+      await deleteWaConversa(ativa.id)
+      setAtiva(null)
+      setConversas((cs) => cs.filter((c) => c.id !== ativa.id))
+      toast.success('Conversa apagada')
+    } catch (e) {
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 
@@ -204,6 +225,13 @@ export default function Whatsapp() {
                   <div className="text-sm font-medium text-slate-100">{ativa.contato_nome || `+${ativa.telefone}`}</div>
                   <div className="text-[11px] text-slate-500">+{ativa.telefone}</div>
                 </div>
+                <button
+                  onClick={handleApagarConversa}
+                  title="Apagar conversa"
+                  className="text-slate-500 hover:text-red-400 text-sm px-2 py-1"
+                >
+                  🗑
+                </button>
               </div>
 
               <div ref={msgsRef} className="flex-1 overflow-y-auto p-4 space-y-2">

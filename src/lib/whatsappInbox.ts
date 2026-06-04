@@ -64,6 +64,11 @@ export async function arquivarWaConversa(wa_conversa_id: string, arquivada = tru
   await supabase.from('wa_conversas').update({ arquivada }).eq('id', wa_conversa_id)
 }
 
+export async function deleteWaConversa(wa_conversa_id: string): Promise<void> {
+  const { error } = await supabase.from('wa_conversas').delete().eq('id', wa_conversa_id)
+  if (error) throw error
+}
+
 /** Acha/cria a conversa do telefone e devolve. */
 export async function ensureWaConversa(input: {
   condominio_id: string
