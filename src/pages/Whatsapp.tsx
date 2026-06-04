@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import { listCondominios } from '../lib/condominios'
+import { whatsappInstance } from '../lib/whatsapp'
 import type { Condominio } from '../types/condominio'
 import {
   listWaConversas, getWaThread, sendWaMessage, markWaLida, ensureWaConversa,
@@ -35,6 +36,7 @@ export default function Whatsapp() {
   const [texto, setTexto] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [novaOpen, setNovaOpen] = useState(false)
+  const [conectado, setConectado] = useState<boolean | null>(null)
 
   const msgsRef = useRef<HTMLDivElement | null>(null)
 
@@ -58,6 +60,19 @@ export default function Whatsapp() {
     const load = () => listWaConversas(scopeId).then((c) => { if (alive) setConversas(c) }).catch(() => {})
     load()
     const t = window.setInterval(load, 5000)
+    return () => { alive = false; clearInterval(t) }
+  }, [scopeId])
+
+  // Status de conexão (não bloqueia o histórico; só avisa)
+  useEffect(() => {
+    if (!scopeId) { setConectado(null); return }
+    let alive = true
+    const check = () =>
+      whatsappInstance(scopeId, 'status')
+        .then((r) => { if (alive) setConectado(!!r.conectado) })
+        .catch(() => { if (alive) setConectado(false) })
+    check()
+    const t = window.setInterval(check, 20000)
     return () => { alive = false; clearInterval(t) }
   }, [scopeId])
 
@@ -86,11 +101,16 @@ export default function Whatsapp() {
 
   async function handleEnviar() {
     if (!ativa || !texto.trim() || !user) return
+    if (conectado === false) {
+      toast.error('WhatsApp desconectado', 'Reconecte em ⚙ Conexão antes de enviar. O histórico continua salvo.')
+      return
+    }
     setEnviando(true)
     try {
       const r = await sendWaMessage({ conversa: ativa, texto: texto.trim(), autor_id: user.id })
       if (r.skipped) {
-        toast.error('WhatsApp inativo', 'Conecte o WhatsApp do condomínio antes de enviar.')
+        setConectado(false)
+        toast.error('WhatsApp desconectado', 'Reconecte em ⚙ Conexão antes de enviar. O histórico continua salvo.')
         return
       }
       if (!r.ok) {
@@ -171,6 +191,14 @@ export default function Whatsapp() {
           >
             {condos.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
           </select>
+        </div>
+      )}
+
+      {conectado === false && (
+        <div className="mb-4 flex items-center gap-3 rounded-md border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-200">
+          <span className="inline-block w-2 h-2 rounded-full bg-amber-400" />
+          <span className="flex-1">WhatsApp desconectado. O histórico continua aqui, mas não dá pra enviar até reconectar.</span>
+          <Link to="/whatsapp-config"><Button size="sm" variant="secondary">Reconectar</Button></Link>
         </div>
       )}
 

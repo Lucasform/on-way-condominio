@@ -46,6 +46,18 @@ export async function listWaConversas(
   return (data ?? []) as WaConversa[]
 }
 
+/** Total de mensagens não-lidas de WhatsApp no condomínio (pra badge do menu). */
+export async function countWaUnread(condominio_id: string): Promise<number> {
+  const { data, error } = await supabase
+    .from('wa_conversas')
+    .select('nao_lidas')
+    .eq('condominio_id', condominio_id)
+    .eq('arquivada', false)
+    .gt('nao_lidas', 0)
+  if (error) return 0
+  return ((data ?? []) as Array<{ nao_lidas: number }>).reduce((s, r) => s + (r.nao_lidas ?? 0), 0)
+}
+
 export async function getWaThread(wa_conversa_id: string): Promise<WaMensagem[]> {
   const { data, error } = await supabase
     .from('wa_mensagens')

@@ -4,6 +4,7 @@ import { useAuth } from './AuthProvider'
 import { signOut } from '../lib/auth'
 import { menuFor, roleLabel, isGroup } from '../lib/nav'
 import { supabase } from '../lib/supabase'
+import { countWaUnread } from '../lib/whatsappInbox'
 import NotificationBell from './NotificationBell'
 import Logo from './Logo'
 import CondominioSwitcher from './CondominioSwitcher'
@@ -27,6 +28,19 @@ export default function AppShell() {
       .then(({ count }) => setTemPessoaResidencial((count ?? 0) > 0))
   }, [user, perfil])
   const podeAlternarMorador = !!perfil && perfil.role !== 'morador' && temPessoaResidencial
+
+  // Badge de WhatsApp não-lido (staff de 1 condomínio)
+  const [waUnread, setWaUnread] = useState(0)
+  useEffect(() => {
+    const condoId = perfil?.condominio_id
+    const staff = perfil && ['administradora', 'sindico', 'subsindico'].includes(perfil.role)
+    if (!condoId || !staff) { setWaUnread(0); return }
+    let alive = true
+    const load = () => countWaUnread(condoId).then((n) => { if (alive) setWaUnread(n) }).catch(() => {})
+    load()
+    const t = window.setInterval(load, 30000)
+    return () => { alive = false; clearInterval(t) }
+  }, [perfil])
   const [condoLogo, setCondoLogo] = useState<string | null>(null)
   const [condoNome, setCondoNome] = useState<string | null>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -173,7 +187,14 @@ export default function AppShell() {
                           }`
                         }
                       >
-                        {child.label}
+                        <span className="flex items-center justify-between gap-2">
+                          {child.label}
+                          {child.to === '/whatsapp' && waUnread > 0 && (
+                            <span className="shrink-0 text-[10px] bg-emerald-500 text-white rounded-full px-1.5 py-0.5">
+                              {waUnread}
+                            </span>
+                          )}
+                        </span>
                       </NavLink>
                     ))}
                   </div>
