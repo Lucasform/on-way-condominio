@@ -24,6 +24,8 @@ import type {
   StatusFornecedor,
   TipoFornecedor,
 } from '../types/condominioFornecedor'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -82,6 +84,8 @@ const EMPTY: CondominioFornecedorInput = {
 
 export default function CondominioFornecedoresPage() {
   const { user, perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const staff = isStaff(perfil?.role)
   const gestor = isGestor(perfil?.role)
 
@@ -209,8 +213,9 @@ export default function CondominioFornecedoresPage() {
     try {
       await aprovarFornecedor(r.id, user.id)
       await load()
+      toast.success(`${r.nome} aprovado.`)
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao aprovar.')
+      toast.error('Erro ao aprovar', e instanceof Error ? e.message : '')
     } finally {
       setWorking(false)
     }
@@ -224,21 +229,28 @@ export default function CondominioFornecedoresPage() {
     try {
       await recusarFornecedor(r.id, user.id, motivo || undefined)
       await load()
+      toast.success(`${r.nome} recusado.`)
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao recusar.')
+      toast.error('Erro ao recusar', e instanceof Error ? e.message : '')
     } finally {
       setWorking(false)
     }
   }
 
   async function handleInativar(r: CondominioFornecedor) {
-    if (!window.confirm(`Inativar ${r.nome}?`)) return
+    const ok = await confirm({
+      message: `Inativar ${r.nome}?`,
+      tone: 'danger',
+      confirmText: 'Inativar',
+    })
+    if (!ok) return
     setWorking(true)
     try {
       await inativarFornecedor(r.id)
       await load()
+      toast.success(`${r.nome} inativado.`)
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao inativar.')
+      toast.error('Erro ao inativar', e instanceof Error ? e.message : '')
     } finally {
       setWorking(false)
     }
@@ -254,8 +266,9 @@ export default function CondominioFornecedoresPage() {
         estrelas,
       })
       await load()
+      toast.success('Avaliação registrada.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao avaliar.')
+      toast.error('Erro ao avaliar', e instanceof Error ? e.message : '')
     } finally {
       setWorking(false)
     }

@@ -11,6 +11,7 @@ import {
 } from '../lib/condominioAnexos'
 import DeleteButton from './ui/DeleteButton'
 import Button from './ui/Button'
+import { useConfirm } from './ui/ConfirmProvider'
 import Pill from './ui/Pill'
 import { TextInput } from './ui/Input'
 
@@ -32,6 +33,7 @@ export default function CondominioAnexosManager({
   descricao,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const confirm = useConfirm()
   const [anexos, setAnexos] = useState<CondominioAnexo[]>([])
   const [loading, setLoading] = useState(true)
   const [novoNome, setNovoNome] = useState('')
@@ -119,7 +121,13 @@ export default function CondominioAnexosManager({
   }
 
   async function handleApagar(a: CondominioAnexo) {
-    if (!window.confirm(`Apagar "${a.nome}" DEFINITIVAMENTE?`)) return
+    const ok = await confirm({
+      title: 'Apagar anexo',
+      message: `Apagar "${a.nome}" DEFINITIVAMENTE?`,
+      tone: 'danger',
+      confirmText: 'Apagar',
+    })
+    if (!ok) return
     try { await deleteAnexo(a); await reload() }
     catch (e) { setError(e instanceof Error ? e.message : 'Erro.') }
   }

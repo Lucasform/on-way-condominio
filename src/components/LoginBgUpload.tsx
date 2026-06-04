@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Button from './ui/Button'
+import { useConfirm } from './ui/ConfirmProvider'
 
 interface Props {
   condominio_id: string
@@ -17,6 +18,7 @@ const MAX_MB = 5
  * de bucket existente. Salva a URL pública em `condominios.imagem_login_url`.
  */
 export default function LoginBgUpload({ condominio_id, current, onChange }: Props) {
+  const confirm = useConfirm()
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -55,7 +57,8 @@ export default function LoginBgUpload({ condominio_id, current, onChange }: Prop
   }
 
   async function handleRemove() {
-    if (!window.confirm('Remover imagem de fundo?')) return
+    const ok = await confirm({ message: 'Remover imagem de fundo?', tone: 'danger', confirmText: 'Remover' })
+    if (!ok) return
     setUploading(true)
     setError(null)
     try {

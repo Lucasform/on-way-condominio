@@ -13,6 +13,8 @@ import { listCondominios } from '../lib/condominios'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import { isGestor, isStaff } from '../lib/permissions'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -20,6 +22,8 @@ import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
 
 export default function Templates() {
   const { user, perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
   const [condos, setCondos] = useState<Condominio[]>([])
@@ -156,17 +160,24 @@ export default function Templates() {
       await setTemplateAtivo(t.id, !t.ativo)
       await reload()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 
   async function apagar(t: MensagemTemplate) {
-    if (!window.confirm(`Apagar definitivamente o template "${t.titulo}"?`)) return
+    const ok = await confirm({
+      title: 'Apagar template',
+      message: `Apagar definitivamente o template "${t.titulo}"?`,
+      tone: 'danger',
+      confirmText: 'Apagar',
+    })
+    if (!ok) return
     try {
       await deleteTemplate(t.id)
       await reload()
+      toast.success('Template apagado.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 

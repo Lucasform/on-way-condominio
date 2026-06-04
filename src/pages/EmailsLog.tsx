@@ -14,6 +14,8 @@ import type { Condominio } from '../types/condominio'
 import type { Pessoa } from '../types/pessoa'
 import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
@@ -46,6 +48,8 @@ const EMPTY_COMPOSE: ComposeState = {
 
 export default function EmailsLog() {
   const { user, perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const podeCompor =
     perfil?.role === 'admin_onway'
@@ -98,13 +102,20 @@ export default function EmailsLog() {
   const [busy, setBusy] = useState(false)
 
   async function apagar(id: string) {
-    if (!window.confirm('Apagar este registro do log? Esta ação não pode ser desfeita.')) return
+    const ok = await confirm({
+      title: 'Apagar registro',
+      message: 'Apagar este registro do log? Esta ação não pode ser desfeita.',
+      tone: 'danger',
+      confirmText: 'Apagar',
+    })
+    if (!ok) return
     setBusy(true)
     try {
       await deleteEmailLog(id)
       await reload()
+      toast.success('Registro apagado.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     } finally {
       setBusy(false)
     }
@@ -112,14 +123,20 @@ export default function EmailsLog() {
 
   async function apagarTodos() {
     if (rows.length === 0) return
-    if (!window.confirm(`Apagar TODOS os ${rows.length} registros visíveis? Esta ação não pode ser desfeita.`)) return
+    const ok = await confirm({
+      title: 'Apagar todos visíveis',
+      message: `Apagar TODOS os ${rows.length} registros visíveis? Esta ação não pode ser desfeita.`,
+      tone: 'danger',
+      confirmText: 'Apagar todos',
+    })
+    if (!ok) return
     setBusy(true)
     try {
       const apagados = await deleteEmailLogs(rows.map((r) => r.id))
       await reload()
-      alert(`${apagados} registro${apagados !== 1 ? 's' : ''} apagado${apagados !== 1 ? 's' : ''}.`)
+      toast.success(`${apagados} registro${apagados !== 1 ? 's' : ''} apagado${apagados !== 1 ? 's' : ''}.`)
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     } finally {
       setBusy(false)
     }

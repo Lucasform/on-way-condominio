@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Button from './ui/Button'
+import { useToast } from './ui/Toast'
+import { useConfirm } from './ui/ConfirmProvider'
 
 type Factor = { id: string; friendly_name?: string; factor_type: string; status: 'verified' | 'unverified' }
 
 export default function TwoFactorPanel() {
+  const toast = useToast()
+  const confirm = useConfirm()
   const [factors, setFactors] = useState<Factor[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -73,14 +77,21 @@ export default function TwoFactorPanel() {
   }
 
   async function removerFator(id: string) {
-    if (!window.confirm('Remover este fator? Você perderá a proteção 2FA.')) return
+    const ok = await confirm({
+      title: 'Remover fator 2FA',
+      message: 'Remover este fator? Você perderá a proteção 2FA.',
+      tone: 'danger',
+      confirmText: 'Remover',
+    })
+    if (!ok) return
     setBusy(true)
     try {
       const { error } = await supabase.auth.mfa.unenroll({ factorId: id })
       if (error) throw error
       await reload()
+      toast.success('Fator removido.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     } finally {
       setBusy(false)
     }

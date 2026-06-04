@@ -3,6 +3,8 @@ import { listAudit, deleteAuditEntries, type AuditEntry } from '../lib/auditLog'
 import { listCondominios } from '../lib/condominios'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select, TextInput, Field } from '../components/ui/Input'
@@ -19,6 +21,8 @@ const ACOES = [
 
 export default function AuditLog() {
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const podeApagar = perfil?.role === 'admin_onway'
   const [busy, setBusy] = useState(false)
@@ -145,15 +149,21 @@ export default function AuditLog() {
           podeApagar && selecionados.size > 0 ? (
             <Button variant="danger" disabled={busy} onClick={async () => {
               const ids = Array.from(selecionados)
-              if (!window.confirm(`Apagar ${ids.length} registro${ids.length !== 1 ? 's' : ''} selecionado${ids.length !== 1 ? 's' : ''}? Esta ação não pode ser desfeita.`)) return
+              const ok = await confirm({
+                title: 'Apagar registros',
+                message: `Apagar ${ids.length} registro${ids.length !== 1 ? 's' : ''} selecionado${ids.length !== 1 ? 's' : ''}? Esta ação não pode ser desfeita.`,
+                tone: 'danger',
+                confirmText: 'Apagar',
+              })
+              if (!ok) return
               setBusy(true)
               try {
                 const n = await deleteAuditEntries(ids)
                 setSelecionados(new Set())
                 await reload()
-                alert(`${n} registro${n !== 1 ? 's' : ''} apagado${n !== 1 ? 's' : ''}.`)
+                toast.success(`${n} registro${n !== 1 ? 's' : ''} apagado${n !== 1 ? 's' : ''}.`)
               } catch (e) {
-                alert(e instanceof Error ? e.message : 'Erro.')
+                toast.error('Erro', e instanceof Error ? e.message : '')
               } finally {
                 setBusy(false)
               }

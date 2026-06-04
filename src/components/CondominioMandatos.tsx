@@ -12,6 +12,8 @@ import {
   type CargoDiretoria,
 } from '../lib/diretoriaMandatos'
 import Button from './ui/Button'
+import { useToast } from './ui/Toast'
+import { useConfirm } from './ui/ConfirmProvider'
 import { Field, Select, TextInput, TextArea } from './ui/Input'
 
 interface PerfilOpcao {
@@ -33,6 +35,8 @@ interface Props {
 export default function CondominioMandatos({ condominio_id }: Props) {
   const { perfil: meuPerfil } = useAuth()
   const podeGerenciar = isStaff(meuPerfil?.role)
+  const toast = useToast()
+  const confirm = useConfirm()
 
   const [mandatos, setMandatos] = useState<Mandato[]>([])
   const [perfis, setPerfis] = useState<PerfilOpcao[]>([])
@@ -113,22 +117,33 @@ export default function CondominioMandatos({ condominio_id }: Props) {
   }
 
   async function encerrar(m: Mandato) {
-    if (!window.confirm(`Encerrar mandato de ${nomePerfil(m.perfil_id, perfis)} (${cargoLabel(m.cargo)}) hoje?`)) return
+    const ok = await confirm({
+      message: `Encerrar mandato de ${nomePerfil(m.perfil_id, perfis)} (${cargoLabel(m.cargo)}) hoje?`,
+      confirmText: 'Encerrar',
+    })
+    if (!ok) return
     try {
       await encerrarMandato(m.id)
       await reload()
+      toast.success('Mandato encerrado.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 
   async function remover(m: Mandato) {
-    if (!window.confirm('Apagar mandato definitivamente?')) return
+    const ok = await confirm({
+      message: 'Apagar mandato definitivamente?',
+      tone: 'danger',
+      confirmText: 'Apagar',
+    })
+    if (!ok) return
     try {
       await deleteMandato(m.id)
       await reload()
+      toast.success('Mandato apagado.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 

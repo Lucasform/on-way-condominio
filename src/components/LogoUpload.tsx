@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useConfirm } from './ui/ConfirmProvider'
 
 interface Props {
   condominio_id: string
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function LogoUpload({ condominio_id, current, onChange }: Props) {
+  const confirm = useConfirm()
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -46,7 +48,8 @@ export default function LogoUpload({ condominio_id, current, onChange }: Props) 
   }
 
   async function handleRemove() {
-    if (!window.confirm('Remover logo?')) return
+    const ok = await confirm({ message: 'Remover logo?', tone: 'danger', confirmText: 'Remover' })
+    if (!ok) return
     setUploading(true)
     try {
       await supabase.from('condominios').update({ logo_url: null }).eq('id', condominio_id)

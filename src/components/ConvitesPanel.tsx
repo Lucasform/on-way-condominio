@@ -11,6 +11,8 @@ import {
 import { listUnidades } from '../lib/unidades'
 import type { Unidade } from '../types/unidade'
 import Button from './ui/Button'
+import { useToast } from './ui/Toast'
+import { useConfirm } from './ui/ConfirmProvider'
 import DeleteButton from './ui/DeleteButton'
 import Pill from './ui/Pill'
 import { Field, TextInput, Select } from './ui/Input'
@@ -29,6 +31,8 @@ const ROLES: { value: ConviteRole; label: string }[] = [
 ]
 
 export default function ConvitesPanel({ condominio_id }: Props) {
+  const toast = useToast()
+  const confirm = useConfirm()
   const [convites, setConvites] = useState<Convite[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
@@ -98,32 +102,50 @@ export default function ConvitesPanel({ condominio_id }: Props) {
   }
 
   async function handleRevogar(c: Convite) {
-    if (!window.confirm(`Revogar código "${c.codigo}"? Não dará mais pra usar.`)) return
+    const ok = await confirm({
+      message: `Revogar código "${c.codigo}"? Não dará mais pra usar.`,
+      tone: 'danger',
+      confirmText: 'Revogar',
+    })
+    if (!ok) return
     try {
       await revogarConvite(c.id)
       await reload()
+      toast.success('Código revogado.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 
   async function handleApagar(c: Convite) {
-    if (!window.confirm(`Apagar código "${c.codigo}" DEFINITIVAMENTE? Esta ação não pode ser desfeita.`)) return
+    const ok = await confirm({
+      title: 'Apagar código',
+      message: `Apagar código "${c.codigo}" DEFINITIVAMENTE? Esta ação não pode ser desfeita.`,
+      tone: 'danger',
+      confirmText: 'Apagar',
+    })
+    if (!ok) return
     try {
       await deleteConvite(c.id)
       await reload()
+      toast.success('Código apagado.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao apagar.')
+      toast.error('Erro ao apagar', e instanceof Error ? e.message : '')
     }
   }
 
   async function handleRenovar(c: Convite) {
-    if (!window.confirm(`Renovar "${c.codigo}" por +30 dias?\nUsos zeram e código fica reativado.`)) return
+    const ok = await confirm({
+      message: `Renovar "${c.codigo}" por +30 dias? Usos zeram e código fica reativado.`,
+      confirmText: 'Renovar',
+    })
+    if (!ok) return
     try {
       await renovarConvite(c.id, 30)
       await reload()
+      toast.success('Código renovado.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 

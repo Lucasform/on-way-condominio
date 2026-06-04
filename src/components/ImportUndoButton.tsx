@@ -7,6 +7,8 @@ import {
   type ImportTipo,
 } from '../lib/importBatches'
 import Button from './ui/Button'
+import { useToast } from './ui/Toast'
+import { useConfirm } from './ui/ConfirmProvider'
 
 interface Props {
   condominio_id: string
@@ -22,6 +24,8 @@ interface Props {
  */
 export default function ImportUndoButton({ condominio_id, tipo, refreshKey, onUndone }: Props) {
   const { user } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const [batch, setBatch] = useState<ImportBatch | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -40,19 +44,21 @@ export default function ImportUndoButton({ condominio_id, tipo, refreshKey, onUn
 
   async function desfazer() {
     if (!batch) return
-    if (!window.confirm(
-      `Desfazer a última importação?\n\n` +
-      `Vai apagar ${batch.total_criados} registro${batch.total_criados !== 1 ? 's' : ''} criado${batch.total_criados !== 1 ? 's' : ''} ${idade}.\n` +
-      `Esta ação é destrutiva — registros editados manualmente após a importação também são apagados.`,
-    )) return
+    const ok = await confirm({
+      title: 'Desfazer importação',
+      message: `Desfazer a última importação? Vai apagar ${batch.total_criados} registro${batch.total_criados !== 1 ? 's' : ''} criado${batch.total_criados !== 1 ? 's' : ''} ${idade}. Registros editados manualmente após a importação também são apagados.`,
+      tone: 'danger',
+      confirmText: 'Desfazer',
+    })
+    if (!ok) return
     setBusy(true)
     try {
       const n = await desfazerImportBatch(batch)
-      alert(`${n} registro${n !== 1 ? 's apagados' : ' apagado'}.`)
+      toast.success(`${n} registro${n !== 1 ? 's apagados' : ' apagado'}.`)
       setBatch(null)
       onUndone?.()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao desfazer.')
+      toast.error('Erro ao desfazer', e instanceof Error ? e.message : '')
     } finally {
       setBusy(false)
     }

@@ -5,6 +5,8 @@ import { listCondominios } from '../lib/condominios'
 import type { EventoInput, TipoEvento } from '../types/evento'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -38,6 +40,8 @@ export default function CalendarioForm() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const isNew = !id || id === 'novo'
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
@@ -128,10 +132,17 @@ export default function CalendarioForm() {
     const aviso = ehFuturo
       ? 'Apagar este evento? Os moradores deixam de vê-lo no calendário.'
       : 'Este evento já passou. Tem certeza que quer apagar? Histórico do calendário será alterado.'
-    if (!window.confirm(aviso)) return
+    const ok = await confirm({
+      title: 'Apagar evento',
+      message: aviso,
+      tone: 'danger',
+      confirmText: 'Apagar',
+    })
+    if (!ok) return
     setSaving(true)
     try {
       await deleteEvento(id)
+      toast.success('Evento apagado.')
       navigate('/calendario')
     } catch (e) {
       setError(traduzErro(e))
@@ -268,7 +279,8 @@ export default function CalendarioForm() {
             disabled={sendingLembrete}
             onClick={async () => {
               if (!id) return
-              if (!window.confirm('Enviar lembrete por e-mail pra todos os moradores agora?')) return
+              const ok = await confirm({ message: 'Enviar lembrete por e-mail para todos os moradores agora?', confirmText: 'Enviar' })
+              if (!ok) return
               setSendingLembrete(true)
               setLembreteMsg(null)
               try {

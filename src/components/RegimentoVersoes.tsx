@@ -3,6 +3,8 @@ import { useAuth } from './AuthProvider'
 import { isStaff, isGestor } from '../lib/permissions'
 import { listVersoes, criarSnapshot, deleteVersao, type RegimentoVersao } from '../lib/regimentoVersoes'
 import Button from './ui/Button'
+import { useToast } from './ui/Toast'
+import { useConfirm } from './ui/ConfirmProvider'
 import { Field, TextInput } from './ui/Input'
 
 interface Props {
@@ -13,14 +15,23 @@ export default function RegimentoVersoes({ condominio_id }: Props) {
   const { user, perfil } = useAuth()
   const podeGerenciar = isStaff(perfil?.role)
   const podeApagar = isGestor(perfil?.role)
+  const toast = useToast()
+  const confirm = useConfirm()
 
   async function apagar(v: RegimentoVersao) {
-    if (!window.confirm(`Apagar definitivamente o snapshot v${v.versao_num}? Multas que referenciam essa versão perderão o vínculo.`)) return
+    const ok = await confirm({
+      title: 'Apagar snapshot',
+      message: `Apagar definitivamente o snapshot v${v.versao_num}? Multas que referenciam essa versão perderão o vínculo.`,
+      tone: 'danger',
+      confirmText: 'Apagar',
+    })
+    if (!ok) return
     try {
       await deleteVersao(v.id)
       setVersoes((prev) => prev.filter((x) => x.id !== v.id))
+      toast.success('Snapshot apagado.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao apagar.')
+      toast.error('Erro ao apagar', e instanceof Error ? e.message : '')
     }
   }
 

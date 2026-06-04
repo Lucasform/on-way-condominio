@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { getPushStatus, enablePush, disablePush, pushSupported } from '../lib/push'
 import Button from './ui/Button'
+import { useConfirm } from './ui/ConfirmProvider'
 
 export default function PushToggle() {
+  const confirm = useConfirm()
   const [supported, setSupported] = useState(true)
   const [subscribed, setSubscribed] = useState(false)
   const [permission, setPermission] = useState<NotificationPermission>('default')
@@ -45,7 +47,12 @@ export default function PushToggle() {
   }
 
   async function handleDisable() {
-    if (!window.confirm('Desativar notificações deste dispositivo?')) return
+    const ok = await confirm({
+      message: 'Desativar notificações deste dispositivo?',
+      tone: 'danger',
+      confirmText: 'Desativar',
+    })
+    if (!ok) return
     setWorking(true)
     setError(null)
     try {

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useConfirm } from './ui/ConfirmProvider'
 
 interface Props {
   condominio_id: string
@@ -34,6 +35,7 @@ export default function CondominioAnexoPdf({
   statusProcessamento,
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const confirm = useConfirm()
   const [uploading, setUploading] = useState(false)
   const [processando, setProcessando] = useState(false)
   const [resultadoProc, setResultadoProc] = useState<string | null>(null)
@@ -114,7 +116,8 @@ export default function CondominioAnexoPdf({
 
   async function handleRemove() {
     if (!current) return
-    if (!window.confirm('Remover o PDF anexado?')) return
+    const ok = await confirm({ message: 'Remover o PDF anexado?', tone: 'danger', confirmText: 'Remover' })
+    if (!ok) return
     setUploading(true)
     setError(null)
     try {

@@ -5,6 +5,8 @@ import { isGestor } from '../lib/permissions'
 import { roleLabel } from '../lib/nav'
 import type { Role } from '../types/database'
 import Button from './ui/Button'
+import { useToast } from './ui/Toast'
+import { useConfirm } from './ui/ConfirmProvider'
 import { Select } from './ui/Input'
 
 interface PerfilLinha {
@@ -39,6 +41,8 @@ function msgErro(e: unknown): string {
 
 export default function CondominioDiretoria({ condominio_id }: Props) {
   const { perfil: meuPerfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const [diretoria, setDiretoria] = useState<PerfilLinha[]>([])
   const [candidatos, setCandidatos] = useState<PessoaCandidata[]>([])
   const [loading, setLoading] = useState(true)
@@ -153,7 +157,12 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
       if (novoCargo === 'sindico') {
         const ja = diretoria.find((d) => d.role === 'sindico')
         if (ja) {
-          if (!window.confirm(`Já existe um síndico: ${ja.nome_exibicao ?? '(sem nome)'}. Substituir e rebaixar o atual a subsíndico?`)) {
+          const ok = await confirm({
+            title: 'Substituir síndico',
+            message: `Já existe um síndico: ${ja.nome_exibicao ?? '(sem nome)'}. Substituir e rebaixar o atual a subsíndico?`,
+            confirmText: 'Substituir',
+          })
+          if (!ok) {
             setBusy(false)
             return
           }
@@ -177,15 +186,21 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
   }
 
   async function removerCargo(p: PerfilLinha) {
-    if (!window.confirm(`Remover ${roleLabel(p.role)} de ${p.nome_exibicao ?? '(sem nome)'}? A pessoa volta a ser morador.`)) return
+    const ok = await confirm({
+      message: `Remover ${roleLabel(p.role)} de ${p.nome_exibicao ?? '(sem nome)'}? A pessoa volta a ser morador.`,
+      tone: 'danger',
+      confirmText: 'Remover',
+    })
+    if (!ok) return
     setBusy(true)
     try {
       const { error: e } = await supabase
         .from('perfis').update({ role: 'morador' }).eq('id', p.id)
       if (e) throw e
       await carregar()
+      toast.success('Cargo removido.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     } finally {
       setBusy(false)
     }
@@ -195,7 +210,12 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
     if (novo === 'sindico') {
       const ja = diretoria.find((d) => d.role === 'sindico' && d.id !== p.id)
       if (ja) {
-        if (!window.confirm(`Já existe um síndico: ${ja.nome_exibicao ?? '(sem nome)'}. Substituir e rebaixar o atual a subsíndico?`)) return
+        const ok = await confirm({
+          title: 'Substituir síndico',
+          message: `Já existe um síndico: ${ja.nome_exibicao ?? '(sem nome)'}. Substituir e rebaixar o atual a subsíndico?`,
+          confirmText: 'Substituir',
+        })
+        if (!ok) return
         await supabase.from('perfis').update({ role: 'subsindico' }).eq('id', ja.id)
       }
     }
@@ -206,7 +226,7 @@ export default function CondominioDiretoria({ condominio_id }: Props) {
       if (e) throw e
       await carregar()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     } finally {
       setBusy(false)
     }
