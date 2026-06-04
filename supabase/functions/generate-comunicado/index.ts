@@ -8,10 +8,12 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { handleCors, jsonResponse } from '../_shared/cors.ts'
 import { consumeIaRateLimit } from '../_shared/rate-limit.ts'
+import { Logger } from '../_shared/log.ts'
 
 const MODEL = 'claude-haiku-4-5-20251001'
 
 Deno.serve(async (req: Request) => {
+  const log = new Logger('generate-comunicado')
   const cors = handleCors(req)
   if (cors) return cors
 
@@ -110,7 +112,7 @@ Gere o comunicado.`
 
     if (!resp.ok) {
       const txt = await resp.text()
-      console.error('[generate-comunicado] Claude error', resp.status, txt)
+      log.error('claude_api_failed', { status: resp.status, body: txt.slice(0, 500) })
       return jsonResponse({ error: 'IA indisponível.' }, 502)
     }
 
@@ -135,7 +137,7 @@ Gere o comunicado.`
       modelo_anexo_id: modeloAnexoId,
     })
   } catch (e) {
-    console.error('[generate-comunicado] erro:', e)
+    log.error('uncaught', { error: e instanceof Error ? e.message : String(e) })
     return jsonResponse({ error: e instanceof Error ? e.message : 'Erro desconhecido.' }, 500)
   }
 })

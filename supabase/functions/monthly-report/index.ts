@@ -5,6 +5,7 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { handleCors, jsonResponse } from '../_shared/cors.ts'
+import { Logger } from '../_shared/log.ts'
 
 const MODEL = 'claude-haiku-4-5-20251001'
 
@@ -22,6 +23,7 @@ interface KPIs {
 }
 
 Deno.serve(async (req: Request) => {
+  const log = new Logger('monthly-report')
   const cors = handleCors(req)
   if (cors) return cors
 
@@ -138,7 +140,7 @@ Deno.serve(async (req: Request) => {
 
     return jsonResponse({ ano_mes: anoMes, resultados })
   } catch (e) {
-    console.error('[monthly-report] erro geral:', e)
+    log.error('uncaught', { error: e instanceof Error ? e.message : String(e) })
     return jsonResponse({ error: e instanceof Error ? e.message : 'Erro.' }, 500)
   }
 })

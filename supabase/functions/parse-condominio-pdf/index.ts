@@ -16,6 +16,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2'
 // extractText devolve { totalPages, text: string[] } com texto por página.
 import { extractText, getDocumentProxy } from 'npm:unpdf@0.12.1'
 import { corsHeaders, handleCors, jsonResponse } from '../_shared/cors.ts'
+import { Logger } from '../_shared/log.ts'
 
 // @ts-expect-error: Supabase.ai injetado pelo runtime
 const aiSession = new Supabase.ai.Session('gte-small')
@@ -24,6 +25,7 @@ const MAX_MODELO_CHARS = 3000
 const MAX_ARTIGO_CHARS = 2000
 
 Deno.serve(async (req: Request) => {
+  const log = new Logger('parse-condominio-pdf')
   const cors = handleCors(req)
   if (cors) return cors
 
@@ -108,7 +110,7 @@ Deno.serve(async (req: Request) => {
 
     // 2) fallback: IA divide quando regex falha mas tem texto util
     if (artigos.length < 3 && texto.trim().length > 400) {
-      console.log(`[parse] regex achou ${artigos.length} artigos. Tentando IA fallback...`)
+      log.info('regex_low_yield_trying_ia', { artigos_regex: artigos.length })
       const artigosIA = await dividirComIA(texto)
       if (artigosIA.length > artigos.length) {
         artigos = artigosIA

@@ -6,6 +6,8 @@ import type { Condominio } from '../types/condominio'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import Pill from '../components/ui/Pill'
 import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
 import {
@@ -280,6 +282,8 @@ function ServicoList({
   canDelete: boolean
   onChange: () => void
 }) {
+  const toast = useToast()
+  const confirm = useConfirm()
   const prestadorNome = (id: string | null) =>
     id ? (prestadores.find((p) => p.id === id)?.nome ?? '—') : '—'
 
@@ -320,9 +324,10 @@ function ServicoList({
                 <StatusMenu
                   current={s.status}
                   onChange={async (novo) => {
-                    if (!window.confirm(`Mudar status para "${STATUS_LABEL[novo]}"?`)) return
+                    const ok = await confirm({ message: `Mudar status para "${STATUS_LABEL[novo]}"?` })
+                    if (!ok) return
                     try { await updateServico(s.id, { status: novo }); onChange() }
-                    catch (e) { alert(e instanceof Error ? e.message : 'Erro.') }
+                    catch (e) { toast.error('Erro', e instanceof Error ? e.message : '') }
                   }}
                 />
               )}
@@ -330,9 +335,15 @@ function ServicoList({
                 <DeleteButton
                   label=""
                   onClick={async () => {
-                    if (!window.confirm('Excluir esse serviço DEFINITIVAMENTE?')) return
+                    const ok = await confirm({
+                      title: 'Excluir serviço',
+                      message: 'Excluir esse serviço DEFINITIVAMENTE?',
+                      tone: 'danger',
+                      confirmText: 'Excluir',
+                    })
+                    if (!ok) return
                     try { await deleteServico(s.id); onChange() }
-                    catch (e) { alert(e instanceof Error ? e.message : 'Erro.') }
+                    catch (e) { toast.error('Erro', e instanceof Error ? e.message : '') }
                   }}
                 />
               )}
@@ -373,6 +384,8 @@ function PrestadorList({
   canDelete: boolean
   onChange: () => void
 }) {
+  const toast = useToast()
+  const confirm = useConfirm()
   if (prestadores.length === 0) {
     return <div className="text-center text-sm text-slate-500 py-10">Nenhum prestador cadastrado.</div>
   }
@@ -411,7 +424,7 @@ function PrestadorList({
                 <button
                   onClick={async () => {
                     try { await setPrestadorAtivo(p.id, !p.ativo); onChange() }
-                    catch (e) { alert(e instanceof Error ? e.message : 'Erro.') }
+                    catch (e) { toast.error('Erro', e instanceof Error ? e.message : '') }
                   }}
                   className="text-[11px] text-slate-500 hover:text-brand-700 dark:hover:text-brand-400 transition"
                   title={p.ativo ? 'Desativar' : 'Reativar'}
@@ -423,9 +436,15 @@ function PrestadorList({
                 <DeleteButton
                   label=""
                   onClick={async () => {
-                    if (!window.confirm(`Excluir o prestador "${p.nome}" DEFINITIVAMENTE? Serviços vinculados ficarão sem prestador.`)) return
+                    const ok = await confirm({
+                      title: 'Excluir prestador',
+                      message: `Excluir o prestador "${p.nome}" DEFINITIVAMENTE? Serviços vinculados ficarão sem prestador.`,
+                      tone: 'danger',
+                      confirmText: 'Excluir',
+                    })
+                    if (!ok) return
                     try { await deletePrestador(p.id); onChange() }
-                    catch (e) { alert(e instanceof Error ? e.message : 'Erro.') }
+                    catch (e) { toast.error('Erro', e instanceof Error ? e.message : '') }
                   }}
                 />
               )}

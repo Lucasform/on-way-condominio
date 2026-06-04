@@ -14,8 +14,10 @@
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { handleCors, jsonResponse } from '../_shared/cors.ts'
+import { Logger } from '../_shared/log.ts'
 
 Deno.serve(async (req: Request) => {
+  const log = new Logger('delete-condominio')
   const cors = handleCors(req)
   if (cors) return cors
 
@@ -107,7 +109,7 @@ Deno.serve(async (req: Request) => {
       },
     })
   } catch (e) {
-    console.error('[delete-condominio] erro:', e)
+    log.error('uncaught', { error: e instanceof Error ? e.message : String(e) })
     return jsonResponse({ error: e instanceof Error ? e.message : 'Erro desconhecido.' }, 500)
   }
 })
