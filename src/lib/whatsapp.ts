@@ -60,3 +60,30 @@ export async function sendWhatsApp(input: SendWaInput): Promise<{ ok?: boolean; 
   }
   return (data ?? {}) as { ok?: boolean; skipped?: boolean }
 }
+
+// ============================================================
+// Provisionamento da instância (Evolution) — QR self-service
+// ============================================================
+export type WaAction = 'connect' | 'status' | 'logout' | 'delete'
+
+export interface WaInstanceResult {
+  ok?: boolean
+  status?: string // 'open' | 'connecting' | 'close'
+  conectado?: boolean
+  qr_base64?: string | null
+  pairing_code?: string | null
+  instance?: string
+  error?: string
+}
+
+/**
+ * Cria/consulta/desconecta a instância WhatsApp do condomínio no servidor
+ * Evolution único. `connect` devolve o QR (base64) pra escanear.
+ */
+export async function whatsappInstance(condominio_id: string, action: WaAction): Promise<WaInstanceResult> {
+  const { data, error } = await supabase.functions.invoke('whatsapp-instance', {
+    body: { condominio_id, action },
+  })
+  if (error) return { ok: false, error: error.message }
+  return (data ?? {}) as WaInstanceResult
+}

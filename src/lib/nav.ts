@@ -121,6 +121,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/chat', label: 'Chat interno' },
         { to: '/comunicados', label: 'Comunicados' },
         { to: '/classificados', label: 'Classificados' },
+        { to: '/whatsapp-config', label: 'WhatsApp' },
       ],
     },
     {
@@ -178,6 +179,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/chat', label: 'Chat interno' },
         { to: '/comunicados', label: 'Comunicados' },
         { to: '/classificados', label: 'Classificados' },
+        { to: '/whatsapp-config', label: 'WhatsApp' },
       ],
     },
     {
@@ -235,6 +237,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/chat', label: 'Chat interno' },
         { to: '/comunicados', label: 'Comunicados' },
         { to: '/classificados', label: 'Classificados' },
+        { to: '/whatsapp-config', label: 'WhatsApp' },
       ],
     },
     {

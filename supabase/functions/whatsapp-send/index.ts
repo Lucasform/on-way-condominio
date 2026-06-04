@@ -55,12 +55,16 @@ Deno.serve(async (req: Request) => {
         reason: 'WhatsApp não configurado/ativo neste condomínio.',
       })
     }
-    if (!cfg.api_url || !cfg.instance_id || !cfg.api_token) {
+    if (!cfg.instance_id) {
       return jsonResponse({
         skipped: true,
-        reason: 'Credenciais WhatsApp incompletas.',
+        reason: 'Instância WhatsApp não definida.',
       })
     }
+
+    // Servidor Evolution é único (env); z-api ainda lê credenciais da config.
+    const evoUrl = (Deno.env.get('EVOLUTION_API_URL') ?? cfg.api_url ?? '').replace(/\/$/, '')
+    const evoKey = Deno.env.get('EVOLUTION_API_KEY') ?? cfg.api_token ?? ''
 
     const telefone = normalizePhone(body.telefone)
 
@@ -68,6 +72,9 @@ Deno.serve(async (req: Request) => {
     let init: RequestInit
 
     if (cfg.provider === 'z-api') {
+      if (!cfg.api_url || !cfg.api_token) {
+        return jsonResponse({ skipped: true, reason: 'Credenciais Z-API incompletas.' })
+      }
       // Z-API: POST https://api.z-api.io/instances/{id}/token/{token}/send-text
       url = `${cfg.api_url.replace(/\/$/, '')}/instances/${cfg.instance_id}/token/${cfg.api_token}/send-text`
       init = {
@@ -79,13 +86,16 @@ Deno.serve(async (req: Request) => {
         body: JSON.stringify({ phone: telefone, message: body.texto }),
       }
     } else if (cfg.provider === 'evolution') {
-      // Evolution: POST {api_url}/message/sendText/{instance}
-      url = `${cfg.api_url.replace(/\/$/, '')}/message/sendText/${cfg.instance_id}`
+      if (!evoUrl || !evoKey) {
+        return jsonResponse({ skipped: true, reason: 'Servidor Evolution não configurado.' })
+      }
+      // Evolution: POST {EVOLUTION_API_URL}/message/sendText/{instance}
+      url = `${evoUrl}/message/sendText/${cfg.instance_id}`
       init = {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          apikey: cfg.api_token,
+          apikey: evoKey,
         },
         body: JSON.stringify({
           number: telefone,
