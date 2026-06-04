@@ -11,6 +11,8 @@ import type { Chamado, StatusChamado } from '../types/chamado'
 import type { Condominio } from '../types/condominio'
 import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import { Select } from '../components/ui/Input'
 
@@ -113,6 +115,8 @@ function chamadoColumn(c: Chamado): ColumnKey {
 
 export default function Painel() {
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
@@ -250,14 +254,16 @@ export default function Painel() {
           return
         } else if (card.status === 'aplicada') {
           // Marca paga (atalho rápido). Síndico pode fazer outras transições no detalhe.
-          if (!window.confirm('Marcar multa como PAGA?')) return
+          const ok = await confirm({ message: 'Marcar multa como PAGA?', confirmText: 'Marcar paga' })
+          if (!ok) return
           await changeMultaStatus(card.id, 'paga')
         }
       } else if (card.kind === 'chamado') {
         if (card.status === 'aberto') {
           await updateChamadoStatus(card.id, 'em_andamento')
         } else if (card.status === 'resolvido') {
-          if (!window.confirm('Finalizar esse chamado?')) return
+          const ok = await confirm({ message: 'Finalizar esse chamado?', confirmText: 'Finalizar' })
+          if (!ok) return
           await updateChamadoStatus(card.id, 'finalizado')
         } else {
           navigate(`/chamados/${card.id}`)
@@ -266,7 +272,7 @@ export default function Painel() {
       }
       await reload()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 
@@ -297,12 +303,14 @@ export default function Painel() {
         if (card.status === 'aberta' && target === 'analise') {
           await updateOcorrenciaStatus(card.id, 'em_analise')
         } else if (target === 'finalizada') {
-          if (!window.confirm(`Arquivar essa ocorrência?`)) return
+          const ok = await confirm({ message: 'Arquivar essa ocorrência?', confirmText: 'Arquivar' })
+          if (!ok) return
           await updateOcorrenciaStatus(card.id, 'arquivada')
         }
       } else {
         if (card.status === 'em_analise' && target === 'em_curso') {
-          if (!window.confirm('Aplicar multa agora?')) return
+          const ok = await confirm({ message: 'Aplicar multa agora?', confirmText: 'Aplicar' })
+          if (!ok) return
           await changeMultaStatus(card.id, 'aplicada')
         } else if (target === 'finalizada') {
           const opt = window.prompt('Finalizar como: 1=Paga, 2=Cancelada, 3=Arquivada\nDigite 1, 2 ou 3:')
@@ -313,7 +321,7 @@ export default function Painel() {
       }
       await reload()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 

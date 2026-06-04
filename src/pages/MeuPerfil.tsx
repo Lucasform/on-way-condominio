@@ -6,6 +6,7 @@ import { roleLabel } from '../lib/nav'
 import PushToggle from '../components/PushToggle'
 import TwoFactorPanel from '../components/TwoFactorPanel'
 import MeusCondominios from '../components/MeusCondominios'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 
@@ -33,6 +34,7 @@ const ROLES_QUE_ASSINAM: string[] = ['admin_onway', 'administradora', 'sindico',
 
 export default function MeuPerfil() {
   const { user, perfil, refreshPerfil } = useAuth()
+  const confirm = useConfirm()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [pessoa, setPessoa] = useState<Pessoa | null>(null)
@@ -178,7 +180,8 @@ export default function MeuPerfil() {
 
   async function handleRemoveAvatar() {
     if (!perfil?.avatar_url || !user) return
-    if (!window.confirm('Remover sua foto de perfil?')) return
+    const ok = await confirm({ message: 'Remover sua foto de perfil?', tone: 'danger', confirmText: 'Remover' })
+    if (!ok) return
     setUploadingAvatar(true)
     setFeedback(null)
 
@@ -248,7 +251,8 @@ export default function MeuPerfil() {
 
   async function handleRemoveAssinatura() {
     if (!perfil?.assinatura_url || !user) return
-    if (!window.confirm('Remover sua assinatura?')) return
+    const ok = await confirm({ message: 'Remover sua assinatura?', tone: 'danger', confirmText: 'Remover' })
+    if (!ok) return
     setUploadingAssinatura(true)
     const prevPath = extrairPathDoPublicUrl(perfil.assinatura_url, ASSINATURA_BUCKET)
     const { error } = await supabase.from('perfis').update({ assinatura_url: null }).eq('id', perfil.id)

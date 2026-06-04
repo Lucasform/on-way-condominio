@@ -12,6 +12,8 @@ import type { RegimentoArtigo } from '../types/regimento'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import { isGestor } from '../lib/permissions'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
@@ -19,6 +21,8 @@ import RegimentoVersoes from '../components/RegimentoVersoes'
 
 export default function Regimento() {
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
@@ -74,41 +78,60 @@ export default function Regimento() {
   async function handleToggleAtivo(row: RegimentoArtigo) {
     const novoEstado = !row.ativo
     const label = `${row.numero ?? ''} ${row.titulo}`.trim()
-    if (!window.confirm(`${novoEstado ? 'Reativar' : 'Desativar'} "${label}"?`)) return
+    const ok = await confirm({
+      message: `${novoEstado ? 'Reativar' : 'Desativar'} "${label}"?`,
+      tone: novoEstado ? 'primary' : 'danger',
+      confirmText: novoEstado ? 'Reativar' : 'Desativar',
+    })
+    if (!ok) return
     try {
       await setRegimentoArtigoAtivo(row.id, novoEstado)
       await reload()
+      toast.success(novoEstado ? 'Artigo reativado.' : 'Artigo desativado.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 
   async function handleDeleteArtigo(row: RegimentoArtigo) {
     const label = `${row.numero ?? ''} ${row.titulo}`.trim()
-    if (!window.confirm(`Apagar definitivamente "${label}"? Esta acao nao pode ser desfeita.`)) return
+    const ok = await confirm({
+      title: 'Apagar artigo',
+      message: `Apagar definitivamente "${label}"? Esta ação não pode ser desfeita.`,
+      tone: 'danger',
+      confirmText: 'Apagar',
+    })
+    if (!ok) return
     try {
       await deleteRegimentoArtigo(row.id)
       await reload()
+      toast.success('Artigo apagado.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 
   async function handleDeleteInativos() {
     const inativos = rows.filter((r) => !r.ativo).length
     if (inativos === 0) {
-      alert('Nao ha artigos desativados pra apagar.')
+      toast.info('Sem artigos desativados', 'Nada para apagar.')
       return
     }
-    if (!window.confirm(`Apagar definitivamente ${inativos} artigo${inativos > 1 ? 's' : ''} desativado${inativos > 1 ? 's' : ''}? Esta acao nao pode ser desfeita.`)) return
+    const ok = await confirm({
+      title: 'Apagar inativos',
+      message: `Apagar definitivamente ${inativos} artigo${inativos > 1 ? 's' : ''} desativado${inativos > 1 ? 's' : ''}? Esta ação não pode ser desfeita.`,
+      tone: 'danger',
+      confirmText: 'Apagar todos',
+    })
+    if (!ok) return
     try {
       const apagados = await deleteRegimentoArtigosInativos(
         isAdmin && scopeId ? scopeId : undefined,
       )
       await reload()
-      alert(`${apagados} artigo${apagados !== 1 ? 's' : ''} apagado${apagados !== 1 ? 's' : ''}.`)
+      toast.success(`${apagados} artigo${apagados !== 1 ? 's' : ''} apagado${apagados !== 1 ? 's' : ''}.`)
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 

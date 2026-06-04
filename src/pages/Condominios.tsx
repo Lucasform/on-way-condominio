@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, Navigate } from 'react-router-dom'
 import { listCondominios, setCondominioAtivo } from '../lib/condominios'
 import type { Condominio } from '../types/condominio'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import Pill from '../components/ui/Pill'
@@ -11,6 +13,8 @@ import { useAuth } from '../components/AuthProvider'
 export default function Condominios() {
   const navigate = useNavigate()
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
 
   // Admin em "view as" enxerga apenas o condomínio assumido — vai direto pro detalhe
   if (perfil?.role === 'admin_onway' && perfil.condominio_id) {
@@ -43,15 +47,21 @@ export default function Condominios() {
 
   async function handleToggleAtivo(row: Condominio) {
     const novoEstado = !row.ativo
-    const msg = novoEstado
-      ? `Restaurar "${row.nome}"? Volta a aparecer pra todos.`
-      : `Arquivar "${row.nome}"? Os dados ficam preservados, mas o condomínio some da operação.`
-    if (!window.confirm(msg)) return
+    const ok = await confirm({
+      title: novoEstado ? 'Restaurar condomínio' : 'Arquivar condomínio',
+      message: novoEstado
+        ? `Restaurar "${row.nome}"? Volta a aparecer pra todos.`
+        : `Arquivar "${row.nome}"? Os dados ficam preservados, mas o condomínio some da operação.`,
+      tone: novoEstado ? 'primary' : 'danger',
+      confirmText: novoEstado ? 'Restaurar' : 'Arquivar',
+    })
+    if (!ok) return
     try {
       await setCondominioAtivo(row.id, novoEstado)
       await reload()
+      toast.success(novoEstado ? 'Condomínio restaurado.' : 'Condomínio arquivado.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao atualizar.')
+      toast.error('Erro ao atualizar', e instanceof Error ? e.message : '')
     }
   }
 

@@ -9,6 +9,8 @@ import {
 } from '../lib/condominios'
 import type { CondominioInput } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import ConfirmarExclusaoCondominio from '../components/ConfirmarExclusaoCondominio'
@@ -52,6 +54,8 @@ export default function CondominioForm() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const isNew = !id || id === 'novo'
   const isAdmin = perfil?.role === 'admin_onway'
   const isSindico = ['administradora', 'sindico', 'subsindico'].includes(perfil?.role ?? '')
@@ -69,13 +73,20 @@ export default function CondominioForm() {
 
   async function handleArquivar() {
     if (!id) return
-    if (!window.confirm(`Arquivar "${form.nome}"?\n\nO condomínio fica oculto da operação mas os dados ficam preservados. O administrador OnWay pode restaurar ou excluir definitivamente depois.`)) return
+    const ok = await confirm({
+      title: 'Arquivar condomínio',
+      message: `Arquivar "${form.nome}"? O condomínio fica oculto da operação mas os dados ficam preservados. O administrador OnWay pode restaurar ou excluir definitivamente depois.`,
+      tone: 'danger',
+      confirmText: 'Arquivar',
+    })
+    if (!ok) return
     setArquivando(true)
     try {
       await setCondominioAtivo(id, false)
       setAtivo(false)
+      toast.success('Condomínio arquivado.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao arquivar.')
+      toast.error('Erro ao arquivar', e instanceof Error ? e.message : '')
     } finally {
       setArquivando(false)
     }
@@ -87,8 +98,9 @@ export default function CondominioForm() {
     try {
       await setCondominioAtivo(id, true)
       setAtivo(true)
+      toast.success('Condomínio restaurado.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao restaurar.')
+      toast.error('Erro ao restaurar', e instanceof Error ? e.message : '')
     } finally {
       setArquivando(false)
     }
@@ -100,7 +112,7 @@ export default function CondominioForm() {
     setError(null)
     try {
       const r = await deleteCondominio(id)
-      alert(`✓ Excluído. ${r.users} usuários removidos.`)
+      toast.success(`Excluído. ${r.users} usuários removidos.`)
       navigate('/condominios')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao excluir.')
