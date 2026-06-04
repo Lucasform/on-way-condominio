@@ -423,6 +423,17 @@ export default function AIAnalysisPanel({ ocorrenciaId, createdAt, canAnalyse, c
             </dl>
           )}
 
+          {result.analysis.cabe_multa && result.analysis.citacao_artigo && (
+            <div className="border-t border-sky-500/20 pt-3">
+              <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
+                Trecho citado do regimento
+              </div>
+              <blockquote className="text-sm text-slate-200 italic border-l-2 border-sky-500/50 pl-3 py-1 bg-slate-950/40 rounded-r">
+                “{result.analysis.citacao_artigo}”
+              </blockquote>
+            </div>
+          )}
+
           <div className="border-t border-sky-500/20 pt-3">
             <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">
               Justificativa

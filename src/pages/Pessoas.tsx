@@ -7,6 +7,8 @@ import type { Pessoa } from '../types/pessoa'
 import type { Condominio } from '../types/condominio'
 import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
@@ -17,6 +19,8 @@ import FuncionariosImport from '../components/FuncionariosImport'
 
 export default function Pessoas() {
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
@@ -118,45 +122,57 @@ export default function Pessoas() {
 
   async function handleToggleAtivo(row: Pessoa) {
     const novoEstado = !row.ativo
-    const aviso = novoEstado
-      ? `Reativar "${row.nome}"?${row.user_id ? '\nO acesso à conta será restaurado.' : ''}`
-      : `Desativar "${row.nome}"?${row.user_id ? '\nA conta será BLOQUEADA imediatamente.' : ''}`
-    if (!window.confirm(aviso)) return
+    const ok = await confirm({
+      title: novoEstado ? 'Reativar pessoa' : 'Desativar pessoa',
+      message: novoEstado
+        ? `Reativar "${row.nome}"?${row.user_id ? ' O acesso à conta será restaurado.' : ''}`
+        : `Desativar "${row.nome}"?${row.user_id ? ' A conta será BLOQUEADA imediatamente.' : ''}`,
+      tone: novoEstado ? 'primary' : 'danger',
+      confirmText: novoEstado ? 'Reativar' : 'Desativar',
+    })
+    if (!ok) return
     const r = await setPessoaAtivo(row.id, novoEstado)
     if (!r.ok) {
-      alert('Erro: ' + r.error)
+      toast.error('Erro', r.error)
       return
     }
+    toast.success(novoEstado ? 'Pessoa reativada.' : 'Pessoa desativada.')
     await reload()
   }
 
   async function handleResetSenha(row: Pessoa) {
     if (!row.user_id) {
-      alert('Pessoa ainda sem conta. Use "Convidar".')
+      toast.warning('Pessoa ainda sem conta', 'Use "Convidar".')
       return
     }
-    if (!window.confirm(`Enviar link de redefinição de senha pra ${row.email}?`)) return
+    const ok = await confirm({ message: `Enviar link de redefinição de senha para ${row.email}?` })
+    if (!ok) return
     const r = await resetSenhaUsuario(row.id)
-    if (r.ok) alert(`✓ Link de redefinição enviado pra ${r.email}.`)
-    else alert('Erro: ' + r.error)
+    if (r.ok) toast.success('Link de redefinição enviado', r.email)
+    else toast.error('Erro', r.error)
   }
 
   async function handleConvidar(row: Pessoa) {
     if (!row.email) {
-      alert('Cadastra o e-mail antes de convidar.')
+      toast.warning('E-mail obrigatório', 'Cadastra o e-mail antes de convidar.')
       return
     }
     if (row.user_id) {
-      alert('Essa pessoa já tem conta vinculada.')
+      toast.info('Já vinculada', 'Essa pessoa já tem conta no app.')
       return
     }
-    if (!window.confirm(`Enviar convite por e-mail pra ${row.email}?\nEla vai receber link pra ativar conta.`)) return
+    const ok = await confirm({
+      title: 'Enviar convite',
+      message: `Enviar convite por e-mail para ${row.email}? Ela vai receber link para ativar a conta.`,
+      confirmText: 'Enviar convite',
+    })
+    if (!ok) return
     const r = await convidarPessoa(row.id)
     if (r.ok) {
-      alert(`✓ Convite enviado pra ${r.email}.`)
+      toast.success('Convite enviado', r.email)
       await reload()
     } else {
-      alert('Erro: ' + r.error)
+      toast.error('Erro', r.error)
     }
   }
 
@@ -172,10 +188,10 @@ export default function Pessoas() {
     if (motivo === null) return // cancelou
     try {
       const r = await excluirUsuarioAuth(p.id, motivo || undefined)
-      alert(r.email_enviado ? `✓ Conta excluída. E-mail enviado.` : `✓ Conta excluída (sem e-mail).`)
+      toast.success(r.email_enviado ? 'Conta excluída. E-mail enviado.' : 'Conta excluída (sem e-mail).')
       await reload()
     } catch (e) {
-      alert('Erro: ' + (e instanceof Error ? e.message : String(e)))
+      toast.error('Erro', e instanceof Error ? e.message : String(e))
     }
   }
 

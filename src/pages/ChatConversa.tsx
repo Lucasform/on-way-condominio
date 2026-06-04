@@ -17,6 +17,8 @@ import type { Conversa, Mensagem, StatusConversa } from '../types/chat'
 import { useAuth } from '../components/AuthProvider'
 import { roleLabel } from '../lib/nav'
 import type { Role } from '../types/database'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import TemplatePicker from '../components/TemplatePicker'
@@ -37,6 +39,8 @@ export default function ChatConversa() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user, perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const isMorador = perfil?.role === 'morador'
   const isStaff = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
 
@@ -105,7 +109,7 @@ export default function ChatConversa() {
       await atribuirConversa(id, novoUserId)
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 
@@ -226,7 +230,7 @@ export default function ChatConversa() {
         await mudarStatusConversa(id, 'em_atendimento')
       }
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao enviar.')
+      toast.error('Erro ao enviar', e instanceof Error ? e.message : '')
     } finally {
       setEnviando(false)
     }
@@ -234,12 +238,14 @@ export default function ChatConversa() {
 
   async function handleEncerrar() {
     if (!id) return
-    if (!window.confirm('Encerrar esta conversa?')) return
+    const ok = await confirm({ message: 'Encerrar esta conversa?', confirmText: 'Encerrar' })
+    if (!ok) return
     try {
       await mudarStatusConversa(id, 'encerrada')
       await load()
+      toast.success('Conversa encerrada.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 
@@ -251,17 +257,26 @@ export default function ChatConversa() {
 
   async function handleApagarConversa() {
     if (!id || !conversa) return
-    const ok = window.confirm(
-      'Apagar esta conversa DEFINITIVAMENTE? Todas as mensagens serão removidas. Esta ação não pode ser desfeita.',
-    )
+    const ok = await confirm({
+      title: 'Apagar conversa',
+      message: 'Apagar esta conversa DEFINITIVAMENTE? Todas as mensagens serão removidas. Esta ação não pode ser desfeita.',
+      tone: 'danger',
+      confirmText: 'Apagar',
+    })
     if (!ok) return
-    const ok2 = window.confirm('Tem certeza? Confirme novamente para apagar.')
+    const ok2 = await confirm({
+      title: 'Confirmar exclusão',
+      message: 'Confirme novamente para apagar a conversa.',
+      tone: 'danger',
+      confirmText: 'Sim, apagar',
+    })
     if (!ok2) return
     try {
       await deleteConversa(id)
+      toast.success('Conversa apagada.')
       navigate('/chat')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao apagar.')
+      toast.error('Erro ao apagar', e instanceof Error ? e.message : '')
     }
   }
 

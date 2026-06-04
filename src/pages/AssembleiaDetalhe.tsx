@@ -18,6 +18,8 @@ import type { Assembleia, StatusAssembleia, TipoAssembleia } from '../types/asse
 import type { Votacao } from '../types/votacao'
 import { useAuth } from '../components/AuthProvider'
 import { isStaff, isGestor } from '../lib/permissions'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -49,6 +51,8 @@ export default function AssembleiaDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user, perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
 
   const [assembleia, setAssembleia] = useState<Assembleia | null>(null)
   const [votacoes, setVotacoes] = useState<Votacao[]>([])
@@ -100,7 +104,7 @@ export default function AssembleiaDetalhe() {
       await supabase.from('assembleias').update({ ata_url: path }).eq('id', assembleia.id)
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao subir ata.')
+      toast.error('Erro ao subir ata', e instanceof Error ? e.message : '')
     } finally {
       setUploading(false)
     }
@@ -108,28 +112,37 @@ export default function AssembleiaDetalhe() {
 
   async function handleDelete() {
     if (!assembleia) return
-    if (!window.confirm('Apagar esta assembleia definitivamente? Esta ação não pode ser desfeita.')) return
+    const ok = await confirm({
+      title: 'Apagar assembleia',
+      message: 'Apagar esta assembleia definitivamente? Esta ação não pode ser desfeita.',
+      tone: 'danger',
+      confirmText: 'Apagar',
+    })
+    if (!ok) return
     setBusy(true)
     try {
       if (assembleia.ata_url) await removeAta(assembleia.ata_url).catch(() => {})
       await deleteAssembleia(assembleia.id)
+      toast.success('Assembleia apagada.')
       navigate('/assembleias')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao apagar.')
+      toast.error('Erro ao apagar', e instanceof Error ? e.message : '')
       setBusy(false)
     }
   }
 
   async function handleRemoverAta() {
     if (!assembleia?.ata_url) return
-    if (!window.confirm('Remover o PDF da ata?')) return
+    const ok = await confirm({ message: 'Remover o PDF da ata?', tone: 'danger', confirmText: 'Remover' })
+    if (!ok) return
     setBusy(true)
     try {
       await removeAta(assembleia.ata_url)
       await supabase.from('assembleias').update({ ata_url: null }).eq('id', assembleia.id)
       await load()
+      toast.success('Ata removida.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao remover.')
+      toast.error('Erro ao remover', e instanceof Error ? e.message : '')
     } finally {
       setBusy(false)
     }
@@ -141,7 +154,7 @@ export default function AssembleiaDetalhe() {
       const url = await getAtaSignedUrl(assembleia.ata_url, 600)
       window.open(url, '_blank', 'noopener,noreferrer')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao abrir ata.')
+      toast.error('Erro ao abrir ata', e instanceof Error ? e.message : '')
     }
   }
 
@@ -154,7 +167,7 @@ export default function AssembleiaDetalhe() {
       else await confirmarPresenca(assembleia.id, user.id)
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     } finally {
       setBusy(false)
     }
@@ -166,7 +179,7 @@ export default function AssembleiaDetalhe() {
       await marcarPresente(presenca_id)
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     } finally {
       setBusy(false)
     }

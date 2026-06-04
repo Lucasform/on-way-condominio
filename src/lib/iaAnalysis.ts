@@ -3,6 +3,7 @@ import { supabase } from './supabase'
 export interface IAAnalysis {
   cabe_multa: boolean
   artigo_aplicavel: string | null
+  citacao_artigo?: string | null
   tipo_infracao: string
   valor_sugerido_reais: number | null
   minuta: string

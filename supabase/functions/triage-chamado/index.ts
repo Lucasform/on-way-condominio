@@ -9,6 +9,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { handleCors, jsonResponse } from '../_shared/cors.ts'
 import { consumeIaRateLimit } from '../_shared/rate-limit.ts'
+import { Logger } from '../_shared/log.ts'
 
 const MODEL = 'claude-haiku-4-5-20251001'
 
@@ -33,6 +34,7 @@ Responda SOMENTE com JSON valido no formato:
 Deno.serve(async (req: Request) => {
   const cors = handleCors(req)
   if (cors) return cors
+  const log = new Logger('triage-chamado')
 
   try {
     const body = await req.json()
@@ -82,7 +84,7 @@ Descricao: ${chamado.descricao}`
 
     if (!resp.ok) {
       const txt = await resp.text()
-      console.error('[triage] Claude error', resp.status, txt)
+      log.error('claude_api_failed', { status: resp.status, body: txt.slice(0, 500) })
       return jsonResponse({ error: 'IA indisponivel.' }, 502)
     }
 
@@ -110,9 +112,10 @@ Descricao: ${chamado.descricao}`
         .eq('id', chamado_id)
     }
 
+    log.info('triage_ok', { chamado_id, prioridade: prio })
     return jsonResponse({ prioridade: prio, razao: parsed.razao ?? null })
   } catch (e) {
-    console.error('[triage] erro:', e)
+    log.error('uncaught', { error: e instanceof Error ? e.message : String(e) })
     return jsonResponse({ error: e instanceof Error ? e.message : 'Erro desconhecido.' }, 500)
   }
 })

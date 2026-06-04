@@ -22,12 +22,16 @@ import { listCondominios } from '../lib/condominios'
 import type { Publicacao, Reacao, ComentarioPublicacao, PublicacaoVoto } from '../types/mural'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
 
 export default function Mural() {
   const { user, perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const canPost = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
   const canModerate = canPost
@@ -141,17 +145,19 @@ export default function Mural() {
       }
       await reload()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao reagir.')
+      toast.error('Erro ao reagir', e instanceof Error ? e.message : '')
     }
   }
 
   async function handleDelete(pub: Publicacao) {
-    if (!window.confirm('Remover esta publicação? Ela será arquivada.')) return
+    const ok = await confirm({ message: 'Remover esta publicação? Ela será arquivada.', tone: 'danger', confirmText: 'Remover' })
+    if (!ok) return
     try {
       await deletePublicacao(pub.id)
       await reload()
+      toast.success('Publicação arquivada.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 
@@ -160,27 +166,36 @@ export default function Mural() {
       await setPublicacaoFixado(pub.id, !pub.fixado)
       await reload()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 
   async function handleReativar(pub: Publicacao) {
-    if (!window.confirm('Reativar esta publicação? Ela volta a aparecer no mural pros moradores.')) return
+    const ok = await confirm({ message: 'Reativar esta publicação? Ela volta a aparecer no mural pros moradores.' })
+    if (!ok) return
     try {
       await reativarPublicacao(pub.id)
       await reload()
+      toast.success('Publicação reativada.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 
   async function handleApagarDefinitivo(pub: Publicacao) {
-    if (!window.confirm('Apagar DEFINITIVAMENTE esta publicação? Esta ação não pode ser desfeita.')) return
+    const ok = await confirm({
+      title: 'Apagar publicação',
+      message: 'Apagar DEFINITIVAMENTE esta publicação? Esta ação não pode ser desfeita.',
+      tone: 'danger',
+      confirmText: 'Apagar',
+    })
+    if (!ok) return
     try {
       await apagarPublicacaoDefinitivo(pub.id)
       await reload()
+      toast.success('Publicação apagada.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 
@@ -216,7 +231,7 @@ export default function Mural() {
       })
       setNovoComent((prev) => ({ ...prev, [pub.id]: '' }))
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao comentar.')
+      toast.error('Erro ao comentar', e instanceof Error ? e.message : '')
     }
   }
 
@@ -239,12 +254,13 @@ export default function Mural() {
         return next
       })
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao votar.')
+      toast.error('Erro ao votar', e instanceof Error ? e.message : '')
     }
   }
 
   async function handleApagarComentario(pub: Publicacao, c: ComentarioPublicacao) {
-    if (!window.confirm('Apagar este comentário?')) return
+    const ok = await confirm({ message: 'Apagar este comentário?', tone: 'danger', confirmText: 'Apagar' })
+    if (!ok) return
     try {
       await deleteComentario(c.id)
       setComentsByPub((prev) => {
@@ -254,7 +270,7 @@ export default function Mural() {
         return next
       })
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 

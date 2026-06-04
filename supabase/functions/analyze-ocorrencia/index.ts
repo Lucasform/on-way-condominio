@@ -11,6 +11,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { handleCors, jsonResponse } from '../_shared/cors.ts'
 import { consumeIaRateLimit } from '../_shared/rate-limit.ts'
+import { Logger } from '../_shared/log.ts'
 
 // @ts-expect-error: Supabase.ai injetado pelo runtime
 const session = new Supabase.ai.Session('gte-small')
@@ -30,6 +31,7 @@ interface AnalysisResult {
 Deno.serve(async (req: Request) => {
   const cors = handleCors(req)
   if (cors) return cors
+  const log = new Logger('analyze-ocorrencia')
 
   try {
     const auth = req.headers.get('Authorization')
@@ -209,6 +211,8 @@ REGRAS:
 - "confianca" = "alta" só quando a relação ocorrência-artigo é direta.
 - "valor_sugerido_reais" proporcional à gravidade (R$ 50 a R$ 2000 tipicamente).
 - "minuta": texto formal pra enviar ao morador, sucinto e respeitoso.
+- "citacao_artigo": OBRIGATÓRIO quando cabe_multa=true. Copie LITERALMENTE até 300 caracteres do artigo cuja redação justifica a sanção (não parafraseie). Use o texto exato como está no regimento. Se não conseguir citar trecho literal, defina cabe_multa=false.
+- "justificativa": amarra a ocorrência ao trecho citado, explicando objetivamente porque a conduta viola o regimento.
 
 Responda EXCLUSIVAMENTE em JSON válido, sem markdown.`,
     ]
@@ -251,6 +255,7 @@ Responda em JSON com EXATAMENTE este schema:
 {
   "cabe_multa": boolean,
   "artigo_aplicavel": string | null,
+  "citacao_artigo": string | null,
   "tipo_infracao": string,
   "valor_sugerido_reais": number | null,
   "minuta": string,
@@ -276,7 +281,7 @@ Responda em JSON com EXATAMENTE este schema:
 
     if (!anthropicRes.ok) {
       const errText = await anthropicRes.text()
-      console.error('[analyze-ocorrencia] Claude API erro', anthropicRes.status, errText)
+      log.error('claude_api_failed', { status: anthropicRes.status, body: errText.slice(0, 500) })
       return jsonResponse({
         error: `Claude API ${anthropicRes.status}: ${errText.slice(0, 800)}`,
       }, 500)
@@ -326,7 +331,7 @@ Responda em JSON com EXATAMENTE este schema:
         })
         .eq('id', ocorrencia_id)
     } catch (e) {
-      console.warn('[analyze-ocorrencia] falha ao persistir ia_analysis:', e)
+      log.warn('persist_ia_analysis_failed', { error: e instanceof Error ? e.message : String(e) })
     }
 
     return jsonResponse({

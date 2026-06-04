@@ -16,6 +16,8 @@ import type { Pessoa } from '../types/pessoa'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import { isGestor } from '../lib/permissions'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { gerarPdfNotificacao } from '../lib/notificacaoPdf'
@@ -35,6 +37,8 @@ export default function NotificacaoDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
 
   const [notificacao, setNotificacao] = useState<Notificacao | null>(null)
   const [unidade, setUnidade] = useState<Unidade | null>(null)
@@ -71,29 +75,34 @@ export default function NotificacaoDetalhe() {
 
   async function handleDelete() {
     if (!notificacao) return
-    const ok = window.confirm(
-      'Excluir esta notificação DEFINITIVAMENTE? Esta ação não pode ser desfeita.',
-    )
+    const ok = await confirm({
+      title: 'Excluir notificação',
+      message: 'Excluir esta notificação DEFINITIVAMENTE? Esta ação não pode ser desfeita.',
+      tone: 'danger',
+      confirmText: 'Excluir',
+    })
     if (!ok) return
     setChanging(true)
     try {
       await deleteNotificacao(notificacao.id)
+      toast.success('Notificação excluída.')
       navigate('/notificacoes')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao excluir.')
+      toast.error('Erro ao excluir', e instanceof Error ? e.message : '')
       setChanging(false)
     }
   }
 
   async function handleChange(novo: StatusNotificacao) {
     if (!notificacao) return
-    if (!window.confirm(`Mudar status para "${NOTIFICACAO_STATUS_LABEL[novo]}"?`)) return
+    const ok = await confirm({ message: `Mudar status para "${NOTIFICACAO_STATUS_LABEL[novo]}"?` })
+    if (!ok) return
     setChanging(true)
     try {
       const updated = await changeNotificacaoStatus(notificacao.id, novo)
       setNotificacao(updated)
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     } finally {
       setChanging(false)
     }
@@ -130,7 +139,7 @@ export default function NotificacaoDetalhe() {
                 condominio,
                 assinaturaUrl: perfil?.assinatura_url ?? null,
                 emissorNome: perfil?.nome_exibicao ?? null,
-              }).catch((e) => alert(e.message))}
+              }).catch((e) => toast.error('Erro no PDF', e.message))}
               disabled={!condominio}
               title="Gerar PDF"
             >

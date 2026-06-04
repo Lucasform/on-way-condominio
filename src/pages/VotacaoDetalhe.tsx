@@ -7,6 +7,8 @@ import { gerarPdfAtaVotacao } from '../lib/votacaoPdf'
 import type { Votacao, VotacaoOpcao, Voto, StatusVotacao } from '../types/votacao'
 import { useAuth } from '../components/AuthProvider'
 import { isGestor } from '../lib/permissions'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -27,6 +29,8 @@ export default function VotacaoDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user, perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const canDelete = isGestor(perfil?.role)
 
   const [votacao, setVotacao] = useState<Votacao | null>(null)
@@ -74,22 +78,27 @@ export default function VotacaoDetalhe() {
     // Se ja votou em outra, confirma a troca
     if (meuVotoAtual) {
       const opcaoAnterior = opcoes.find((o) => o.id === meuVotoAtual.opcao_id)
-      const ok = window.confirm(
-        `Você já votou em "${opcaoAnterior?.texto ?? '(anterior)'}".\n\nTrocar para "${textoOpcao}"?\n\nO voto pode ser alterado quantas vezes quiser até o encerramento da votação. O que vale é o voto final.`,
-      )
+      const ok = await confirm({
+        title: 'Trocar voto',
+        message: `Você já votou em "${opcaoAnterior?.texto ?? '(anterior)'}". Trocar para "${textoOpcao}"? O voto pode ser alterado quantas vezes quiser até o encerramento; o que vale é o voto final.`,
+        confirmText: 'Trocar voto',
+      })
       if (!ok) return
     } else {
-      const ok = window.confirm(
-        `Confirmar voto em "${textoOpcao}"?\n\nVocê pode trocar até o encerramento da votação. O voto final é o que vale.`,
-      )
+      const ok = await confirm({
+        title: 'Confirmar voto',
+        message: `Confirmar voto em "${textoOpcao}"? Você pode trocar até o encerramento da votação.`,
+        confirmText: 'Votar',
+      })
       if (!ok) return
     }
     setSubmitting(true)
     try {
       await votar(votacao.id, opcaoId, user.id)
       await load()
+      toast.success('Voto registrado.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao votar.')
+      toast.error('Erro ao votar', e instanceof Error ? e.message : '')
     } finally {
       setSubmitting(false)
     }
@@ -97,30 +106,39 @@ export default function VotacaoDetalhe() {
 
   async function handleDelete() {
     if (!votacao) return
-    if (!window.confirm('Excluir essa votação DEFINITIVAMENTE? Esta ação não pode ser desfeita.')) return
+    const ok = await confirm({
+      title: 'Excluir votação',
+      message: 'Excluir essa votação DEFINITIVAMENTE? Esta ação não pode ser desfeita.',
+      tone: 'danger',
+      confirmText: 'Excluir',
+    })
+    if (!ok) return
     try {
       await deleteVotacao(votacao.id)
+      toast.success('Votação excluída.')
       navigate('/votacoes')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao excluir.')
+      toast.error('Erro ao excluir', e instanceof Error ? e.message : '')
     }
   }
 
   async function handleEncerrar() {
     if (!votacao) return
     if (votacao.quorum_minimo != null && votos.length < votacao.quorum_minimo) {
-      alert(
-        `Quórum mínimo de ${votacao.quorum_minimo} voto(s) não atingido. ` +
-        `Apenas ${votos.length} voto(s) registrado(s). Cancele ou aguarde mais participação.`,
+      toast.warning(
+        'Quórum não atingido',
+        `Mínimo de ${votacao.quorum_minimo} voto(s), apenas ${votos.length} registrado(s).`,
       )
       return
     }
-    if (!window.confirm('Encerrar votação? Não poderá mais receber votos.')) return
+    const ok = await confirm({ message: 'Encerrar votação? Não poderá mais receber votos.', confirmText: 'Encerrar' })
+    if (!ok) return
     try {
       await encerrarVotacao(votacao.id)
       await load()
+      toast.success('Votação encerrada.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 
@@ -137,18 +155,20 @@ export default function VotacaoDetalhe() {
         emissorNome: perfil?.nome_exibicao ?? null,
       })
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao gerar PDF.')
+      toast.error('Erro ao gerar PDF', e instanceof Error ? e.message : '')
     }
   }
 
   async function handleCancelar() {
     if (!votacao) return
-    if (!window.confirm('Cancelar votação?')) return
+    const ok = await confirm({ message: 'Cancelar votação?', tone: 'danger', confirmText: 'Cancelar votação' })
+    if (!ok) return
     try {
       await cancelarVotacao(votacao.id)
       await load()
+      toast.success('Votação cancelada.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 
