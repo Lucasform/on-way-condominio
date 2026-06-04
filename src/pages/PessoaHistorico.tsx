@@ -15,6 +15,7 @@ import type { Chamado } from '../types/chamado'
 import type { Encomenda } from '../types/encomenda'
 import type { Notificacao } from '../types/notificacao'
 import PageHeader from '../components/ui/PageHeader'
+import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 
 type TimelineItem =
@@ -188,11 +189,13 @@ export default function PessoaHistorico() {
       )}
 
       {visiveis.length === 0 ? (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
-          {items.length === 0
-            ? 'Nada registrado para essa pessoa ainda.'
-            : 'Nenhum item no filtro atual.'}
-        </div>
+        <EmptyState
+          message={
+            items.length === 0
+              ? 'Nada registrado para essa pessoa ainda.'
+              : 'Nenhum item no filtro atual.'
+          }
+        />
       ) : (
         <div className="space-y-3">
           {visiveis.map((item) => (

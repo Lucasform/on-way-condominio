@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { TableSkeleton } from './Skeleton'
+import EmptyState from './EmptyState'
 
 export interface Column<T> {
   key: string
@@ -32,11 +33,7 @@ export default function DataTable<T>({
   }
 
   if (rows.length === 0) {
-    return (
-      <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
-        {emptyMessage}
-      </div>
-    )
+    return <EmptyState message={emptyMessage} />
   }
 
   return (

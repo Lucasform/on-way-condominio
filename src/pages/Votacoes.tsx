@@ -6,6 +6,7 @@ import type { Votacao, StatusVotacao } from '../types/votacao'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
+import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
 
@@ -90,9 +91,7 @@ export default function Votacoes() {
           Carregando...
         </div>
       ) : rows.length === 0 ? (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
-          Nenhuma votação encontrada.
-        </div>
+        <EmptyState message="Nenhuma votação encontrada." />
       ) : (
         <div className="space-y-3">
           {rows.map((v) => (

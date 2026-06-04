@@ -17,6 +17,7 @@ import type { Encomenda } from '../types/encomenda'
 import type { Notificacao } from '../types/notificacao'
 import type { AcessoAutorizado } from '../types/acesso'
 import PageHeader from '../components/ui/PageHeader'
+import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 
 type TimelineItem =
@@ -152,9 +153,7 @@ export default function UnidadeHistorico() {
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
-          Sem registros para esta unidade.
-        </div>
+        <EmptyState message="Sem registros para esta unidade." />
       ) : (
         <div className="space-y-3">
           {items.map((item) =>

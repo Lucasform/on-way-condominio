@@ -16,6 +16,7 @@ import { isGestor, isStaff } from '../lib/permissions'
 import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
+import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
 import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
@@ -281,16 +282,16 @@ export default function Templates() {
       {loading ? (
         <div className="text-sm text-slate-400">Carregando...</div>
       ) : rows.length === 0 ? (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
-          Nenhum template ainda.
-          {podeEditar && (
-            <div className="mt-2">
-              <button onClick={abrirNovo} className="text-brand-400 hover:underline">
+        <EmptyState
+          message="Nenhum template ainda."
+          action={
+            podeEditar ? (
+              <button onClick={abrirNovo} className="text-brand-400 hover:underline text-sm">
                 Criar o primeiro →
               </button>
-            </div>
-          )}
-        </div>
+            ) : undefined
+          }
+        />
       ) : (
         <ul className="space-y-3">
           {rows.map((t) => (

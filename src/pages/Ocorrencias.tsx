@@ -8,6 +8,7 @@ import type { Unidade } from '../types/unidade'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
+import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
 import { CardListSkeleton } from '../components/ui/Skeleton'
@@ -155,9 +156,7 @@ export default function Ocorrencias() {
       {loading ? (
         <CardListSkeleton rows={5} />
       ) : rows.length === 0 ? (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
-          Nenhuma ocorrência encontrada com os filtros atuais.
-        </div>
+        <EmptyState message="Nenhuma ocorrência encontrada com os filtros atuais." />
       ) : (
         <div className="space-y-3">
           {rows.map((o) => (

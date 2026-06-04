@@ -10,6 +10,7 @@ import { useAuth } from '../components/AuthProvider'
 import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
+import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
 import { CardListSkeleton } from '../components/ui/Skeleton'
@@ -410,9 +411,7 @@ interface ListaComidasProps {
 function ListaComidas({ rows, unidadeLabel, onCard, onEntregar, selected, onToggle }: ListaComidasProps) {
   if (rows.length === 0) {
     return (
-      <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
-        Nenhuma entrega de comida agora.
-      </div>
+      <EmptyState message="Nenhuma entrega de comida agora." />
     )
   }
   return (

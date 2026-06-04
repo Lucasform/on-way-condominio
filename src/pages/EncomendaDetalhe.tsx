@@ -20,6 +20,7 @@ import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
+import { DetailSkeleton } from '../components/ui/Skeleton'
 import { Field, TextInput } from '../components/ui/Input'
 
 const STATUS_CLASS: Record<StatusEncomenda, string> = {
@@ -157,7 +158,7 @@ export default function EncomendaDetalhe() {
     }
   }
 
-  if (loading) return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando...</div>
+  if (loading) return <DetailSkeleton />
 
   if (error || !encomenda) {
     return (

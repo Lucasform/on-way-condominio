@@ -17,6 +17,7 @@ import { useAuth } from '../components/AuthProvider'
 import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
+import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
 import TemplatePicker from '../components/TemplatePicker'
@@ -513,9 +514,7 @@ export default function EmailsLog() {
       {loading ? (
         <TableSkeleton rows={6} cols={5} />
       ) : rows.length === 0 ? (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
-          Nenhum e-mail enviado ainda.
-        </div>
+        <EmptyState message="Nenhum e-mail enviado ainda." />
       ) : (
         <div className="rounded-lg border border-slate-800 overflow-hidden">
           <table className="w-full text-sm">

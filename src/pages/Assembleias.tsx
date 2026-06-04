@@ -7,6 +7,7 @@ import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import { isStaff } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
+import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
 
@@ -97,16 +98,16 @@ export default function Assembleias() {
           Carregando...
         </div>
       ) : rows.length === 0 ? (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
-          Nenhuma assembleia registrada.
-          {canCreate && (
-            <div className="mt-2">
-              <Link to="/assembleias/nova" className="text-brand-400 hover:underline">
+        <EmptyState
+          message="Nenhuma assembleia registrada."
+          action={
+            canCreate ? (
+              <Link to="/assembleias/nova" className="text-brand-400 hover:underline text-sm">
                 Registrar a primeira →
               </Link>
-            </div>
-          )}
-        </div>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="space-y-3">
           {rows.map((a) => (

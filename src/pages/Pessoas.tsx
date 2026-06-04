@@ -11,6 +11,7 @@ import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
+import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
 import DataTable, { type Column } from '../components/ui/DataTable'
@@ -282,9 +283,7 @@ export default function Pessoas() {
 
       {tab === 'sem_cadastro' ? (
         perfisSemCadastro.length === 0 ? (
-          <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
-            Todos os usuários ativos do condomínio têm cadastro residencial. 👍
-          </div>
+          <EmptyState message="Todos os usuários ativos do condomínio têm cadastro residencial. 👍" />
         ) : (
           <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 overflow-hidden">
             <div className="px-4 py-3 border-b border-amber-500/30 text-xs text-amber-200">

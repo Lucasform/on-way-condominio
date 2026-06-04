@@ -7,6 +7,7 @@ import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
+import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
 import { CardListSkeleton } from '../components/ui/Skeleton'
@@ -216,9 +217,7 @@ export default function Chamados() {
       {loading ? (
         <CardListSkeleton rows={5} />
       ) : filteredRows.length === 0 ? (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
-          Nenhum chamado encontrado.
-        </div>
+        <EmptyState message="Nenhum chamado encontrado." />
       ) : (
         <div className="space-y-2">
           {filteredRows.map((c) => (

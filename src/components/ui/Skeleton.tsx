@@ -38,6 +38,33 @@ export function CardListSkeleton({ rows = 5 }: { rows?: number }) {
   )
 }
 
+/** Skeleton padrão pra página de detalhe (header + card com seções). */
+export function DetailSkeleton() {
+  return (
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <div className="h-7 w-40 bg-slate-800 rounded animate-pulse" />
+        <div className="h-9 w-24 bg-slate-800/60 rounded animate-pulse" />
+      </div>
+      <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-6">
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="space-y-2 flex-1">
+            <div className="h-5 w-2/3 bg-slate-800 rounded animate-pulse" />
+            <div className="h-3 w-1/3 bg-slate-800/60 rounded animate-pulse" />
+          </div>
+          <div className="h-7 w-24 bg-slate-800/60 rounded animate-pulse" />
+        </div>
+        <div className="border-t border-slate-800 pt-4 space-y-2">
+          <div className="h-3 w-20 bg-slate-800/60 rounded animate-pulse" />
+          <div className="h-4 w-full bg-slate-800/60 rounded animate-pulse" />
+          <div className="h-4 w-5/6 bg-slate-800/60 rounded animate-pulse" />
+          <div className="h-4 w-3/4 bg-slate-800/60 rounded animate-pulse" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /** Skeleton padrão pra tabela. */
 export function TableSkeleton({ rows = 5, cols = 5 }: { rows?: number; cols?: number }) {
   return (

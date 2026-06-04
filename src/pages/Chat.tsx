@@ -17,6 +17,7 @@ import type { Unidade } from '../types/unidade'
 import type { Pessoa } from '../types/pessoa'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
+import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import { Field, TextArea, Select } from '../components/ui/Input'
 import { CardListSkeleton } from '../components/ui/Skeleton'
@@ -584,19 +585,16 @@ export default function Chat() {
       {loading ? (
         <CardListSkeleton rows={4} />
       ) : rowsFiltradas.length === 0 ? (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
-          {rows.length === 0 ? 'Nenhuma conversa.' : 'Nenhuma conversa bate com a busca.'}
-          {isMorador && !showNova && rows.length === 0 && (
-            <div className="mt-2">
-              <button
-                onClick={() => setShowNova(true)}
-                className="text-emerald-400 hover:underline"
-              >
+        <EmptyState
+          message={rows.length === 0 ? 'Nenhuma conversa.' : 'Nenhuma conversa bate com a busca.'}
+          action={
+            isMorador && !showNova && rows.length === 0 ? (
+              <button onClick={() => setShowNova(true)} className="text-emerald-400 hover:underline text-sm">
                 Abrir a primeira →
               </button>
-            </div>
-          )}
-        </div>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="space-y-2">
           {rowsFiltradas.map((c) => {

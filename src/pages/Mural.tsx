@@ -25,6 +25,7 @@ import { useAuth } from '../components/AuthProvider'
 import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
+import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
 
@@ -322,16 +323,16 @@ export default function Mural() {
           Carregando...
         </div>
       ) : rows.length === 0 ? (
-        <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-8 text-center text-slate-500 text-sm">
-          Nenhuma publicação no mural ainda.
-          {canPost && (
-            <div className="mt-2">
-              <Link to="/mural/novo" className="text-emerald-400 hover:underline">
+        <EmptyState
+          message="Nenhuma publicação no mural ainda."
+          action={
+            canPost ? (
+              <Link to="/mural/novo" className="text-emerald-400 hover:underline text-sm">
                 Publicar a primeira →
               </Link>
-            </div>
-          )}
-        </div>
+            ) : undefined
+          }
+        />
       ) : (
         <div className="space-y-4">
           {rows.map((pub) => {
