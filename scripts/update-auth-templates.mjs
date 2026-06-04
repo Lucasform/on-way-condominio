@@ -12,7 +12,10 @@ if (!TOKEN) {
 
 // Base shell HTML — paleta azul OnWay (#1D4ED8), Calibri/system.
 function shell(titulo, corpo, ctaTexto, ctaUrl) {
-  return `
+  return `<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f1f5f9">
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:32px 24px;color:#0f172a;background:#fff;border:1px solid #e2e8f0;border-radius:12px">
   <div style="text-align:center;margin-bottom:24px">
     <div style="display:inline-block;width:48px;height:48px;background:#1D4ED8;border-radius:50%;line-height:48px;color:#fff;font-weight:bold;font-size:20px">🏢</div>
@@ -34,7 +37,8 @@ function shell(titulo, corpo, ctaTexto, ctaUrl) {
     Se você não solicitou este e-mail, pode ignorá-lo com segurança.<br>
     OnWay Condomínio · <a href="https://onwaytech.com.br" style="color:#1D4ED8;text-decoration:none">onwaytech.com.br</a>
   </p>
-</div>`
+</div>
+</body></html>`
 }
 
 const templates = {

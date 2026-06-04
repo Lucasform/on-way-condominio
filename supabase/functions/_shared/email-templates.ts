@@ -24,6 +24,10 @@ function shell(corpo: string, condominio_nome?: string, sender_name?: string | n
   const headerSub = sender_name && condominio_nome ? condominio_nome : null
   return `<!doctype html>
 <html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+</head>
 <body style="margin:0;padding:0;background:#f4f6f8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#1f2937;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f8;padding:24px 0;">
     <tr><td align="center">
