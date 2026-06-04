@@ -7,6 +7,7 @@ import type { Multa, StatusMulta } from '../types/multa'
 import type { Condominio } from '../types/condominio'
 import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
@@ -33,6 +34,7 @@ const STATUS_CLASS: Record<StatusMulta, string> = {
 
 export default function Multas() {
   const { perfil } = useAuth()
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const isMorador = perfil?.role === 'morador'
@@ -130,7 +132,8 @@ export default function Multas() {
 
   async function arquivarSelecionadas() {
     if (selected.size === 0) return
-    if (!window.confirm(`Arquivar ${selected.size} multa(s)?`)) return
+    const ok = await confirm({ message: `Arquivar ${selected.size} multa(s)?`, confirmText: 'Arquivar' })
+    if (!ok) return
     setBulkBusy(true)
     try {
       const ids = Array.from(selected)

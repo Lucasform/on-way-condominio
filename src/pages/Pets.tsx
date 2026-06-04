@@ -7,6 +7,8 @@ import type { Pet } from '../types/pet'
 import type { Condominio } from '../types/condominio'
 import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
@@ -14,6 +16,8 @@ import DataTable, { type Column } from '../components/ui/DataTable'
 
 export default function Pets() {
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
@@ -63,12 +67,18 @@ export default function Pets() {
 
   async function handleToggleAtivo(row: Pet) {
     const novoEstado = !row.ativo
-    if (!window.confirm(`${novoEstado ? 'Reativar' : 'Desativar'} pet "${row.nome}"?`)) return
+    const ok = await confirm({
+      message: `${novoEstado ? 'Reativar' : 'Desativar'} pet "${row.nome}"?`,
+      tone: novoEstado ? 'primary' : 'danger',
+      confirmText: novoEstado ? 'Reativar' : 'Desativar',
+    })
+    if (!ok) return
     try {
       await setPetAtivo(row.id, novoEstado)
       await reload()
+      toast.success(novoEstado ? 'Pet reativado.' : 'Pet desativado.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 

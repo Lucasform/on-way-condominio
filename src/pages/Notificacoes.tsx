@@ -7,6 +7,7 @@ import type { Notificacao, StatusNotificacao } from '../types/notificacao'
 import type { Unidade } from '../types/unidade'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
@@ -22,6 +23,7 @@ const STATUS_CLASS: Record<StatusNotificacao, string> = {
 
 export default function Notificacoes() {
   const { perfil } = useAuth()
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
@@ -106,7 +108,8 @@ export default function Notificacoes() {
   }
   async function arquivarSelecionadas() {
     if (selected.size === 0) return
-    if (!window.confirm(`Arquivar ${selected.size} notificação(ões)?`)) return
+    const ok = await confirm({ message: `Arquivar ${selected.size} notificação(ões)?`, confirmText: 'Arquivar' })
+    if (!ok) return
     setBulkBusy(true)
     try {
       for (const id of Array.from(selected)) {

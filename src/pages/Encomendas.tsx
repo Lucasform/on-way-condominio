@@ -7,6 +7,8 @@ import type { Encomenda, StatusEncomenda, TipoEncomenda } from '../types/encomen
 import type { Condominio } from '../types/condominio'
 import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
@@ -40,6 +42,8 @@ const TIPO_LABEL: Record<TipoEncomenda, string> = {
 
 export default function Encomendas() {
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
   const isMorador = perfil?.role === 'morador'
@@ -63,7 +67,8 @@ export default function Encomendas() {
   }
   async function devolverSelecionadas() {
     if (selected.size === 0) return
-    if (!window.confirm(`Marcar ${selected.size} como devolvida(s)?`)) return
+    const ok = await confirm({ message: `Marcar ${selected.size} como devolvida(s)?`, confirmText: 'Devolver' })
+    if (!ok) return
     setBulkBusy(true)
     try {
       for (const id of Array.from(selected)) {
@@ -110,7 +115,7 @@ export default function Encomendas() {
       await darBaixaEncomenda(id, nome || 'Morador', perfil.id)
       await reload()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 

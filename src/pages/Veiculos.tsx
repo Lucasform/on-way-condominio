@@ -8,6 +8,8 @@ import type { Condominio } from '../types/condominio'
 import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
 import { isGestor } from '../lib/permissions'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
@@ -16,6 +18,8 @@ import VeiculosImport from '../components/VeiculosImport'
 
 export default function Veiculos() {
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
@@ -65,12 +69,18 @@ export default function Veiculos() {
 
   async function handleToggleAtivo(row: Veiculo) {
     const novoEstado = !row.ativo
-    if (!window.confirm(`${novoEstado ? 'Reativar' : 'Desativar'} veículo "${row.placa}"?`)) return
+    const ok = await confirm({
+      message: `${novoEstado ? 'Reativar' : 'Desativar'} veículo "${row.placa}"?`,
+      tone: novoEstado ? 'primary' : 'danger',
+      confirmText: novoEstado ? 'Reativar' : 'Desativar',
+    })
+    if (!ok) return
     try {
       await setVeiculoAtivo(row.id, novoEstado)
       await reload()
+      toast.success(novoEstado ? 'Veículo reativado.' : 'Veículo desativado.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 

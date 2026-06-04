@@ -5,6 +5,7 @@ import { listCondominios } from '../lib/condominios'
 import type { Chamado, StatusChamado, PrioridadeChamado } from '../types/chamado'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
@@ -54,6 +55,7 @@ const PRIO_LABEL: Record<PrioridadeChamado, string> = {
 
 export default function Chamados() {
   const { perfil } = useAuth()
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
@@ -125,7 +127,8 @@ export default function Chamados() {
   }
   async function arquivarSelecionados() {
     if (selected.size === 0) return
-    if (!window.confirm(`Cancelar ${selected.size} chamado(s)?`)) return
+    const ok = await confirm({ message: `Cancelar ${selected.size} chamado(s)?`, tone: 'danger', confirmText: 'Cancelar' })
+    if (!ok) return
     setBulkBusy(true)
     try {
       for (const id of Array.from(selected)) {

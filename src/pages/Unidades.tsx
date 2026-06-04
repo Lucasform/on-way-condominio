@@ -6,6 +6,8 @@ import type { Unidade } from '../types/unidade'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import { isGestor } from '../lib/permissions'
+import { useToast } from '../components/ui/Toast'
+import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
@@ -14,6 +16,8 @@ import UnidadesImport from '../components/UnidadesImport'
 
 export default function Unidades() {
   const { perfil } = useAuth()
+  const toast = useToast()
+  const confirm = useConfirm()
   const navigate = useNavigate()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
@@ -63,12 +67,18 @@ export default function Unidades() {
   async function handleToggleAtivo(row: Unidade) {
     const novoEstado = !row.ativo
     const label = `${row.bloco ? row.bloco + '-' : ''}${row.numero}`
-    if (!window.confirm(`${novoEstado ? 'Reativar' : 'Desativar'} unidade "${label}"?`)) return
+    const ok = await confirm({
+      message: `${novoEstado ? 'Reativar' : 'Desativar'} unidade "${label}"?`,
+      tone: novoEstado ? 'primary' : 'danger',
+      confirmText: novoEstado ? 'Reativar' : 'Desativar',
+    })
+    if (!ok) return
     try {
       await setUnidadeAtivo(row.id, novoEstado)
       await reload()
+      toast.success(novoEstado ? 'Unidade reativada.' : 'Unidade desativada.')
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro.')
+      toast.error('Erro', e instanceof Error ? e.message : '')
     }
   }
 
