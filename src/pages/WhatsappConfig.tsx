@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import { listCondominios } from '../lib/condominios'
 import { getWhatsappConfig, whatsappInstance, sendWhatsApp } from '../lib/whatsapp'
@@ -175,8 +176,9 @@ export default function WhatsappConfig() {
   return (
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
       <PageHeader
-        title="WhatsApp"
+        title="WhatsApp · Conexão"
         subtitle="Conecte o WhatsApp do condomínio escaneando o QR. As mensagens dos moradores chegam no app e as automações saem por aqui."
+        actions={<Link to="/whatsapp"><Button variant="ghost">← Conversas</Button></Link>}
       />
 
       <p className="mb-5 text-[11px] text-slate-500">
