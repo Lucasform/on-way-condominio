@@ -59,7 +59,7 @@ export default function TemplatePicker({ condominio_id, tipo, onSelect, label = 
           >
             <div className="px-4 py-3 border-b border-slate-800 flex items-center gap-3">
               <div className="text-sm font-semibold text-slate-100 flex-1">
-                Escolher template ({tipo === 'chat' ? 'chat' : 'e-mail'})
+                Escolher template ({tipo === 'chat' ? 'chat' : tipo === 'whatsapp' ? 'WhatsApp' : 'e-mail'})
               </div>
               <button
                 type="button"

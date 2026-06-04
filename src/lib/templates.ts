@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 
-export type TemplateTipo = 'chat' | 'email'
+export type TemplateTipo = 'chat' | 'email' | 'whatsapp'
 
 export interface MensagemTemplate {
   id: string

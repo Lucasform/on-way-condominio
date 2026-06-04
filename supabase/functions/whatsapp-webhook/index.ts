@@ -78,27 +78,52 @@ Deno.serve(async (req: Request) => {
 
     const { data: pessoa } = await admin
       .from('pessoas')
-      .select('id, user_id, nome')
+      .select('id, user_id, nome, unidade_id')
       .eq('condominio_id', cfg.condominio_id)
       .in('telefone', variantes)
       .eq('ativo', true)
       .limit(1)
       .maybeSingle()
 
-    if (!pessoa) {
-      // Telefone desconhecido — registra mas não cria conversa nem dispara bot.
-      // Síndico pode usar essa info pra cadastrar o morador.
-      return jsonResponse({
-        ok: true,
-        warn: 'Telefone não encontrado em pessoas. Mensagem ignorada.',
+    // ---- Inbox WhatsApp (sempre grava, mesmo número sem cadastro/login) ----
+    const { data: waConv } = await admin
+      .from('wa_conversas')
+      .upsert({
+        condominio_id: cfg.condominio_id,
         telefone: telDigits,
+        contato_nome: pessoa?.nome ?? null,
+        pessoa_id: pessoa?.id ?? null,
+        unidade_id: pessoa?.unidade_id ?? null,
+      }, { onConflict: 'condominio_id,telefone' })
+      .select('id, nao_lidas')
+      .single()
+
+    if (waConv) {
+      await admin.from('wa_mensagens').insert({
+        wa_conversa_id: waConv.id,
+        condominio_id: cfg.condominio_id,
+        direcao: 'in',
+        conteudo: parsed.texto,
+        wa_message_id: parsed.messageId ?? null,
       })
+      await admin
+        .from('wa_conversas')
+        .update({
+          ultima_mensagem: parsed.texto.slice(0, 200),
+          ultima_mensagem_at: new Date().toISOString(),
+          nao_lidas: (waConv.nao_lidas ?? 0) + 1,
+          ...(pessoa?.nome ? { contato_nome: pessoa.nome } : {}),
+        })
+        .eq('id', waConv.id)
     }
 
-    if (!pessoa.user_id) {
+    // ---- Bot + chat interno só pra morador COM login ----
+    if (!pessoa || !pessoa.user_id) {
       return jsonResponse({
         ok: true,
-        warn: 'Pessoa encontrada mas sem user_id (morador não tem login). Bot não responde.',
+        wa_conversa_id: waConv?.id ?? null,
+        bot: false,
+        reason: !pessoa ? 'telefone sem cadastro' : 'pessoa sem login',
       })
     }
 

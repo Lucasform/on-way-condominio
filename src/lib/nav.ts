@@ -63,7 +63,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/comunicados', label: 'Comunicados' },
         { to: '/classificados', label: 'Classificados' },
         { to: '/emails-log', label: 'E-mail' },
-        { to: '/whatsapp-config', label: 'WhatsApp' },
+        { to: '/whatsapp', label: 'WhatsApp' },
       ],
     },
     {
@@ -121,7 +121,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/chat', label: 'Chat interno' },
         { to: '/comunicados', label: 'Comunicados' },
         { to: '/classificados', label: 'Classificados' },
-        { to: '/whatsapp-config', label: 'WhatsApp' },
+        { to: '/whatsapp', label: 'WhatsApp' },
       ],
     },
     {
@@ -179,7 +179,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/chat', label: 'Chat interno' },
         { to: '/comunicados', label: 'Comunicados' },
         { to: '/classificados', label: 'Classificados' },
-        { to: '/whatsapp-config', label: 'WhatsApp' },
+        { to: '/whatsapp', label: 'WhatsApp' },
       ],
     },
     {
@@ -237,7 +237,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/chat', label: 'Chat interno' },
         { to: '/comunicados', label: 'Comunicados' },
         { to: '/classificados', label: 'Classificados' },
-        { to: '/whatsapp-config', label: 'WhatsApp' },
+        { to: '/whatsapp', label: 'WhatsApp' },
       ],
     },
     {
