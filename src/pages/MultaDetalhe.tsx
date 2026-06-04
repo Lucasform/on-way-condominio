@@ -26,6 +26,7 @@ import ContestacaoThread from '../components/ContestacaoThread'
 import DeleteButton from '../components/ui/DeleteButton'
 import { gerarPdfNotificacao } from '../lib/multaPdf'
 import { gerarPdfRecibo } from '../lib/multaReciboPdf'
+import { ensureWaConversa, sendWaMessage } from '../lib/whatsappInbox'
 
 const STATUS_CLASS: Record<StatusMulta, string> = {
   em_analise: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
@@ -41,7 +42,7 @@ const CAN_CHANGE = ['admin_onway', 'administradora', 'sindico', 'subsindico'] as
 export default function MultaDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { perfil } = useAuth()
+  const { perfil, user } = useAuth()
   const toast = useToast()
   const confirm = useConfirm()
 
@@ -175,6 +176,36 @@ export default function MultaDetalhe() {
 
   const canChange = perfil && (CAN_CHANGE as readonly string[]).includes(perfil.role)
   const canDelete = isGestor(perfil?.role)
+
+  async function handleAvisarWhatsApp() {
+    if (!multa || !pessoa?.telefone || !user) return
+    setChanging(true)
+    try {
+      const conv = await ensureWaConversa({
+        condominio_id: multa.condominio_id,
+        telefone: pessoa.telefone,
+        contato_nome: pessoa.nome,
+        pessoa_id: pessoa.id,
+        unidade_id: multa.unidade_id,
+      })
+      const venc = multa.vencimento_em ? new Date(multa.vencimento_em).toLocaleDateString('pt-BR') : null
+      const valorFmt = `R$ ${Number(multa.valor).toFixed(2).replace('.', ',')}`
+      const texto =
+        `*OnWay Condomínio*\n\nLembrete de multa em seu nome.\n` +
+        `*Valor:* ${valorFmt}\n` +
+        (venc ? `*Vencimento:* ${venc}\n` : '') +
+        (multa.artigo_regimento ? `*Base:* ${multa.artigo_regimento}\n` : '') +
+        `\nVocê pode acompanhar e regularizar pelo app. Dúvidas, fale com a administração.`
+      const r = await sendWaMessage({ conversa: conv, texto, autor_id: user.id })
+      if (r.skipped) toast.error('WhatsApp inativo', 'Conecte o WhatsApp do condomínio antes de avisar.')
+      else if (r.ok) toast.success('Aviso enviado', 'Mensagem registrada no WhatsApp do morador.')
+      else toast.error('Falha', 'Não foi possível enviar.')
+    } catch (e) {
+      toast.error('Erro', e instanceof Error ? e.message : '')
+    } finally {
+      setChanging(false)
+    }
+  }
   const transitions = MULTA_STATUS_TRANSITIONS[multa.status]
 
   return (
@@ -216,6 +247,16 @@ export default function MultaDetalhe() {
                 title="Recibo de quitação"
               >
                 ✓ Recibo
+              </Button>
+            )}
+            {canChange && pessoa?.telefone && (
+              <Button
+                variant="secondary"
+                onClick={handleAvisarWhatsApp}
+                disabled={changing}
+                title="Enviar lembrete por WhatsApp ao morador"
+              >
+                📱 Avisar no WhatsApp
               </Button>
             )}
             <Link to="/multas"><Button variant="ghost">← Voltar</Button></Link>

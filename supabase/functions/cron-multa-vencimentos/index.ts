@@ -111,6 +111,25 @@ ${m.artigo_regimento ? `<p><strong>Base:</strong> ${escapeHtml(m.artigo_regiment
         continue
       }
 
+      // Alerta interno pro staff (eles decidem avisar por WhatsApp na mão)
+      const { data: staff } = await sb
+        .from('perfis')
+        .select('id')
+        .eq('condominio_id', m.condominio_id)
+        .in('role', ['sindico', 'subsindico', 'administradora'])
+        .eq('ativo', true)
+      const alertas = ((staff ?? []) as Array<{ id: string }>).map((s) => ({
+        user_id: s.id,
+        condominio_id: m.condominio_id,
+        tipo: 'multa_vencimento',
+        titulo: isVencido ? `Multa em atraso — ${valorFmt}` : `Multa vence em ${vencFmt}`,
+        conteudo: `${pessoa.nome ?? 'Morador'} · ${valorFmt}. Você pode avisar por WhatsApp na tela da multa.`,
+        link: `/multas/${m.id}`,
+      }))
+      if (alertas.length > 0) {
+        await sb.from('app_notifications').insert(alertas)
+      }
+
       await sb.from('multa_lembretes_enviados').insert({ multa_id: m.id, tipo })
       enviadas++
     }
