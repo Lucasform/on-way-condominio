@@ -263,7 +263,11 @@ Responda em JSON com EXATAMENTE este schema:
   "justificativa": string
 }`
 
-    // 5) Claude API (sem prompt caching por enquanto — system como string única)
+    // 5) Claude API com prompt caching: o system é estático por condomínio
+    // (instruções + regimento + modelos + ai_instrucoes), então marcamos como
+    // ephemeral. Análises seguintes do mesmo condo em até 5 min reusam o cache
+    // (corta ~90% do custo do prefixo). Se o prefixo for < mínimo cacheável
+    // (condo pequeno), a API só ignora o cache — não dá erro.
     const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -274,7 +278,7 @@ Responda em JSON com EXATAMENTE este schema:
       body: JSON.stringify({
         model: CLAUDE_MODEL,
         max_tokens: 1024,
-        system: systemPrompt,
+        system: [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
         messages: [{ role: 'user', content: userPrompt }],
       }),
     })
