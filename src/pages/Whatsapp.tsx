@@ -90,7 +90,14 @@ export default function Whatsapp() {
         toast.error('WhatsApp inativo', 'Conecte o WhatsApp do condomínio antes de enviar.')
         return
       }
-      if (!r.ok) { toast.error('Falha', 'Não foi possível enviar.'); return }
+      if (!r.ok) {
+        if (r.reason === 'numero_sem_whatsapp') {
+          toast.error('Número sem WhatsApp', 'Este telefone não tem conta no WhatsApp. Confira o número cadastrado.')
+        } else {
+          toast.error('Falha', r.error || 'Não foi possível enviar.')
+        }
+        return
+      }
       setTexto('')
       const m = await getWaThread(ativa.id)
       setThread(m)

@@ -52,13 +52,20 @@ export interface SendWaInput {
   conversa_id?: string
 }
 
-export async function sendWhatsApp(input: SendWaInput): Promise<{ ok?: boolean; skipped?: boolean }> {
+export interface SendWaResult {
+  ok?: boolean
+  skipped?: boolean
+  reason?: string
+  error?: string
+}
+
+export async function sendWhatsApp(input: SendWaInput): Promise<SendWaResult> {
   const { data, error } = await supabase.functions.invoke('whatsapp-send', { body: input })
   if (error) {
     console.warn('[whatsapp-send] erro:', error.message)
-    return { ok: false }
+    return { ok: false, error: error.message }
   }
-  return (data ?? {}) as { ok?: boolean; skipped?: boolean }
+  return (data ?? {}) as SendWaResult
 }
 
 // ============================================================

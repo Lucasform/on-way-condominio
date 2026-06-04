@@ -110,12 +110,16 @@ Deno.serve(async (req: Request) => {
     const data = await r.json().catch(() => ({}))
 
     if (!r.ok) {
+      // Detecta "número não tem WhatsApp" (Evolution: response.message[].exists=false)
+      const raw = JSON.stringify(data)
+      const semWhats = /"exists"\s*:\s*false/.test(raw)
       return jsonResponse({
         ok: false,
         provider: cfg.provider,
         status: r.status,
-        error: JSON.stringify(data).slice(0, 500),
-      }, 502)
+        reason: semWhats ? 'numero_sem_whatsapp' : 'erro_envio',
+        error: semWhats ? 'Este número não tem conta no WhatsApp.' : raw.slice(0, 500),
+      }, 200)
     }
 
     // Se foi parte de uma conversa, atualiza metadata da última msg

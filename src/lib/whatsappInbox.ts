@@ -96,14 +96,14 @@ export async function sendWaMessage(input: {
   conversa: WaConversa
   texto: string
   autor_id: string
-}): Promise<{ ok: boolean; skipped?: boolean }> {
+}): Promise<{ ok: boolean; skipped?: boolean; reason?: string; error?: string }> {
   const r = await sendWhatsApp({
     condominio_id: input.conversa.condominio_id,
     telefone: input.conversa.telefone,
     texto: input.texto,
   })
   if (r.skipped) return { ok: false, skipped: true }
-  if (!r.ok) return { ok: false }
+  if (!r.ok) return { ok: false, reason: r.reason, error: r.error }
 
   await supabase.from('wa_mensagens').insert({
     wa_conversa_id: input.conversa.id,
