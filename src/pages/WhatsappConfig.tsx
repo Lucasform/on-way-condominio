@@ -179,10 +179,9 @@ export default function WhatsappConfig() {
         subtitle="Conecte o WhatsApp do condomínio escaneando o QR. As mensagens dos moradores chegam no app e as automações saem por aqui."
       />
 
-      <div className="mb-5 rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-200">
-        ⚠ <strong>Importante:</strong> a conexão usa a API não-oficial do WhatsApp Web. Há risco
-        de banimento do número em uso abusivo (envio em massa). Use com moderação.
-      </div>
+      <p className="mb-5 text-[11px] text-slate-500">
+        Conexão via API não-oficial do WhatsApp Web. Evite envio em massa para reduzir risco de bloqueio do número.
+      </p>
 
       {isAdmin && condos.length > 0 && (
         <div className="mb-5 max-w-xs">
