@@ -216,7 +216,7 @@ export default function Whatsapp() {
                 <div className="mb-2">
                   <TemplatePicker
                     condominio_id={scopeId}
-                    tipo="whatsapp"
+                    tipo={['chat', 'whatsapp']}
                     onSelect={(t) => setTexto((prev) => (prev ? `${prev}\n${t.corpo}` : t.corpo))}
                   />
                 </div>

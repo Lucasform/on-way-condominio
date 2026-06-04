@@ -3,7 +3,7 @@ import { listTemplates, type MensagemTemplate, type TemplateTipo } from '../lib/
 
 interface Props {
   condominio_id: string
-  tipo: TemplateTipo
+  tipo: TemplateTipo | TemplateTipo[]
   onSelect: (t: MensagemTemplate) => void
   label?: string
 }
@@ -14,6 +14,8 @@ export default function TemplatePicker({ condominio_id, tipo, onSelect, label = 
   const [loading, setLoading] = useState(false)
   const [busca, setBusca] = useState('')
 
+  const tipoKey = Array.isArray(tipo) ? tipo.join(',') : tipo
+
   useEffect(() => {
     if (!open) return
     setLoading(true)
@@ -21,7 +23,8 @@ export default function TemplatePicker({ condominio_id, tipo, onSelect, label = 
       .then(setTemplates)
       .catch(() => setTemplates([]))
       .finally(() => setLoading(false))
-  }, [open, condominio_id, tipo])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, condominio_id, tipoKey])
 
   useEffect(() => {
     if (!open) return
@@ -59,7 +62,7 @@ export default function TemplatePicker({ condominio_id, tipo, onSelect, label = 
           >
             <div className="px-4 py-3 border-b border-slate-800 flex items-center gap-3">
               <div className="text-sm font-semibold text-slate-100 flex-1">
-                Escolher template ({tipo === 'chat' ? 'chat' : tipo === 'whatsapp' ? 'WhatsApp' : 'e-mail'})
+                Escolher template ({Array.isArray(tipo) ? 'mensagem' : tipo === 'chat' ? 'chat' : tipo === 'whatsapp' ? 'WhatsApp' : 'e-mail'})
               </div>
               <button
                 type="button"

@@ -27,12 +27,13 @@ const SELECT = 'id, condominio_id, tipo, titulo, corpo, assunto, ativo, criado_p
 
 export async function listTemplates(opts: {
   condominio_id?: string
-  tipo?: TemplateTipo
+  tipo?: TemplateTipo | TemplateTipo[]
   apenas_ativos?: boolean
 } = {}): Promise<MensagemTemplate[]> {
   let q = supabase.from('mensagem_templates').select(SELECT).order('titulo')
   if (opts.condominio_id) q = q.eq('condominio_id', opts.condominio_id)
-  if (opts.tipo) q = q.eq('tipo', opts.tipo)
+  if (Array.isArray(opts.tipo)) q = q.in('tipo', opts.tipo)
+  else if (opts.tipo) q = q.eq('tipo', opts.tipo)
   if (opts.apenas_ativos !== false) q = q.eq('ativo', true)
   const { data, error } = await q
   if (error) throw error
