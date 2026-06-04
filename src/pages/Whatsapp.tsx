@@ -34,7 +34,7 @@ export default function Whatsapp() {
   const [enviando, setEnviando] = useState(false)
   const [novaOpen, setNovaOpen] = useState(false)
 
-  const fimRef = useRef<HTMLDivElement | null>(null)
+  const msgsRef = useRef<HTMLDivElement | null>(null)
 
   // Escopo
   useEffect(() => {
@@ -71,7 +71,8 @@ export default function Whatsapp() {
   }, [ativa])
 
   useEffect(() => {
-    fimRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const el = msgsRef.current
+    if (el) el.scrollTop = el.scrollHeight
   }, [thread])
 
   const filtradas = useMemo(() => {
@@ -205,7 +206,7 @@ export default function Whatsapp() {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              <div ref={msgsRef} className="flex-1 overflow-y-auto p-4 space-y-2">
                 {thread.map((m) => (
                   <div key={m.id} className={`flex ${m.direcao === 'out' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[75%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap ${
@@ -216,7 +217,6 @@ export default function Whatsapp() {
                     </div>
                   </div>
                 ))}
-                <div ref={fimRef} />
               </div>
 
               <div className="p-3 border-t border-slate-800 bg-slate-900/40">
