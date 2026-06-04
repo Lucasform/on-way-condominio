@@ -259,7 +259,6 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
       label: 'Acompanhamento',
       children: [
         { to: '/dashboard', label: 'Acompanhamento Geral' },
-        { to: '/painel', label: 'Painel de trabalho' },
       ],
     },
     {
