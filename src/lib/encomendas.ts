@@ -2,6 +2,7 @@ import { supabase } from './supabase'
 import type { Encomenda, EncomendaInput, StatusEncomenda } from '../types/encomenda'
 import { sendEmail } from './email'
 import { sendPush } from './push'
+import { sendWhatsApp } from './whatsapp'
 
 export async function listEncomendas(opts: {
   condominio_id?: string
@@ -118,7 +119,7 @@ async function notifyMoradorEncomenda(
 ): Promise<void> {
   const { data: pessoas } = await supabase
     .from('pessoas')
-    .select('nome, email, user_id')
+    .select('nome, email, telefone, user_id')
     .eq('unidade_id', encomenda.unidade_id)
     .eq('ativo', true)
 
@@ -159,6 +160,20 @@ async function notifyMoradorEncomenda(
         link: `/encomendas/${encomenda.id}`,
       }).catch((e) => console.warn('[encomenda] push falhou:', e.message))
     }
+  }
+
+  // WhatsApp (skip silencioso se o condomínio não tiver o canal ativo)
+  const tituloWa = encomenda.tipo === 'comida' ? '🍔 Sua comida chegou' : '📦 Encomenda na portaria'
+  for (const p of moradores) {
+    if (!p.telefone) continue
+    sendWhatsApp({
+      condominio_id: encomenda.condominio_id,
+      telefone: p.telefone,
+      texto:
+        `*OnWay Condomínio*\n\n${tituloWa}.\n\n` +
+        (encomenda.descricao ? `${encomenda.descricao}\n\n` : '') +
+        `Retire na portaria. Detalhes no app.`,
+    }).catch((e) => console.warn('[encomenda] whatsapp falhou:', e.message))
   }
 }
 
