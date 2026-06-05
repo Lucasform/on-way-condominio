@@ -14,11 +14,14 @@ import { Select } from '../components/ui/Input'
 import DataTable, { type Column } from '../components/ui/DataTable'
 
 const STATUS_CLASS: Record<StatusNotificacao, string> = {
-  pendente:  'bg-amber-500/10 text-amber-300 border border-amber-500/30',
-  enviada:   'bg-sky-500/10 text-sky-300 border border-sky-500/30',
-  ciente:    'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30',
-  arquivada: 'bg-slate-700/40 text-slate-400',
-  cancelada: 'bg-slate-700/40 text-slate-500',
+  pendente:     'bg-amber-500/10 text-amber-300 border border-amber-500/30',
+  enviada:      'bg-sky-500/10 text-sky-300 border border-sky-500/30',
+  ciente:       'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30',
+  contestada:   'bg-orange-500/10 text-orange-300 border border-orange-500/30',
+  advertencia:  'bg-yellow-500/10 text-yellow-300 border border-yellow-500/30',
+  multa_gerada: 'bg-red-500/10 text-red-300 border border-red-500/30',
+  arquivada:    'bg-slate-700/40 text-slate-400',
+  cancelada:    'bg-slate-700/40 text-slate-500',
 }
 
 export default function Notificacoes() {

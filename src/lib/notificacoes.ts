@@ -2,19 +2,45 @@ import { supabase } from './supabase'
 import type { Notificacao, NotificacaoInput, StatusNotificacao } from '../types/notificacao'
 
 export const NOTIFICACAO_STATUS_LABEL: Record<StatusNotificacao, string> = {
-  pendente:  'Pendente',
-  enviada:   'Enviada',
-  ciente:    'Ciente',
-  arquivada: 'Arquivada',
-  cancelada: 'Cancelada',
+  pendente:     'Pendente',
+  enviada:      'Enviada',
+  ciente:       'Ciente',
+  contestada:   'Contestada',
+  advertencia:  'Advertência aplicada',
+  multa_gerada: 'Multa gerada',
+  arquivada:    'Arquivada',
+  cancelada:    'Cancelada',
 }
 
+// Transições simples de acompanhamento (o desfecho final tem botões próprios).
 export const NOTIFICACAO_STATUS_TRANSITIONS: Record<StatusNotificacao, StatusNotificacao[]> = {
-  pendente:  ['enviada', 'cancelada'],
-  enviada:   ['ciente', 'arquivada', 'cancelada'],
-  ciente:    ['arquivada'],
-  arquivada: [],
-  cancelada: [],
+  pendente:     ['enviada', 'cancelada'],
+  enviada:      ['ciente', 'contestada'],
+  ciente:       ['contestada'],
+  contestada:   [],
+  advertencia:  [],
+  multa_gerada: [],
+  arquivada:    [],
+  cancelada:    [],
+}
+
+// Status terminais (desfecho decidido)
+export const NOTIFICACAO_STATUS_TERMINAL: StatusNotificacao[] = [
+  'advertencia', 'multa_gerada', 'arquivada', 'cancelada',
+]
+
+/** Aplica advertência (desfecho sem valor). */
+export async function aplicarAdvertencia(id: string): Promise<Notificacao> {
+  return changeNotificacaoStatus(id, 'advertencia')
+}
+
+/** Marca que a notificação virou multa (após criar a multa). */
+export async function vincularMultaNotificacao(id: string, multa_id: string): Promise<void> {
+  const { error } = await supabase
+    .from('notificacoes')
+    .update({ status: 'multa_gerada', multa_id })
+    .eq('id', id)
+  if (error) throw error
 }
 
 export async function listNotificacoes(opts: {

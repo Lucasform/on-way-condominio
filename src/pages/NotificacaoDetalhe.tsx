@@ -4,8 +4,10 @@ import {
   getNotificacao,
   changeNotificacaoStatus,
   deleteNotificacao,
+  aplicarAdvertencia,
   NOTIFICACAO_STATUS_TRANSITIONS,
   NOTIFICACAO_STATUS_LABEL,
+  NOTIFICACAO_STATUS_TERMINAL,
 } from '../lib/notificacoes'
 import { getUnidade } from '../lib/unidades'
 import { getPessoa } from '../lib/pessoas'
@@ -25,11 +27,14 @@ import { gerarPdfNotificacao } from '../lib/notificacaoPdf'
 import DeleteButton from '../components/ui/DeleteButton'
 
 const STATUS_CLASS: Record<StatusNotificacao, string> = {
-  pendente:  'bg-amber-500/10 text-amber-300 border-amber-500/30',
-  enviada:   'bg-sky-500/10 text-sky-300 border-sky-500/30',
-  ciente:    'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
-  arquivada: 'bg-slate-700/40 text-slate-400 border-slate-700',
-  cancelada: 'bg-slate-700/40 text-slate-500 border-slate-700',
+  pendente:     'bg-amber-500/10 text-amber-300 border-amber-500/30',
+  enviada:      'bg-sky-500/10 text-sky-300 border-sky-500/30',
+  ciente:       'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
+  contestada:   'bg-orange-500/10 text-orange-300 border-orange-500/30',
+  advertencia:  'bg-yellow-500/10 text-yellow-300 border-yellow-500/30',
+  multa_gerada: 'bg-red-500/10 text-red-300 border-red-500/30',
+  arquivada:    'bg-slate-700/40 text-slate-400 border-slate-700',
+  cancelada:    'bg-slate-700/40 text-slate-500 border-slate-700',
 }
 
 const CAN_CHANGE = ['admin_onway', 'administradora', 'sindico', 'subsindico'] as const
@@ -102,6 +107,26 @@ export default function NotificacaoDetalhe() {
     try {
       const updated = await changeNotificacaoStatus(notificacao.id, novo)
       setNotificacao(updated)
+    } catch (e) {
+      toast.error('Erro', e instanceof Error ? e.message : '')
+    } finally {
+      setChanging(false)
+    }
+  }
+
+  async function handleAdvertencia() {
+    if (!notificacao) return
+    const ok = await confirm({
+      title: 'Aplicar advertência?',
+      message: 'Formaliza a advertência (sem valor financeiro) e encerra a notificação.',
+      confirmText: 'Aplicar advertência',
+    })
+    if (!ok) return
+    setChanging(true)
+    try {
+      const u = await aplicarAdvertencia(notificacao.id)
+      setNotificacao(u)
+      toast.success('Advertência aplicada')
     } catch (e) {
       toast.error('Erro', e instanceof Error ? e.message : '')
     } finally {
@@ -213,6 +238,44 @@ export default function NotificacaoDetalhe() {
           </div>
         )}
       </div>
+
+      {canChange && !NOTIFICACAO_STATUS_TERMINAL.includes(notificacao.status) && (
+        <div className="mt-6 rounded-lg border border-slate-700 bg-slate-900/40 p-5">
+          <div className="text-sm font-medium text-slate-200 mb-1">Decidir o desfecho</div>
+          <div className="text-xs text-slate-400 mb-3">
+            Depois da ciência/contestação da unidade, escolha a sanção.
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Link
+              to={`/multas/nova?ocorrencia=${notificacao.ocorrencia_id ?? ''}&notificacao=${notificacao.id}&fromIA=1`}
+              className="block"
+            >
+              <div className="rounded-md border border-slate-700 bg-slate-900/40 p-3 hover:border-brand-500 hover:bg-slate-800/60 transition h-full">
+                <div className="text-sm font-semibold text-slate-100">💰 Gerar multa</div>
+                <div className="text-xs text-slate-400 mt-1">Sanção com valor monetário conforme regimento.</div>
+              </div>
+            </Link>
+            <button type="button" onClick={handleAdvertencia} disabled={changing} className="block text-left">
+              <div className="rounded-md border border-slate-700 bg-slate-900/40 p-3 hover:border-brand-500 hover:bg-slate-800/60 transition h-full">
+                <div className="text-sm font-semibold text-slate-100">⚠ Gerar advertência</div>
+                <div className="text-xs text-slate-400 mt-1">Advertência formal, sem valor financeiro.</div>
+              </div>
+            </button>
+            <button type="button" onClick={() => handleChange('arquivada')} disabled={changing} className="block text-left">
+              <div className="rounded-md border border-slate-700 bg-slate-900/40 p-3 hover:border-brand-500 hover:bg-slate-800/60 transition h-full">
+                <div className="text-sm font-semibold text-slate-100">📦 Arquivar</div>
+                <div className="text-xs text-slate-400 mt-1">Sem sanção. Fica no histórico.</div>
+              </div>
+            </button>
+            <button type="button" onClick={() => handleChange('cancelada')} disabled={changing} className="block text-left">
+              <div className="rounded-md border border-slate-700 bg-slate-900/40 p-3 hover:border-brand-500 hover:bg-slate-800/60 transition h-full">
+                <div className="text-sm font-semibold text-slate-100">✕ Cancelar</div>
+                <div className="text-xs text-slate-400 mt-1">Registro inválido ou duplicado.</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
 
       {canChange && transitions.length > 0 && (
         <div className="mt-6 rounded-lg border border-slate-800 bg-slate-900/40 p-5">

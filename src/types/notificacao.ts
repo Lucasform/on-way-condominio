@@ -2,6 +2,9 @@ export type StatusNotificacao =
   | 'pendente'
   | 'enviada'
   | 'ciente'
+  | 'contestada'
+  | 'advertencia'
+  | 'multa_gerada'
   | 'arquivada'
   | 'cancelada'
 
@@ -17,6 +20,7 @@ export interface Notificacao {
   artigo_regimento: string | null
   observacoes: string | null
   status: StatusNotificacao
+  multa_id: string | null
   data_envio: string | null
   data_ciencia: string | null
   created_at: string

@@ -5,6 +5,7 @@ import { getOcorrencia } from '../lib/ocorrencias'
 import { getUnidade } from '../lib/unidades'
 import { getPessoa } from '../lib/pessoas'
 import { createMultaFromOcorrencia } from '../lib/multas'
+import { vincularMultaNotificacao } from '../lib/notificacoes'
 import { clearIASuggestion, getOcorrenciaIaAnalysis, readIASuggestion } from '../lib/iaAnalysis'
 import type { Ocorrencia } from '../types/ocorrencia'
 import type { Unidade } from '../types/unidade'
@@ -39,6 +40,7 @@ function defaultVencimento(): string {
 export default function MultaNova() {
   const [params] = useSearchParams()
   const ocorrenciaId = params.get('ocorrencia')
+  const notificacaoId = params.get('notificacao')
   const navigate = useNavigate()
   const { user, perfil } = useAuth()
 
@@ -135,7 +137,7 @@ export default function MultaNova() {
     setSubmitting(true)
     setError(null)
     try {
-      await createMultaFromOcorrencia(
+      const multa = await createMultaFromOcorrencia(
         {
           condominio_id: ocorrencia.condominio_id,
           unidade_id: unidade.id,
@@ -149,7 +151,12 @@ export default function MultaNova() {
         },
         user.id,
       )
-      navigate(`/ocorrencias/${ocorrencia.id}`, { replace: true })
+      if (notificacaoId) {
+        await vincularMultaNotificacao(notificacaoId, multa.id).catch(() => {})
+        navigate(`/notificacoes/${notificacaoId}`, { replace: true })
+      } else {
+        navigate(`/ocorrencias/${ocorrencia.id}`, { replace: true })
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao gerar multa.')
     } finally {

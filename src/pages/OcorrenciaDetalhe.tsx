@@ -416,19 +416,13 @@ export default function OcorrenciaDetalhe() {
         <div className="mt-6 rounded-lg border border-slate-700 bg-slate-900/40 p-5">
           <div className="text-sm font-medium text-slate-200 mb-1">Decidir o desfecho</div>
           <div className="text-xs text-slate-400 mb-3">
-            Escolha uma das ações abaixo de acordo com a gravidade. Notificação é advertência sem valor; multa tem valor financeiro.
+            Toda ocorrência começa por uma notificação à unidade. Depois da ciência/contestação, você decide multa, advertência, arquivar ou cancelar na tela da notificação.
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Link to={`/notificacoes/nova?ocorrencia=${ocorrencia.id}&fromIA=1`} className="block">
-              <div className="rounded-md border border-slate-700 bg-slate-900/40 p-3 hover:border-brand-500 hover:bg-slate-800/60 transition h-full">
-                <div className="text-sm font-semibold text-slate-100">📋 Virar notificação</div>
-                <div className="text-xs text-slate-400 mt-1">Advertência formal, sem valor financeiro.</div>
-              </div>
-            </Link>
-            <Link to={`/multas/nova?ocorrencia=${ocorrencia.id}&fromIA=1`} className="block">
-              <div className="rounded-md border border-slate-700 bg-slate-900/40 p-3 hover:border-brand-500 hover:bg-slate-800/60 transition h-full">
-                <div className="text-sm font-semibold text-slate-100">💰 Virar multa</div>
-                <div className="text-xs text-slate-400 mt-1">Sanção com valor monetário conforme regimento.</div>
+            <Link to={`/notificacoes/nova?ocorrencia=${ocorrencia.id}&fromIA=1`} className="block sm:col-span-2">
+              <div className="rounded-md border border-brand-500/50 bg-brand-500/5 p-3 hover:border-brand-500 hover:bg-slate-800/60 transition h-full">
+                <div className="text-sm font-semibold text-slate-100">📋 Gerar notificação</div>
+                <div className="text-xs text-slate-400 mt-1">Notifica a unidade. A decisão (multa/advertência) vem depois, na notificação.</div>
               </div>
             </Link>
             <button
