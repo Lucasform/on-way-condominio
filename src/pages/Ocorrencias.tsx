@@ -8,6 +8,7 @@ import type { Unidade } from '../types/unidade'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import PageHeader from '../components/ui/PageHeader'
+import Fab from '../components/ui/Fab'
 import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
@@ -122,6 +123,7 @@ export default function Ocorrencias() {
           ) : undefined
         }
       />
+      {podeRegistrar && <Fab to="/ocorrencias/novo" label="Nova ocorrência" />}
 
       <div className="mb-5 flex flex-wrap gap-4 items-end">
         {isAdmin && condos.length > 0 && (

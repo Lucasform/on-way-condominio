@@ -7,6 +7,7 @@ import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
+import Fab from '../components/ui/Fab'
 import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
@@ -154,6 +155,7 @@ export default function Chamados() {
           ) : undefined
         }
       />
+      {podeAbrir && <Fab to="/chamados/novo" label="Novo chamado" />}
 
       <div className="mb-5 flex flex-wrap gap-4 items-end">
         {isAdmin && condos.length > 0 && (

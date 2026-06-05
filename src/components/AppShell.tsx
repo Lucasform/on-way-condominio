@@ -30,6 +30,24 @@ export default function AppShell() {
   }, [user, perfil])
   const podeAlternarMorador = !!perfil && perfil.role !== 'morador' && temPessoaResidencial
 
+  // Unidade do usuário (contexto no header mobile)
+  const [unidadeLabel, setUnidadeLabel] = useState<string | null>(null)
+  useEffect(() => {
+    if (!user) { setUnidadeLabel(null); return }
+    supabase
+      .from('pessoas')
+      .select('unidades:unidade_id(bloco, numero)')
+      .eq('user_id', user.id)
+      .not('unidade_id', 'is', null)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        const u = (data as { unidades?: { bloco: string | null; numero: string } | { bloco: string | null; numero: string }[] | null } | null)?.unidades
+        const uf = Array.isArray(u) ? u[0] : u
+        setUnidadeLabel(uf ? (uf.bloco ? `${uf.bloco}-${uf.numero}` : uf.numero) : null)
+      })
+  }, [user])
+
   // Badge de WhatsApp não-lido (staff de 1 condomínio)
   const [waUnread, setWaUnread] = useState(0)
   useEffect(() => {
@@ -250,8 +268,13 @@ export default function AppShell() {
             ) : (
               <Logo size={28} />
             )}
-            <div className="text-sm font-bold text-slate-100 truncate">
-              {condoNome ?? 'OnWay'}
+            <div className="min-w-0">
+              <div className="text-sm font-bold text-slate-100 truncate leading-tight">
+                {condoNome ?? 'OnWay'}
+              </div>
+              {unidadeLabel && (
+                <div className="text-[10px] text-slate-400 leading-tight">Un. {unidadeLabel}</div>
+              )}
             </div>
           </div>
           <div className="hidden md:block flex-1" />

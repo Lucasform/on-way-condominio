@@ -244,19 +244,29 @@ export default function AcessoDetalhe() {
       {(podeRegistrarEvento || podeRevogar) && (
         <div className="mt-6 rounded-lg border border-slate-700 bg-slate-900/40 p-5">
           <div className="text-sm font-medium text-slate-200 mb-3">Ações</div>
+          {podeRegistrarEvento && (
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <button
+                onClick={() => handleEvento('entrada')}
+                disabled={working}
+                className="rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold py-5 text-base transition disabled:opacity-50"
+              >
+                ✓ Liberar entrada
+              </button>
+              <button
+                onClick={() => handleEvento('negada', true)}
+                disabled={working}
+                className="rounded-xl bg-red-600 hover:bg-red-500 active:bg-red-700 text-white font-semibold py-5 text-base transition disabled:opacity-50"
+              >
+                ✗ Negar
+              </button>
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
             {podeRegistrarEvento && (
-              <>
-                <Button onClick={() => handleEvento('entrada')} disabled={working}>
-                  ✓ Liberar entrada
-                </Button>
-                <Button variant="ghost" onClick={() => handleEvento('saida')} disabled={working}>
-                  ↩ Registrar saída
-                </Button>
-                <Button variant="ghost" onClick={() => handleEvento('negada', true)} disabled={working}>
-                  ✗ Negar
-                </Button>
-              </>
+              <Button variant="ghost" onClick={() => handleEvento('saida')} disabled={working}>
+                ↩ Registrar saída
+              </Button>
             )}
             {podeRevogar && (
               <Button variant="ghost" onClick={() => handleEvento('revogada', true)} disabled={working}>
