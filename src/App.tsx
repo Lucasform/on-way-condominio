@@ -70,6 +70,7 @@ const Chat = lazy(() => import('./pages/Chat'))
 const ChatConversa = lazy(() => import('./pages/ChatConversa'))
 const WhatsappConfig = lazy(() => import('./pages/WhatsappConfig'))
 const Whatsapp = lazy(() => import('./pages/Whatsapp'))
+const Mais = lazy(() => import('./pages/Mais'))
 const AuditLog = lazy(() => import('./pages/AuditLog'))
 const Servicos = lazy(() => import('./pages/Servicos'))
 const Acessos = lazy(() => import('./pages/Acessos'))
@@ -107,6 +108,7 @@ export default function App() {
             }
           >
             <Route path="/" element={<Home />} />
+            <Route path="/mais" element={<Mais />} />
             <Route path="/meu-perfil" element={<MeuPerfil />} />
             <Route
               path="/condominios"

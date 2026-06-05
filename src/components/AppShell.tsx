@@ -6,6 +6,7 @@ import { menuFor, roleLabel, isGroup } from '../lib/nav'
 import { supabase } from '../lib/supabase'
 import { countWaUnread } from '../lib/whatsappInbox'
 import NotificationBell from './NotificationBell'
+import BottomNav from './BottomNav'
 import Logo from './Logo'
 import CondominioSwitcher from './CondominioSwitcher'
 import { prefetchRoutes } from '../lib/prefetchRoutes'
@@ -271,10 +272,12 @@ export default function AppShell() {
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto bg-slate-950">
+        <main className="flex-1 overflow-y-auto bg-slate-950 pb-16 md:pb-0">
           <Outlet />
         </main>
       </div>
+
+      <BottomNav />
     </div>
   )
 }

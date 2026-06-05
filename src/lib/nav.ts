@@ -379,6 +379,66 @@ export function menuFor(role: Role): MenuItem[] {
   return MENU_BY_ROLE[role] ?? COMMON_TOP
 }
 
+// ============================================================
+// Ícones por rota (emoji) — usados no launcher "Mais" e no bottom nav
+// ============================================================
+export const NAV_ICON: Record<string, string> = {
+  '/': '🏠',
+  '/dashboard': '📊',
+  '/painel': '🗂',
+  '/meu-perfil': '👤',
+  '/ajuda': '❓',
+  '/condominios': '🏢',
+  '/unidades': '🚪',
+  '/pessoas': '👥',
+  '/veiculos': '🚗',
+  '/pets': '🐾',
+  '/regimento': '📜',
+  '/ocorrencias': '⚠️',
+  '/notificacoes': '📋',
+  '/multas': '💰',
+  '/chamados': '🛠',
+  '/encomendas': '📦',
+  '/acessos': '🔑',
+  '/servicos': '🧰',
+  '/mural': '📣',
+  '/calendario': '📅',
+  '/chat': '💬',
+  '/comunicados': '📰',
+  '/classificados': '🏷',
+  '/whatsapp': '🟢',
+  '/emails-log': '✉️',
+  '/assembleias': '🏛',
+  '/votacoes': '🗳',
+  '/relatorios': '📈',
+  '/templates': '🧩',
+  '/auditoria': '🔍',
+  '/mais': '⋯',
+}
+
+export function iconFor(to: string): string {
+  return NAV_ICON[to] ?? '•'
+}
+
+// ============================================================
+// Bottom nav (mobile): até 4 itens principais + "Mais"
+// ============================================================
+const BOTTOM_BY_ROLE: Record<Role, MenuLeaf[]> = {
+  admin_onway:    [{ to: '/', label: 'Início' }, { to: '/painel', label: 'Painel' }, { to: '/ocorrencias', label: 'Ocorr.' }, { to: '/chat', label: 'Chat' }],
+  administradora: [{ to: '/', label: 'Início' }, { to: '/painel', label: 'Painel' }, { to: '/ocorrencias', label: 'Ocorr.' }, { to: '/chat', label: 'Chat' }],
+  sindico:        [{ to: '/', label: 'Início' }, { to: '/painel', label: 'Painel' }, { to: '/ocorrencias', label: 'Ocorr.' }, { to: '/chat', label: 'Chat' }],
+  subsindico:     [{ to: '/', label: 'Início' }, { to: '/painel', label: 'Painel' }, { to: '/ocorrencias', label: 'Ocorr.' }, { to: '/chat', label: 'Chat' }],
+  conselheiro:    [{ to: '/', label: 'Início' }, { to: '/dashboard', label: 'Painel' }, { to: '/ocorrencias', label: 'Ocorr.' }, { to: '/mural', label: 'Mural' }],
+  portaria:       [{ to: '/', label: 'Início' }, { to: '/encomendas', label: 'Portaria' }, { to: '/acessos', label: 'Acessos' }, { to: '/chat', label: 'Chat' }],
+  ronda:          [{ to: '/', label: 'Início' }, { to: '/ocorrencias', label: 'Ocorr.' }, { to: '/chamados', label: 'Chamados' }],
+  morador:        [{ to: '/', label: 'Início' }, { to: '/encomendas', label: 'Encom.' }, { to: '/chat', label: 'Chat' }, { to: '/comunicados', label: 'Avisos' }],
+}
+
+export function bottomNavFor(role: Role): MenuLeaf[] {
+  const base = BOTTOM_BY_ROLE[role] ?? [{ to: '/', label: 'Início' }]
+  return [...base, { to: '/mais', label: 'Mais' }]
+}
+
 export function roleLabel(role: Role): string {
   return {
     admin_onway: 'Administrador OnWay',
