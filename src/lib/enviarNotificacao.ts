@@ -1,3 +1,4 @@
+import { supabase } from './supabase'
 import { sendEmail } from './email'
 import { sendWhatsApp } from './whatsapp'
 import { sendPush } from './push'
@@ -12,6 +13,8 @@ export interface EnvioNotificacaoResultado {
   email: 'ok' | 'sem_email' | 'erro'
   whatsapp: 'ok' | 'sem_whatsapp' | 'inativo' | 'erro'
   push: boolean
+  app: boolean        // alerta interno (sininho) — o "padrão"
+  entregue: boolean   // chegou por algum canal direto (email/whatsapp/app)
 }
 
 /**
@@ -29,7 +32,9 @@ export async function enviarNotificacaoMulticanal(args: {
   emissorNome?: string | null
 }): Promise<EnvioNotificacaoResultado> {
   const { notificacao, pessoa, condominio } = args
-  const res: EnvioNotificacaoResultado = { email: 'sem_email', whatsapp: 'sem_whatsapp', push: false }
+  const res: EnvioNotificacaoResultado = {
+    email: 'sem_email', whatsapp: 'sem_whatsapp', push: false, app: false, entregue: false,
+  }
 
   const pdf = (await gerarPdfNotificacao({ ...args, output: 'base64' })) as { base64: string; filename: string }
 
@@ -72,19 +77,29 @@ export async function enviarNotificacaoMulticanal(args: {
     res.whatsapp = r.ok ? 'ok' : r.skipped ? 'inativo' : 'erro'
   }
 
-  // Padrão (push in-app) — sempre que houver login, garante que a pessoa fique sabendo
+  // Padrão (alerta interno) — sempre que houver login, garante o sininho no app
+  // mesmo sem e-mail/telefone/push cadastrados.
   if (pessoa?.user_id) {
     try {
-      await sendPush({
-        user_ids: [pessoa.user_id],
+      await supabase.from('app_notifications').insert({
+        user_id: pessoa.user_id,
+        condominio_id: notificacao.condominio_id,
+        tipo: 'notificacao',
         titulo: `📋 Nova notificação · ${condominio.nome}`,
-        corpo: notificacao.assunto,
+        conteudo: notificacao.assunto,
         link: `/notificacoes/${notificacao.id}`,
       })
-      res.push = true
+      res.app = true
     } catch { /* ignora */ }
+    sendPush({
+      user_ids: [pessoa.user_id],
+      titulo: `📋 Nova notificação · ${condominio.nome}`,
+      corpo: notificacao.assunto,
+      link: `/notificacoes/${notificacao.id}`,
+    }).then(() => { res.push = true }).catch(() => {})
   }
 
+  res.entregue = res.email === 'ok' || res.whatsapp === 'ok' || res.app
   await changeNotificacaoStatus(notificacao.id, 'enviada').catch(() => {})
   return res
 }

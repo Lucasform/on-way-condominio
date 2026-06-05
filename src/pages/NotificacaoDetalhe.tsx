@@ -128,9 +128,13 @@ export default function NotificacaoDetalhe() {
         r.email === 'ok' ? 'e-mail ✓' : r.email === 'sem_email' ? 'sem e-mail' : 'e-mail ✕',
         r.whatsapp === 'ok' ? 'WhatsApp ✓' : r.whatsapp === 'sem_whatsapp' ? 'sem WhatsApp'
           : r.whatsapp === 'inativo' ? 'WhatsApp desconectado' : 'WhatsApp ✕',
-        ...(r.push ? ['app ✓'] : []),
+        ...(r.app ? ['app ✓'] : []),
       ]
-      toast.success('Notificação enviada', partes.join(' · '))
+      if (r.entregue) {
+        toast.success('Notificação enviada', partes.join(' · '))
+      } else {
+        toast.warning('Registrada, mas sem canal', 'A pessoa não tem e-mail, telefone nem acesso ao app. Cadastre um contato.')
+      }
       const u = await getNotificacao(notificacao.id)
       if (u) setNotificacao(u)
     } catch (e) {
