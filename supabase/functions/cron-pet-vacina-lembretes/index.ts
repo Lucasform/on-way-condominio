@@ -108,6 +108,19 @@ ${tipo === 'antirabica_vencida'
       })
       if (!resp.ok) continue
 
+      // Alerta interno pro staff
+      const { data: staff } = await sb
+        .from('perfis').select('id')
+        .eq('condominio_id', pet.condominio_id)
+        .in('role', ['sindico', 'subsindico', 'administradora']).eq('ativo', true)
+      const alertas = ((staff ?? []) as Array<{ id: string }>).map((s) => ({
+        user_id: s.id, condominio_id: pet.condominio_id, tipo: 'pet_vacina',
+        titulo: subject,
+        conteudo: `${donoNome ? `Dono: ${donoNome}. ` : ''}Vence em ${formatDate(venc)}.`,
+        link: '/pets',
+      }))
+      if (alertas.length > 0) await sb.from('app_notifications').insert(alertas)
+
       await sb.from('pet_vacina_lembretes_enviados').insert({ pet_id: pet.id, tipo })
       enviadas++
     }

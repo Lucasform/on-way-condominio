@@ -64,6 +64,14 @@ Deno.serve(async (req: Request) => {
         } catch (err) {
           console.warn('[notify-encomendas-paradas] push falhou', err)
         }
+        // Alerta interno (sininho) pros mesmos staff
+        const alertas = Array.from(userIds).map((uid) => ({
+          user_id: uid, condominio_id: e.condominio_id, tipo: 'encomenda_parada',
+          titulo: `Encomenda parada há ${dias} dias`,
+          conteudo: `Unidade ${unidadeStr}${e.descricao ? `: ${String(e.descricao).slice(0, 80)}` : ''}`,
+          link: `/encomendas/${e.id}`,
+        }))
+        if (alertas.length > 0) await admin.from('app_notifications').insert(alertas)
       }
       await admin.from('encomendas').update({ push_alerta_at: new Date().toISOString() }).eq('id', e.id)
     }

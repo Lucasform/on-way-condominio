@@ -91,6 +91,19 @@ ${a.pauta ? `<p><strong>Pauta:</strong><br>${escapeHtml(a.pauta).replace(/\n/g, 
         continue
       }
 
+      // Alerta interno pro staff
+      const { data: staff } = await sb
+        .from('perfis').select('id')
+        .eq('condominio_id', a.condominio_id)
+        .in('role', ['sindico', 'subsindico', 'administradora']).eq('ativo', true)
+      const alertas = ((staff ?? []) as Array<{ id: string }>).map((s) => ({
+        user_id: s.id, condominio_id: a.condominio_id, tipo: 'assembleia_lembrete',
+        titulo: `Assembleia amanhã: ${a.titulo}`,
+        conteudo: `${dataFmt}${a.local ? ` · ${a.local}` : ''}`,
+        link: `/assembleias/${a.id}`,
+      }))
+      if (alertas.length > 0) await sb.from('app_notifications').insert(alertas)
+
       await sb.from('assembleia_lembretes_enviados').insert({ assembleia_id: a.id, tipo: '24h' })
       enviadas++
     }
