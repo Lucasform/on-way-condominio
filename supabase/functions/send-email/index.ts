@@ -17,6 +17,8 @@ interface Body {
   vars?: TemplateVars
   condominio_id?: string
   custom?: { subject: string; html: string; text?: string }
+  reply_to?: string                                  // sobrescreve; senão usa email_contato do condo
+  attachments?: Array<{ filename: string; content: string }>  // content = base64
 }
 
 Deno.serve(async (req: Request) => {
@@ -69,6 +71,14 @@ Deno.serve(async (req: Request) => {
     const finalVars: TemplateVars = { ...(body.vars ?? {}), sender_name: senderName }
     const rendered = renderTemplate(body.template, finalVars, body.custom)
 
+    // Reply-To = e-mail do condomínio (quando houver), pra respostas irem pra ele
+    let replyTo: string | null = body.reply_to ?? null
+    if (!replyTo && body.condominio_id) {
+      const { data: condo } = await admin
+        .from('condominios').select('email_contato').eq('id', body.condominio_id).maybeSingle()
+      if (condo?.email_contato) replyTo = condo.email_contato
+    }
+
     const results: Array<{ to: string; ok: boolean; id?: string; error?: string }> = []
 
     for (const to of recipients) {
@@ -107,6 +117,10 @@ Deno.serve(async (req: Request) => {
             subject: rendered.subject,
             html: rendered.html,
             text: rendered.text,
+            ...(replyTo ? { reply_to: replyTo } : {}),
+            ...(body.attachments && body.attachments.length
+              ? { attachments: body.attachments.map((a) => ({ filename: a.filename, content: a.content })) }
+              : {}),
           }),
         })
         const data = await rendaResp.json()

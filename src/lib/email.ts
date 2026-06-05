@@ -29,6 +29,8 @@ export interface SendEmailInput {
   vars?: EmailVars
   condominio_id?: string | null
   custom?: { subject: string; html: string; text?: string }
+  reply_to?: string
+  attachments?: Array<{ filename: string; content: string }>  // content = base64
 }
 
 export interface SendEmailResult {

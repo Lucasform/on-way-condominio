@@ -24,6 +24,7 @@ import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { DetailSkeleton } from '../components/ui/Skeleton'
 import { gerarPdfNotificacao } from '../lib/notificacaoPdf'
+import { enviarNotificacaoMulticanal } from '../lib/enviarNotificacao'
 import DeleteButton from '../components/ui/DeleteButton'
 
 const STATUS_CLASS: Record<StatusNotificacao, string> = {
@@ -114,6 +115,31 @@ export default function NotificacaoDetalhe() {
     }
   }
 
+  async function handleEnviar() {
+    if (!notificacao || !condominio) return
+    setChanging(true)
+    try {
+      const r = await enviarNotificacaoMulticanal({
+        notificacao, pessoa, unidade, condominio,
+        assinaturaUrl: perfil?.assinatura_url ?? null,
+        emissorNome: perfil?.nome_exibicao ?? null,
+      })
+      const partes = [
+        r.email === 'ok' ? 'e-mail ✓' : r.email === 'sem_email' ? 'sem e-mail' : 'e-mail ✕',
+        r.whatsapp === 'ok' ? 'WhatsApp ✓' : r.whatsapp === 'sem_whatsapp' ? 'sem WhatsApp'
+          : r.whatsapp === 'inativo' ? 'WhatsApp desconectado' : 'WhatsApp ✕',
+        ...(r.push ? ['app ✓'] : []),
+      ]
+      toast.success('Notificação enviada', partes.join(' · '))
+      const u = await getNotificacao(notificacao.id)
+      if (u) setNotificacao(u)
+    } catch (e) {
+      toast.error('Erro ao enviar', e instanceof Error ? e.message : '')
+    } finally {
+      setChanging(false)
+    }
+  }
+
   async function handleAdvertencia() {
     if (!notificacao) return
     const ok = await confirm({
@@ -155,6 +181,11 @@ export default function NotificacaoDetalhe() {
           <div className="flex items-center gap-2">
             {canDelete && (
               <DeleteButton onClick={handleDelete} disabled={changing} />
+            )}
+            {canChange && !NOTIFICACAO_STATUS_TERMINAL.includes(notificacao.status) && (
+              <Button onClick={handleEnviar} disabled={changing} title="Enviar por e-mail + WhatsApp com o PDF">
+                📧 Enviar
+              </Button>
             )}
             <Button
               variant="secondary"

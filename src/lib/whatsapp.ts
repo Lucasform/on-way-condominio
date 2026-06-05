@@ -50,6 +50,7 @@ export interface SendWaInput {
   telefone: string
   texto: string
   conversa_id?: string
+  documento?: { base64: string; filename: string }
 }
 
 export interface SendWaResult {

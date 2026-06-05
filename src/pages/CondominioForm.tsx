@@ -36,6 +36,7 @@ const EMPTY: CondominioInput = {
   estado: null,
   cep: null,
   administradora: null,
+  email_contato: null,
   logo_url: null,
   regimento_pdf_url: null,
   modelo_notificacao_url: null,
@@ -140,6 +141,7 @@ export default function CondominioForm() {
             estado: c.estado,
             cep: c.cep,
             administradora: c.administradora,
+            email_contato: c.email_contato,
             logo_url: c.logo_url,
             regimento_pdf_url: c.regimento_pdf_url,
             modelo_notificacao_url: c.modelo_notificacao_url,
@@ -312,6 +314,15 @@ export default function CondominioForm() {
           <TextInput
             value={form.cnpj ?? ''}
             onChange={(e) => update('cnpj', e.target.value)}
+          />
+        </Field>
+
+        <Field label="E-mail de contato" hint="Para onde as respostas das notificações/e-mails vão (Reply-To).">
+          <TextInput
+            type="email"
+            value={form.email_contato ?? ''}
+            onChange={(e) => update('email_contato', e.target.value)}
+            placeholder="sindico@seucondominio.com.br"
           />
         </Field>
 

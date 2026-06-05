@@ -11,7 +11,8 @@ export async function gerarPdfNotificacao(args: {
   condominio: Condominio
   assinaturaUrl?: string | null
   emissorNome?: string | null
-}): Promise<void> {
+  output?: 'save' | 'base64'
+}): Promise<void | { base64: string; filename: string }> {
   const { jsPDF } = await import('jspdf')
   const { notificacao, unidade, pessoa, condominio, assinaturaUrl, emissorNome } = args
 
@@ -146,6 +147,10 @@ export async function gerarPdfNotificacao(args: {
   )
 
   const nome = `notificacao-${unidadeLabel}-${notificacao.id.slice(0, 8)}.pdf`
+  if (args.output === 'base64') {
+    const base64 = doc.output('datauristring').split(',')[1] ?? ''
+    return { base64, filename: nome }
+  }
   doc.save(nome)
 }
 

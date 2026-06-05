@@ -116,6 +116,7 @@ function normalize(input: CondominioInput): CondominioInput {
     estado: input.estado ? input.estado.toUpperCase().slice(0, 2) : null,
     cep: digitsOrNull(input.cep),
     administradora: trimOrNull(input.administradora),
+    email_contato: trimOrNull(input.email_contato),
     logo_url: trimOrNull(input.logo_url),
     regimento_pdf_url: input.regimento_pdf_url ?? null,
     modelo_notificacao_url: input.modelo_notificacao_url ?? null,

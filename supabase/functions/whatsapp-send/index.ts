@@ -14,6 +14,7 @@ interface Body {
   telefone: string
   texto: string
   conversa_id?: string
+  documento?: { base64: string; filename: string }  // anexa PDF (Evolution sendMedia)
 }
 
 function normalizePhone(p: string): string {
@@ -89,18 +90,29 @@ Deno.serve(async (req: Request) => {
       if (!evoUrl || !evoKey) {
         return jsonResponse({ skipped: true, reason: 'Servidor Evolution não configurado.' })
       }
-      // Evolution: POST {EVOLUTION_API_URL}/message/sendText/{instance}
-      url = `${evoUrl}/message/sendText/${cfg.instance_id}`
-      init = {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          apikey: evoKey,
-        },
-        body: JSON.stringify({
-          number: telefone,
-          text: body.texto,
-        }),
+      if (body.documento?.base64) {
+        // Documento (PDF): Evolution POST /message/sendMedia/{instance}
+        url = `${evoUrl}/message/sendMedia/${cfg.instance_id}`
+        init = {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', apikey: evoKey },
+          body: JSON.stringify({
+            number: telefone,
+            mediatype: 'document',
+            mimetype: 'application/pdf',
+            media: body.documento.base64,
+            fileName: body.documento.filename,
+            caption: body.texto,
+          }),
+        }
+      } else {
+        // Texto: Evolution POST /message/sendText/{instance}
+        url = `${evoUrl}/message/sendText/${cfg.instance_id}`
+        init = {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', apikey: evoKey },
+          body: JSON.stringify({ number: telefone, text: body.texto }),
+        }
       }
     } else {
       return jsonResponse({ error: `Provider desconhecido: ${cfg.provider}` }, 500)

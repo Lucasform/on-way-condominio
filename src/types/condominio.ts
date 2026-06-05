@@ -10,6 +10,7 @@ export interface Condominio {
   estado: string | null
   cep: string | null
   administradora: string | null
+  email_contato: string | null
   logo_url: string | null
   regimento_pdf_url: string | null
   modelo_notificacao_url: string | null
