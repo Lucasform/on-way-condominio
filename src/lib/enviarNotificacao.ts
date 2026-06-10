@@ -10,11 +10,17 @@ import type { Unidade } from '../types/unidade'
 import type { Condominio } from '../types/condominio'
 
 export interface EnvioNotificacaoResultado {
-  email: 'ok' | 'sem_email' | 'erro'
-  whatsapp: 'ok' | 'sem_whatsapp' | 'inativo' | 'erro'
+  email: 'ok' | 'sem_email' | 'nao_escolhido' | 'erro'
+  whatsapp: 'ok' | 'sem_whatsapp' | 'nao_escolhido' | 'inativo' | 'erro'
   push: boolean
   app: boolean        // alerta interno (sininho) — o "padrão"
   entregue: boolean   // chegou por algum canal direto (email/whatsapp/app)
+}
+
+/** Canais diretos que o usuário pode escolher. In-app/push são sempre baseline. */
+export interface CanaisEnvio {
+  email: boolean
+  whatsapp: boolean
 }
 
 /**
@@ -30,10 +36,15 @@ export async function enviarNotificacaoMulticanal(args: {
   condominio: Condominio
   assinaturaUrl?: string | null
   emissorNome?: string | null
+  /** Canais diretos escolhidos. Default: ambos. In-app/push vão sempre. */
+  canais?: CanaisEnvio
 }): Promise<EnvioNotificacaoResultado> {
   const { notificacao, pessoa, condominio } = args
+  const canais = args.canais ?? { email: true, whatsapp: true }
   const res: EnvioNotificacaoResultado = {
-    email: 'sem_email', whatsapp: 'sem_whatsapp', push: false, app: false, entregue: false,
+    email: canais.email ? 'sem_email' : 'nao_escolhido',
+    whatsapp: canais.whatsapp ? 'sem_whatsapp' : 'nao_escolhido',
+    push: false, app: false, entregue: false,
   }
 
   const pdf = (await gerarPdfNotificacao({ ...args, output: 'base64' })) as { base64: string; filename: string }
@@ -46,7 +57,7 @@ export async function enviarNotificacaoMulticanal(args: {
     `<p>${notificacao.descricao.replace(/\n/g, '<br>')}</p>`
 
   // E-mail (com PDF anexo)
-  if (pessoa?.email) {
+  if (canais.email && pessoa?.email) {
     try {
       const r = await sendEmail({
         to: pessoa.email,
@@ -62,7 +73,7 @@ export async function enviarNotificacaoMulticanal(args: {
   }
 
   // WhatsApp (PDF como documento)
-  if (pessoa?.telefone) {
+  if (canais.whatsapp && pessoa?.telefone) {
     const texto =
       `*${condominio.nome}*\n\nNotificação referente à sua unidade.\n` +
       `*Assunto:* ${notificacao.assunto}\n` +

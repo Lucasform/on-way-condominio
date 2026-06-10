@@ -22,9 +22,10 @@ import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import Modal from '../components/ui/Modal'
 import { DetailSkeleton } from '../components/ui/Skeleton'
 import { gerarPdfNotificacao } from '../lib/notificacaoPdf'
-import { enviarNotificacaoMulticanal } from '../lib/enviarNotificacao'
+import { enviarNotificacaoMulticanal, type CanaisEnvio } from '../lib/enviarNotificacao'
 import DeleteButton from '../components/ui/DeleteButton'
 
 const STATUS_CLASS: Record<StatusNotificacao, string> = {
@@ -54,6 +55,8 @@ export default function NotificacaoDetalhe() {
   const [loading, setLoading] = useState(true)
   const [changing, setChanging] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [enviarOpen, setEnviarOpen] = useState(false)
+  const [canais, setCanais] = useState<CanaisEnvio>({ email: true, whatsapp: true })
 
   async function load() {
     if (!id) return
@@ -117,19 +120,25 @@ export default function NotificacaoDetalhe() {
 
   async function handleEnviar() {
     if (!notificacao || !condominio) return
+    if (!canais.email && !canais.whatsapp) {
+      toast.warning('Escolha um canal', 'Marque e-mail e/ou WhatsApp para enviar.')
+      return
+    }
+    setEnviarOpen(false)
     setChanging(true)
     try {
       const r = await enviarNotificacaoMulticanal({
         notificacao, pessoa, unidade, condominio,
         assinaturaUrl: perfil?.assinatura_url ?? null,
         emissorNome: perfil?.nome_exibicao ?? null,
+        canais,
       })
       const partes = [
-        r.email === 'ok' ? 'e-mail ✓' : r.email === 'sem_email' ? 'sem e-mail' : 'e-mail ✕',
-        r.whatsapp === 'ok' ? 'WhatsApp ✓' : r.whatsapp === 'sem_whatsapp' ? 'sem WhatsApp'
-          : r.whatsapp === 'inativo' ? 'WhatsApp desconectado' : 'WhatsApp ✕',
+        canais.email ? (r.email === 'ok' ? 'e-mail ✓' : r.email === 'sem_email' ? 'sem e-mail' : 'e-mail ✕') : null,
+        canais.whatsapp ? (r.whatsapp === 'ok' ? 'WhatsApp ✓' : r.whatsapp === 'sem_whatsapp' ? 'sem WhatsApp'
+          : r.whatsapp === 'inativo' ? 'WhatsApp desconectado' : 'WhatsApp ✕') : null,
         ...(r.app ? ['app ✓'] : []),
-      ]
+      ].filter(Boolean) as string[]
       if (r.entregue) {
         toast.success('Notificação enviada', partes.join(' · '))
       } else {
@@ -187,7 +196,7 @@ export default function NotificacaoDetalhe() {
               <DeleteButton onClick={handleDelete} disabled={changing} />
             )}
             {canChange && !NOTIFICACAO_STATUS_TERMINAL.includes(notificacao.status) && (
-              <Button onClick={handleEnviar} disabled={changing} title="Enviar por e-mail + WhatsApp com o PDF">
+              <Button onClick={() => setEnviarOpen(true)} disabled={changing} title="Escolher canais e enviar com o PDF">
                 📧 Enviar
               </Button>
             )}
@@ -210,6 +219,43 @@ export default function NotificacaoDetalhe() {
           </div>
         }
       />
+
+      <Modal
+        open={enviarOpen}
+        onClose={() => setEnviarOpen(false)}
+        title="Enviar notificação"
+        size="sm"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setEnviarOpen(false)}>Cancelar</Button>
+            <Button onClick={handleEnviar} disabled={!canais.email && !canais.whatsapp}>Enviar</Button>
+          </>
+        }
+      >
+        <p className="text-slate-400 mb-3">Escolha por onde enviar o PDF. O alerta no app vai sempre.</p>
+        <div className="space-y-2">
+          <label className="flex items-center gap-3 rounded-lg border border-slate-800 px-3 py-2 cursor-pointer hover:bg-slate-800/40">
+            <input
+              type="checkbox"
+              checked={canais.email}
+              onChange={(e) => setCanais((c) => ({ ...c, email: e.target.checked }))}
+              className="h-4 w-4 accent-sky-500"
+            />
+            <span className="flex-1">📧 E-mail</span>
+            <span className="text-xs text-slate-500">{pessoa?.email ?? 'sem e-mail cadastrado'}</span>
+          </label>
+          <label className="flex items-center gap-3 rounded-lg border border-slate-800 px-3 py-2 cursor-pointer hover:bg-slate-800/40">
+            <input
+              type="checkbox"
+              checked={canais.whatsapp}
+              onChange={(e) => setCanais((c) => ({ ...c, whatsapp: e.target.checked }))}
+              className="h-4 w-4 accent-emerald-500"
+            />
+            <span className="flex-1">💬 WhatsApp</span>
+            <span className="text-xs text-slate-500">{pessoa?.telefone ?? 'sem telefone cadastrado'}</span>
+          </label>
+        </div>
+      </Modal>
 
       <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-6">
         <div className="flex items-start justify-between gap-4 mb-5">
