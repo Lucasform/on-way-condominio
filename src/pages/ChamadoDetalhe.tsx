@@ -207,10 +207,12 @@ export default function ChamadoDetalhe() {
           <p className="text-slate-100 whitespace-pre-wrap">{chamado.descricao}</p>
         </div>
 
-        {chamado.resolucao_nota && (
+        {(chamado.resolucao_nota || chamado.resolvido_em) && (
           <div className="border-t border-slate-800 pt-4 mt-4">
             <div className="text-xs font-medium text-emerald-300 uppercase tracking-wide mb-1">Resolução</div>
-            <p className="text-slate-200 whitespace-pre-wrap text-sm">{chamado.resolucao_nota}</p>
+            {chamado.resolucao_nota
+              ? <p className="text-slate-200 whitespace-pre-wrap text-sm">{chamado.resolucao_nota}</p>
+              : <p className="text-slate-400 text-sm italic">Sem nota de resolução.</p>}
             {chamado.resolvido_em && (
               <p className="text-xs text-slate-500 mt-1">
                 em {new Date(chamado.resolvido_em).toLocaleString('pt-BR')}

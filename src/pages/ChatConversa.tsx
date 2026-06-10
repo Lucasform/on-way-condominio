@@ -53,6 +53,7 @@ export default function ChatConversa() {
   const [enviando, setEnviando] = useState(false)
   const [sugerindo, setSugerindo] = useState(false)
   const [sugestaoErr, setSugestaoErr] = useState<string | null>(null)
+  const [botDigitando, setBotDigitando] = useState(false)
 
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -213,6 +214,18 @@ export default function ChatConversa() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [mensagens])
 
+  // "Assistente digitando": última msg é do morador e o bot ainda vai responder.
+  // Some quando o bot responde (mensagens muda) ou após 25s (caso o bot falhe).
+  useEffect(() => {
+    const ultima = mensagens[mensagens.length - 1]
+    const ativo = !!ultima && ultima.autor_tipo === 'morador'
+      && conversa?.status !== 'encerrada' && conversa?.status !== 'em_atendimento'
+    if (!ativo) { setBotDigitando(false); return }
+    setBotDigitando(true)
+    const t = setTimeout(() => setBotDigitando(false), 25000)
+    return () => clearTimeout(t)
+  }, [mensagens, conversa?.status])
+
   async function handleEnviar(e: FormEvent) {
     e.preventDefault()
     if (!user || !id || !novaMsg.trim() || !conversa) return
@@ -363,8 +376,20 @@ export default function ChatConversa() {
               mensagem={m}
               autor={m.autor_id ? autores.get(m.autor_id) ?? null : null}
               eMeuLado={Boolean(m.autor_id === user?.id || (isMorador && m.autor_tipo === 'morador') || (isStaff && m.autor_tipo === 'staff'))}
+              mostrarMeta={Boolean(isStaff)}
             />
           ))
+        )}
+        {botDigitando && (
+          <div className="flex justify-start">
+            <div className="max-w-[75%] rounded-lg px-3 py-2 bg-purple-600/20 border border-purple-500/30 text-purple-100">
+              <div className="text-[10px] uppercase tracking-wide opacity-70 mb-1">🤖 Assistente</div>
+              <div className="flex items-center gap-1 text-sm">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-purple-300 animate-pulse" />
+                <span className="opacity-80">digitando...</span>
+              </div>
+            </div>
+          </div>
         )}
         <div ref={bottomRef} />
       </div>
@@ -432,10 +457,12 @@ function MensagemBubble({
   mensagem: m,
   autor,
   eMeuLado,
+  mostrarMeta,
 }: {
   mensagem: Mensagem
   autor: AutorInfo | null
   eMeuLado: boolean
+  mostrarMeta?: boolean
 }) {
   const isBot = m.autor_tipo === 'bot'
   const isSistema = m.autor_tipo === 'sistema'
@@ -468,6 +495,17 @@ function MensagemBubble({
           {new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
         </div>
         <p className="text-sm whitespace-pre-wrap">{m.conteudo}</p>
+        {isBot && mostrarMeta && m.metadata && (() => {
+          const meta = m.metadata as { modelo?: string; transferir?: boolean; artigos_consultados?: unknown }
+          const artigos = Array.isArray(meta.artigos_consultados) ? meta.artigos_consultados.join(', ') : null
+          return (
+            <div className="mt-1.5 pt-1.5 border-t border-purple-500/20 text-[10px] text-purple-300/80 flex flex-wrap gap-x-2">
+              {meta.modelo && <span>{meta.modelo}</span>}
+              {artigos && <span>· artigos: {artigos}</span>}
+              {meta.transferir && <span>· transferiu p/ humano</span>}
+            </div>
+          )
+        })()}
       </div>
     </div>
   )
