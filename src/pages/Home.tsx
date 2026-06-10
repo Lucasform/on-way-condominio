@@ -15,6 +15,7 @@ import type { Chamado } from '../types/chamado'
 import OnboardingChecklist from '../components/OnboardingChecklist'
 import AdminHome from '../components/AdminHome'
 import AdminKPIs from '../components/AdminKPIs'
+import AppLauncher from '../components/AppLauncher'
 import { isStaff } from '../lib/permissions'
 
 export default function Home() {
@@ -41,7 +42,10 @@ export default function Home() {
         Bem-vindo, {perfil?.nome_exibicao ?? user?.email}.
       </p>
 
-      <section className="mt-8 max-w-md rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-5">
+      {/* Launcher de apps — só mobile (no desktop a sidebar cobre) */}
+      <AppLauncher className="md:hidden mt-6" />
+
+      <section className="mt-8 max-w-md rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-5 hidden md:block">
         <div className="text-sm text-slate-500 dark:text-slate-400">Logado como</div>
         <div className="mt-1 text-base font-medium text-slate-900 dark:text-slate-100">{user?.email}</div>
         {perfil && (
@@ -133,6 +137,9 @@ function MoradorHome() {
         Resumo do que está acontecendo pra você no condomínio.
       </p>
       <OnboardingChecklist />
+
+      {/* Launcher de apps — só mobile */}
+      <AppLauncher className="md:hidden mt-6" />
 
       {loading ? (
         <div className="mt-8 text-slate-400">Carregando...</div>

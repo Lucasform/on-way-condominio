@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
 import { signOut } from '../lib/auth'
-import { menuFor, roleLabel, isGroup } from '../lib/nav'
+import { menuFor, roleLabel, isGroup, iconFor } from '../lib/nav'
 import { supabase } from '../lib/supabase'
 import { countWaUnread } from '../lib/whatsappInbox'
 import NotificationBell from './NotificationBell'
@@ -14,7 +14,6 @@ import { prefetchRoutes } from '../lib/prefetchRoutes'
 export default function AppShell() {
   const { perfil, user, effectiveRole, viewAsMorador, setViewAsMorador } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
   const items = effectiveRole ? menuFor(effectiveRole) : []
   // Toggle "ver como morador" so faz sentido se o user nao e morador de fato
   // E tem cadastro residencial vinculado (pessoa.user_id = user.id).
@@ -62,31 +61,10 @@ export default function AppShell() {
   }, [perfil])
   const [condoLogo, setCondoLogo] = useState<string | null>(null)
   const [condoNome, setCondoNome] = useState<string | null>(null)
-  const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
     prefetchRoutes()
   }, [])
-
-  // Fecha o drawer ao navegar
-  useEffect(() => { setMobileOpen(false) }, [location.pathname])
-
-  // Bloqueia scroll do body quando o drawer está aberto (mobile)
-  useEffect(() => {
-    if (mobileOpen) {
-      const prev = document.body.style.overflow
-      document.body.style.overflow = 'hidden'
-      return () => { document.body.style.overflow = prev }
-    }
-  }, [mobileOpen])
-
-  // ESC fecha o drawer
-  useEffect(() => {
-    if (!mobileOpen) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMobileOpen(false) }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [mobileOpen])
 
   useEffect(() => {
     if (!perfil?.condominio_id) { setCondoLogo(null); setCondoNome(null); return }
@@ -110,23 +88,10 @@ export default function AppShell() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors">
-      {/* Backdrop (mobile only) */}
-      {mobileOpen && (
-        <div
-          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-          onClick={() => setMobileOpen(false)}
-          aria-hidden="true"
-        />
-      )}
-
+      {/* Sidebar — só desktop. No mobile a navegação é a barra inferior + launcher. */}
       <aside
-        className={`
-          w-72 md:w-60 shrink-0 border-r border-slate-200 dark:border-slate-800
-          bg-white dark:bg-slate-900 md:dark:bg-slate-900/40 flex flex-col
-          fixed md:static inset-y-0 left-0 z-50
-          transform transition-transform duration-200 ease-out
-          ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-        `}
+        className="hidden md:flex w-60 shrink-0 border-r border-slate-200 dark:border-slate-800
+          bg-white dark:bg-slate-900/40 flex-col static inset-y-0 left-0"
         aria-label="Navegação principal"
       >
         <div className="px-4 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2.5">
@@ -206,8 +171,9 @@ export default function AppShell() {
                           }`
                         }
                       >
-                        <span className="flex items-center justify-between gap-2">
-                          {child.label}
+                        <span className="flex items-center gap-2.5">
+                          <span className="text-base leading-none w-5 text-center shrink-0">{iconFor(child.to)}</span>
+                          <span className="flex-1 truncate">{child.label}</span>
                           {child.to === '/whatsapp' && waUnread > 0 && (
                             <span className="shrink-0 text-[10px] bg-emerald-500 text-white rounded-full px-1.5 py-0.5">
                               {waUnread}
@@ -233,7 +199,10 @@ export default function AppShell() {
                   }`
                 }
               >
-                {item.label}
+                <span className="flex items-center gap-2.5">
+                  <span className="text-base leading-none w-5 text-center shrink-0">{iconFor(item.to)}</span>
+                  <span className="flex-1 truncate">{item.label}</span>
+                </span>
               </NavLink>
             )
           })}
@@ -252,16 +221,8 @@ export default function AppShell() {
       </aside>
 
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-        {/* Header unificado: hamburger + nome em mobile, sino sempre. */}
-        <header className="h-12 shrink-0 border-b border-slate-800 bg-slate-900/60 md:bg-slate-900/30 flex items-center px-2 md:px-4 gap-2">
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="md:hidden p-2 -ml-1 rounded-md text-slate-300 hover:bg-slate-800 active:bg-slate-700 transition"
-            aria-label="Abrir menu"
-            aria-expanded={mobileOpen}
-          >
-            <MenuIcon />
-          </button>
+        {/* Header: logo + nome do condomínio em mobile, sino sempre. */}
+        <header className="h-12 shrink-0 border-b border-slate-800 bg-slate-900/60 md:bg-slate-900/30 flex items-center px-3 md:px-4 gap-2">
           <div className="md:hidden flex items-center gap-2 min-w-0 flex-1">
             {condoLogo ? (
               <img src={condoLogo} alt="" className="w-7 h-7 object-contain rounded shrink-0" />
@@ -302,26 +263,6 @@ export default function AppShell() {
 
       <BottomNav />
     </div>
-  )
-}
-
-function MenuIcon() {
-  return (
-    <svg
-      width="22"
-      height="22"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <line x1="3" y1="6" x2="21" y2="6" />
-      <line x1="3" y1="12" x2="21" y2="12" />
-      <line x1="3" y1="18" x2="21" y2="18" />
-    </svg>
   )
 }
 

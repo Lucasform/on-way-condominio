@@ -420,6 +420,46 @@ export function iconFor(to: string): string {
   return NAV_ICON[to] ?? '•'
 }
 
+// Cor do "chip" do ícone no launcher (classes completas — Tailwind precisa delas
+// estáticas pra não fazer purge). Fallback slate.
+export const NAV_COLOR: Record<string, string> = {
+  '/': 'bg-brand-500/15 text-brand-300',
+  '/dashboard': 'bg-sky-500/15 text-sky-300',
+  '/painel': 'bg-sky-500/15 text-sky-300',
+  '/meu-perfil': 'bg-brand-500/15 text-brand-300',
+  '/ajuda': 'bg-slate-500/15 text-slate-300',
+  '/condominios': 'bg-blue-500/15 text-blue-300',
+  '/unidades': 'bg-slate-500/15 text-slate-300',
+  '/pessoas': 'bg-indigo-500/15 text-indigo-300',
+  '/veiculos': 'bg-cyan-500/15 text-cyan-300',
+  '/pets': 'bg-orange-500/15 text-orange-300',
+  '/regimento': 'bg-amber-500/15 text-amber-300',
+  '/ocorrencias': 'bg-amber-500/15 text-amber-300',
+  '/notificacoes': 'bg-indigo-500/15 text-indigo-300',
+  '/multas': 'bg-red-500/15 text-red-300',
+  '/chamados': 'bg-orange-500/15 text-orange-300',
+  '/encomendas': 'bg-sky-500/15 text-sky-300',
+  '/acessos': 'bg-teal-500/15 text-teal-300',
+  '/servicos': 'bg-lime-500/15 text-lime-300',
+  '/mural': 'bg-pink-500/15 text-pink-300',
+  '/calendario': 'bg-violet-500/15 text-violet-300',
+  '/chat': 'bg-emerald-500/15 text-emerald-300',
+  '/comunicados': 'bg-cyan-500/15 text-cyan-300',
+  '/classificados': 'bg-fuchsia-500/15 text-fuchsia-300',
+  '/whatsapp': 'bg-green-500/15 text-green-300',
+  '/emails-log': 'bg-blue-500/15 text-blue-300',
+  '/assembleias': 'bg-purple-500/15 text-purple-300',
+  '/votacoes': 'bg-amber-500/15 text-amber-300',
+  '/relatorios': 'bg-sky-500/15 text-sky-300',
+  '/templates': 'bg-slate-500/15 text-slate-300',
+  '/auditoria': 'bg-rose-500/15 text-rose-300',
+  '/mais': 'bg-slate-500/15 text-slate-300',
+}
+
+export function iconColorFor(to: string): string {
+  return NAV_COLOR[to] ?? 'bg-slate-500/15 text-slate-300'
+}
+
 // ============================================================
 // Bottom nav (mobile): até 4 itens principais + "Mais"
 // ============================================================

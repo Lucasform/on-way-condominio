@@ -1,55 +1,67 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
-import { menuFor, isGroup, iconFor, roleLabel, type MenuLeaf } from '../lib/nav'
+import { roleLabel } from '../lib/nav'
+import { signOut } from '../lib/auth'
+import AppLauncher from '../components/AppLauncher'
+import CondominioSwitcher from '../components/CondominioSwitcher'
+import ThemeToggle from '../components/ThemeToggle'
 
 /**
- * Launcher estilo "apps" do celular: todas as funções do papel em grade de
- * ícones. Aparece no mobile via bottom nav. No desktop a sidebar já cobre.
+ * Hub do mobile: launcher de apps (grade de ícones) + conta (perfil, troca de
+ * condomínio, tema, sair). No desktop a sidebar cobre tudo isso.
  */
 export default function Mais() {
   const { effectiveRole, perfil, user } = useAuth()
+  const navigate = useNavigate()
   if (!effectiveRole) return null
-  const items = menuFor(effectiveRole)
 
-  // achata grupos em seções pra renderizar como blocos
-  const secoes: { titulo: string | null; leafs: MenuLeaf[] }[] = []
-  const topo: MenuLeaf[] = []
-  for (const item of items) {
-    if (isGroup(item)) secoes.push({ titulo: item.label, leafs: item.children })
-    else topo.push(item)
+  const ini = (perfil?.nome_exibicao ?? user?.email ?? '?').slice(0, 1).toUpperCase()
+
+  async function handleSignOut() {
+    await signOut()
+    navigate('/entrar', { replace: true })
   }
-  if (topo.length) secoes.unshift({ titulo: null, leafs: topo })
 
   return (
     <div className="px-4 py-6 pb-24 max-w-3xl mx-auto">
-      <div className="mb-5">
-        <div className="text-lg font-semibold text-slate-100">Tudo</div>
-        <div className="text-xs text-slate-500">
-          {perfil?.nome_exibicao ?? user?.email} · {roleLabel(effectiveRole)}
-        </div>
-      </div>
-
-      {secoes.map((s, i) => (
-        <div key={i} className="mb-6">
-          {s.titulo && (
-            <div className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold mb-2 px-1">
-              {s.titulo}
-            </div>
-          )}
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-            {s.leafs.map((leaf) => (
-              <Link
-                key={leaf.to}
-                to={leaf.to}
-                className="flex flex-col items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 p-3 hover:border-brand-500 hover:bg-slate-800/60 transition aspect-square text-center"
-              >
-                <span className="text-2xl leading-none">{iconFor(leaf.to)}</span>
-                <span className="text-[11px] text-slate-300 leading-tight">{leaf.label}</span>
-              </Link>
-            ))}
+      {/* Cartão de conta */}
+      <Link
+        to="/meu-perfil"
+        className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/50 p-4 mb-5 hover:border-slate-700 transition"
+      >
+        {perfil?.avatar_url ? (
+          <img src={perfil.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-brand-700/30 text-brand-300 text-lg font-bold flex items-center justify-center shrink-0">
+            {ini}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold text-slate-100 truncate">
+            {perfil?.nome_exibicao ?? user?.email}
+          </div>
+          <div className="text-[11px] uppercase tracking-wide text-slate-500">
+            {roleLabel(effectiveRole)}
           </div>
         </div>
-      ))}
+        <span className="text-slate-500 text-sm shrink-0">✎</span>
+      </Link>
+
+      <CondominioSwitcher />
+
+      {/* Launcher de apps */}
+      <AppLauncher />
+
+      {/* Conta */}
+      <div className="mt-2 border-t border-slate-800 pt-5 flex items-center justify-between gap-3">
+        <ThemeToggle />
+        <button
+          onClick={handleSignOut}
+          className="px-4 py-2 rounded-lg text-sm font-medium text-red-300 bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition"
+        >
+          Sair
+        </button>
+      </div>
     </div>
   )
 }
