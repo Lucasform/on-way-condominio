@@ -33,6 +33,17 @@ const STATUS_CLASS: Record<StatusMulta, string> = {
   arquivada: 'bg-slate-700/40 text-slate-400 border-slate-700',
 }
 
+// Aviso de vencimento na lista (só multas aplicadas com vencimento definido).
+function vencInfo(m: Multa): { label: string; cls: string } | null {
+  if (m.status !== 'aplicada' || !m.vencimento_em) return null
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0)
+  const d = new Date(m.vencimento_em + 'T00:00:00')
+  const dias = Math.round((d.getTime() - hoje.getTime()) / 86400000)
+  if (dias < 0) return { label: `⏱ vencida há ${Math.abs(dias)}d`, cls: 'text-red-300 font-medium' }
+  if (dias <= 3) return { label: `⏱ vence em ${dias}d`, cls: 'text-amber-300' }
+  return null
+}
+
 export default function Multas() {
   const { perfil } = useAuth()
   const confirm = useConfirm()
@@ -290,6 +301,10 @@ export default function Multas() {
                     <span className={`px-2 py-0.5 rounded text-xs border ${STATUS_CLASS[m.status]}`}>
                       {MULTA_STATUS_LABEL[m.status]}
                     </span>
+                    {(() => {
+                      const v = vencInfo(m)
+                      return v ? <div className={`mt-1 text-[11px] ${v.cls}`}>{v.label}</div> : null
+                    })()}
                   </td>
                 </tr>
               ))}
