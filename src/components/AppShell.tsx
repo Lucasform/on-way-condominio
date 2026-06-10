@@ -1,20 +1,36 @@
 import { useEffect, useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
-import { bottomNavFor, iconFor } from '../lib/nav'
+import { signOut } from '../lib/auth'
+import { menuFor, roleLabel, isGroup, iconFor } from '../lib/nav'
 import { supabase } from '../lib/supabase'
+import { countWaUnread } from '../lib/whatsappInbox'
 import NotificationBell from './NotificationBell'
 import Logo from './Logo'
+import CondominioSwitcher from './CondominioSwitcher'
 import AccountMenu from './AccountMenu'
 import { prefetchRoutes } from '../lib/prefetchRoutes'
 
+/**
+ * Layout: sidebar no desktop (padrão web), top bar + launcher no mobile.
+ */
 export default function AppShell() {
-  const { perfil, user, effectiveRole } = useAuth()
+  const { perfil, user, effectiveRole, viewAsMorador, setViewAsMorador } = useAuth()
+  const navigate = useNavigate()
+  const items = effectiveRole ? menuFor(effectiveRole) : []
 
-  // Links rápidos no topo (desktop): os mesmos primários da barra inferior.
-  const quickLinks = effectiveRole
-    ? bottomNavFor(effectiveRole).filter((i) => i.to !== '/mais')
-    : []
+  // "Ver como morador" só pra quem não é morador de fato e tem cadastro residencial.
+  const [temPessoaResidencial, setTemPessoaResidencial] = useState(false)
+  useEffect(() => {
+    if (!user || !perfil || perfil.role === 'morador') { setTemPessoaResidencial(false); return }
+    supabase
+      .from('pessoas')
+      .select('id', { head: true, count: 'exact' })
+      .eq('user_id', user.id)
+      .in('tipo_vinculo', ['titular', 'conjuge', 'filho', 'dependente', 'inquilino', 'morador'])
+      .then(({ count }) => setTemPessoaResidencial((count ?? 0) > 0))
+  }, [user, perfil])
+  const podeAlternarMorador = !!perfil && perfil.role !== 'morador' && temPessoaResidencial
 
   // Unidade do usuário (contexto no header mobile)
   const [unidadeLabel, setUnidadeLabel] = useState<string | null>(null)
@@ -34,6 +50,19 @@ export default function AppShell() {
       })
   }, [user])
 
+  // Badge de WhatsApp não-lido (staff de 1 condomínio) na sidebar
+  const [waUnread, setWaUnread] = useState(0)
+  useEffect(() => {
+    const condoId = perfil?.condominio_id
+    const staff = perfil && ['administradora', 'sindico', 'subsindico'].includes(perfil.role)
+    if (!condoId || !staff) { setWaUnread(0); return }
+    let alive = true
+    const load = () => countWaUnread(condoId).then((n) => { if (alive) setWaUnread(n) }).catch(() => {})
+    load()
+    const t = window.setInterval(load, 30000)
+    return () => { alive = false; clearInterval(t) }
+  }, [perfil])
+
   const [condoLogo, setCondoLogo] = useState<string | null>(null)
   const [condoNome, setCondoNome] = useState<string | null>(null)
 
@@ -47,6 +76,11 @@ export default function AppShell() {
     return () => { mounted = false }
   }, [perfil?.condominio_id])
 
+  async function handleSignOut() {
+    await signOut()
+    navigate('/entrar', { replace: true })
+  }
+
   async function handleExitViewAs() {
     await supabase.rpc('exit_view_as')
     window.location.href = '/'
@@ -54,72 +88,185 @@ export default function AppShell() {
 
   const emViewAs = perfil?.role === 'admin_onway' && perfil.condominio_id
 
+  const navLinkCls = ({ isActive }: { isActive: boolean }) =>
+    `block px-3 py-2 rounded-lg text-sm transition ${
+      isActive
+        ? 'bg-brand-500/10 text-slate-900 dark:text-white font-semibold'
+        : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100/70 dark:hover:bg-slate-800/40 hover:text-slate-900 dark:hover:text-white'
+    }`
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col transition-colors">
-      {/* Top bar — único nível de navegação fixa (sem sidebar) */}
-      <header className="h-14 shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/70 backdrop-blur flex items-center px-3 md:px-5 gap-3 sticky top-0 z-40">
-        {/* Logo + condomínio (clica e volta pro início) */}
-        <NavLink to="/" className="flex items-center gap-2.5 min-w-0 shrink-0">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex transition-colors">
+      {/* Sidebar — só desktop. No mobile a navegação é o launcher de ícones. */}
+      <aside
+        className="hidden md:flex w-64 shrink-0 border-r border-slate-200 dark:border-slate-800
+          bg-white dark:bg-slate-900/40 flex-col"
+        aria-label="Navegação principal"
+      >
+        <Link to="/" className="px-4 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2.5">
           {condoLogo ? (
-            <img src={condoLogo} alt="" className="w-8 h-8 object-contain rounded shrink-0" />
+            <img src={condoLogo} alt={condoNome ?? ''} className="w-9 h-9 object-contain rounded" />
           ) : (
-            <Logo size={30} />
+            <Logo size={36} />
           )}
           <div className="min-w-0">
-            <div className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate leading-tight">
+            <div className="text-sm font-bold leading-tight truncate text-slate-900 dark:text-slate-100">
               {condoNome ?? 'OnWay'}
             </div>
-            {unidadeLabel && (
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">Un. {unidadeLabel}</div>
+            {!condoNome && (
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">Condomínio</div>
             )}
           </div>
-        </NavLink>
+        </Link>
 
-        {/* Atalhos (desktop) */}
-        <nav className="hidden md:flex items-center gap-1 ml-4 flex-1">
-          {quickLinks.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              className={({ isActive }) =>
-                `flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition ${
-                  isActive
-                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100/70 dark:hover:bg-slate-800/50'
-                }`
-              }
-            >
-              <span className="text-base leading-none">{iconFor(item.to)}</span>
-              {item.label}
-            </NavLink>
-          ))}
+        {perfil && (
+          <Link
+            to="/meu-perfil"
+            title="Editar meu perfil"
+            className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition group"
+          >
+            <ProfileAvatar perfil={perfil} email={user?.email ?? null} />
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-medium text-slate-900 dark:text-slate-100 truncate">
+                {perfil.nome_exibicao ?? user?.email ?? 'Sem nome'}
+              </div>
+              <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-500 truncate">
+                {viewAsMorador ? `${roleLabel('morador')} (visão)` : roleLabel(perfil.role)}
+              </div>
+            </div>
+            <span className="text-[10px] text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition shrink-0">✎</span>
+          </Link>
+        )}
+
+        {podeAlternarMorador && (
+          <button
+            type="button"
+            onClick={() => setViewAsMorador(!viewAsMorador)}
+            className={`px-3 py-2 text-xs border-b border-slate-200 dark:border-slate-800 text-left transition ${
+              viewAsMorador
+                ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/15'
+                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/40'
+            }`}
+            title={viewAsMorador ? 'Voltar ao papel original' : 'Ver o app como um morador veria'}
+          >
+            {viewAsMorador ? '👁 Voltar ao papel' : '👁 Ver como morador'}
+          </button>
+        )}
+
+        <CondominioSwitcher />
+
+        <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
+          {items.map((item, idx) => {
+            if (isGroup(item)) {
+              return (
+                <div key={`g-${idx}-${item.label}`} className="pt-3 pb-1">
+                  <div className="px-3 pb-1 text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 font-semibold">
+                    {item.label}
+                  </div>
+                  <div className="space-y-1">
+                    {item.children.map((child) => (
+                      <NavLink key={child.to} to={child.to} className={navLinkCls}>
+                        <span className="flex items-center gap-2.5">
+                          <span className="text-base leading-none w-5 text-center shrink-0">{iconFor(child.to)}</span>
+                          <span className="flex-1 truncate">{child.label}</span>
+                          {child.to === '/whatsapp' && waUnread > 0 && (
+                            <span className="shrink-0 text-[10px] bg-emerald-500 text-white rounded-full px-1.5 py-0.5">{waUnread}</span>
+                          )}
+                        </span>
+                      </NavLink>
+                    ))}
+                  </div>
+                </div>
+              )
+            }
+            return (
+              <NavLink key={item.to} to={item.to} end={item.to === '/'} className={navLinkCls}>
+                <span className="flex items-center gap-2.5">
+                  <span className="text-base leading-none w-5 text-center shrink-0">{iconFor(item.to)}</span>
+                  <span className="flex-1 truncate">{item.label}</span>
+                </span>
+              </NavLink>
+            )
+          })}
         </nav>
 
-        <div className="flex-1 md:hidden" />
-        <div className="flex items-center gap-1 shrink-0">
-          <NotificationBell />
-          <AccountMenu />
-        </div>
-      </header>
-
-      {emViewAs && (
-        <div className="shrink-0 bg-amber-500/10 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between gap-3 text-xs">
-          <span className="text-amber-700 dark:text-amber-300">
-            👁 Você está em modo "Ver como". Assumiu o condomínio <strong>{condoNome ?? '...'}</strong> como Administrador OnWay.
-          </span>
+        <div className="border-t border-slate-200 dark:border-slate-800 p-3">
           <button
-            onClick={handleExitViewAs}
-            className="px-3 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 dark:text-amber-200 font-medium whitespace-nowrap"
+            onClick={handleSignOut}
+            title={user?.email ?? 'Sair'}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-slate-600 dark:text-slate-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition"
           >
-            ← Voltar pra visão global
+            <SignOutIcon />
+            <span>Sair</span>
           </button>
         </div>
-      )}
+      </aside>
 
-      <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950">
-        <Outlet />
-      </main>
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {/* Top bar: no mobile traz logo+condomínio+conta; no desktop só o sino. */}
+        <header className="h-12 shrink-0 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/60 md:dark:bg-slate-900/30 backdrop-blur flex items-center px-3 md:px-4 gap-2">
+          <Link to="/" className="md:hidden flex items-center gap-2 min-w-0 flex-1">
+            {condoLogo ? (
+              <img src={condoLogo} alt="" className="w-7 h-7 object-contain rounded shrink-0" />
+            ) : (
+              <Logo size={28} />
+            )}
+            <div className="min-w-0">
+              <div className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate leading-tight">
+                {condoNome ?? 'OnWay'}
+              </div>
+              {unidadeLabel && (
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">Un. {unidadeLabel}</div>
+              )}
+            </div>
+          </Link>
+          <div className="hidden md:block flex-1" />
+          <NotificationBell />
+          <div className="md:hidden">
+            <AccountMenu />
+          </div>
+        </header>
+
+        {emViewAs && (
+          <div className="shrink-0 bg-amber-500/10 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between gap-3 text-xs">
+            <span className="text-amber-700 dark:text-amber-300">
+              👁 Você está em modo "Ver como". Assumiu o condomínio <strong>{condoNome ?? '...'}</strong> como Administrador OnWay.
+            </span>
+            <button
+              onClick={handleExitViewAs}
+              className="px-3 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-700 dark:text-amber-200 font-medium whitespace-nowrap"
+            >
+              ← Voltar pra visão global
+            </button>
+          </div>
+        )}
+
+        <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950">
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  )
+}
+
+function SignOutIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  )
+}
+
+function ProfileAvatar({ perfil, email }: { perfil: { avatar_url: string | null; nome_exibicao: string | null }; email: string | null }) {
+  const ini = (perfil.nome_exibicao ?? email ?? '?').slice(0, 1).toUpperCase()
+  if (perfil.avatar_url) {
+    return <img src={perfil.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover bg-brand-50 dark:bg-brand-700/20 shrink-0" />
+  }
+  return (
+    <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-700/30 text-brand-700 dark:text-brand-300 text-xs font-bold flex items-center justify-center shrink-0">
+      {ini}
     </div>
   )
 }

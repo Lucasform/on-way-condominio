@@ -43,7 +43,7 @@ export default function Home() {
       </p>
 
       {/* Launcher de apps — navegação principal (sem sidebar) */}
-      <AppLauncher className="mt-6" />
+      <AppLauncher className="md:hidden mt-6" />
 
       <section className="mt-8 max-w-md rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-5">
         <div className="text-sm text-slate-500 dark:text-slate-400">Logado como</div>
@@ -136,7 +136,7 @@ function MoradorHome() {
       <OnboardingChecklist />
 
       {/* Launcher de apps — navegação principal (sem sidebar) */}
-      <AppLauncher className="mt-6" />
+      <AppLauncher className="md:hidden mt-6" />
 
       {loading ? (
         <div className="mt-8 text-slate-400">Carregando...</div>
