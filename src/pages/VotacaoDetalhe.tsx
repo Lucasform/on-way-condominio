@@ -85,6 +85,23 @@ export default function VotacaoDetalhe() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
+  // Apuração ao vivo: recarrega os votos quando algo muda (assembleia em tempo real).
+  useEffect(() => {
+    if (!id) return
+    const ch = supabase
+      .channel(`votacao-votos:${id}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'votos', filter: `votacao_id=eq.${id}` },
+        async () => {
+          const { data } = await supabase.from('votos').select('*').eq('votacao_id', id)
+          if (data) setVotos(data as Voto[])
+        },
+      )
+      .subscribe()
+    return () => { supabase.removeChannel(ch) }
+  }, [id])
+
   async function handleVotar(opcaoId: string, textoOpcao: string) {
     if (!user || !votacao) return
     const meuVotoAtual = votos.find((v) => v.user_id === user.id)
