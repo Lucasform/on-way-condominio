@@ -33,10 +33,9 @@ Deno.serve(async (req: Request) => {
     const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')
     if (!anthropicKey) return jsonResponse({ error: 'ANTHROPIC_API_KEY ausente.' }, 500)
 
-    const admin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    )
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
+    const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE)
 
     // 1) Carrega conversa
     const { data: conversa, error: cErr } = await admin
@@ -76,9 +75,10 @@ Deno.serve(async (req: Request) => {
     // 3) Carrega condomínio
     const { data: condo } = await admin
       .from('condominios')
-      .select('nome')
+      .select('nome, ai_instrucoes')
       .eq('id', conversa.condominio_id)
       .single()
+    const aiInstrucoes = (condo?.ai_instrucoes ?? '').trim()
 
     // 4) RAG: artigos relevantes pra última msg do morador
     const embOut = await session.run(ultimaMorador.conteudo, { mean_pool: true, normalize: true })
@@ -118,7 +118,10 @@ Responda EXCLUSIVAMENTE em JSON válido neste schema (sem markdown):
   "resposta": string,                          // sua resposta pro morador
   "transferir_humano": boolean,
   "motivo_transferir": string                  // breve, só se transferir_humano=true
-}`
+}${aiInstrucoes ? `
+
+INSTRUÇÕES ESPECÍFICAS DESTE CONDOMÍNIO (sigam com prioridade, sem violar as regras acima):
+${aiInstrucoes}` : ''}`
 
     const historicoTxt = historico
       .map((m) => `${m.autor_tipo === 'morador' ? 'MORADOR' : m.autor_tipo === 'bot' ? 'VOCÊ (bot)' : 'STAFF'}: ${m.conteudo}`)
@@ -200,6 +203,44 @@ Responda a última mensagem do morador.`
         autor_tipo: 'sistema',
         conteudo: `Bot transferiu pra um humano. ${output.motivo_transferir ?? ''}`,
       })
+
+      // Avisa o staff do condomínio: a conversa precisa de atendimento humano.
+      try {
+        const STAFF_ROLES = ['administradora', 'sindico', 'subsindico', 'conselheiro', 'portaria', 'ronda']
+        const { data: staff } = await admin
+          .from('perfis')
+          .select('id')
+          .eq('condominio_id', conversa.condominio_id)
+          .eq('ativo', true)
+          .in('role', STAFF_ROLES)
+        const staffIds = (staff ?? []).map((s) => s.id as string)
+        if (staffIds.length > 0) {
+          const motivo = output.motivo_transferir?.trim()
+          const corpo = `Assunto: ${conversa.assunto}.${motivo ? ` ${motivo}` : ''}`
+          await admin.from('app_notifications').insert(
+            staffIds.map((uid) => ({
+              user_id: uid,
+              condominio_id: conversa.condominio_id,
+              tipo: 'chat_aguardando',
+              titulo: 'Conversa aguardando atendimento',
+              conteudo: corpo,
+              link: `/chat/${conversa_id}`,
+            })),
+          )
+          fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', Authorization: `Bearer ${SERVICE_ROLE}` },
+            body: JSON.stringify({
+              user_ids: staffIds,
+              titulo: '💬 Conversa aguardando atendimento',
+              corpo,
+              link: `/chat/${conversa_id}`,
+            }),
+          }).catch(() => {})
+        }
+      } catch (err) {
+        console.warn('[chat-bot] alerta de staff falhou', err)
+      }
     }
 
     return jsonResponse({

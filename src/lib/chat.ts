@@ -235,6 +235,29 @@ export async function marcarMensagensLidas(conversa_id: string, current_user_id:
 }
 
 /**
+ * Conta mensagens não-lidas (lida_em null e de outro autor) por conversa,
+ * pro usuário atual. Uma query só; agrupa no cliente. Respeita RLS.
+ */
+export async function unreadCountsByConversa(
+  current_user_id: string,
+  conversa_ids: string[],
+): Promise<Record<string, number>> {
+  if (conversa_ids.length === 0) return {}
+  const { data, error } = await supabase
+    .from('mensagens')
+    .select('conversa_id')
+    .in('conversa_id', conversa_ids)
+    .is('lida_em', null)
+    .neq('autor_id', current_user_id)
+  if (error) throw error
+  const counts: Record<string, number> = {}
+  for (const m of (data ?? []) as Array<{ conversa_id: string }>) {
+    counts[m.conversa_id] = (counts[m.conversa_id] ?? 0) + 1
+  }
+  return counts
+}
+
+/**
  * Lista usuários staff de um condomínio (pra select de assignee).
  */
 export async function listStaffCondominio(condominio_id: string): Promise<Array<{ id: string; nome_exibicao: string | null; role: string }>> {

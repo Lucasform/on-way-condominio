@@ -4,6 +4,7 @@ import {
   listConversas,
   createConversa,
   createConversasUnidadeProprietarios,
+  unreadCountsByConversa,
   ASSUNTO_LABEL,
   STATUS_LABEL,
 } from '../lib/chat'
@@ -46,6 +47,7 @@ export default function Chat() {
   // Mapa morador_user_id -> nome (resolvido via perfis+pessoas, com cache leve)
   const [nomesMorador, setNomesMorador] = useState<Record<string, string>>({})
   const [assigneeNomes, setAssigneeNomes] = useState<Record<string, string>>({})
+  const [naoLidas, setNaoLidas] = useState<Record<string, number>>({})
   const [busca, setBusca] = useState('')
 
   // Form de nova conversa (morador)
@@ -208,6 +210,14 @@ export default function Chat() {
     })().catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows])
+
+  // Conta mensagens não-lidas por conversa pro usuário atual
+  useEffect(() => {
+    if (!user || rows.length === 0) { setNaoLidas({}); return }
+    unreadCountsByConversa(user.id, rows.map((r) => r.id))
+      .then(setNaoLidas)
+      .catch(() => {})
+  }, [rows, user])
 
   const rowsFiltradas = useMemo(() => {
     const q = busca.trim().toLowerCase()
@@ -600,16 +610,26 @@ export default function Chat() {
           {rowsFiltradas.map((c) => {
             const moradorNome = nomesMorador[c.morador_user_id]
             const assignee = c.atribuida_para ? assigneeNomes[c.atribuida_para] : null
+            const unread = naoLidas[c.id] ?? 0
             return (
               <Link
                 key={c.id}
                 to={`/chat/${c.id}`}
-                className="block rounded-lg border border-slate-800 bg-slate-900/40 p-4 hover:border-slate-700 hover:bg-slate-900/70 transition"
+                className={`block rounded-lg border p-4 transition ${
+                  unread > 0
+                    ? 'border-emerald-500/40 bg-emerald-500/5 hover:bg-emerald-500/10'
+                    : 'border-slate-800 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-900/70'
+                }`}
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-slate-100">
-                      {ASSUNTO_LABEL[c.assunto]}
+                    <div className="text-sm font-medium text-slate-100 flex items-center gap-2">
+                      <span className={unread > 0 ? 'font-semibold' : ''}>{ASSUNTO_LABEL[c.assunto]}</span>
+                      {unread > 0 && (
+                        <span className="shrink-0 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full text-[11px] font-semibold bg-emerald-500 text-white">
+                          {unread > 9 ? '9+' : unread}
+                        </span>
+                      )}
                       {isStaff && moradorNome && <span className="text-slate-400 font-normal"> · {moradorNome}</span>}
                     </div>
                     <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-x-2">
