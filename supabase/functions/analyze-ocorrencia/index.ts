@@ -16,6 +16,8 @@ import { Logger } from '../_shared/log.ts'
 // @ts-expect-error: Supabase.ai injetado pelo runtime
 const session = new Supabase.ai.Session('gte-small')
 
+// Sonnet 4.6: a análise gera a minuta jurídica da multa, então mantemos o
+// modelo mais forte aqui. (Troca pra Haiku está em avaliação de qualidade.)
 const CLAUDE_MODEL = 'claude-sonnet-4-6'
 
 interface AnalysisResult {
@@ -86,21 +88,22 @@ Deno.serve(async (req: Request) => {
     //   - ai_instrucoes (campo singleton em condominios)
     //   - todos os anexos ATIVOS do tipo modelo_notificacao e modelo_multa com texto extraído
     //   - fallback no campo legado modelo_notificacao_texto se nenhum anexo ativo
-    const { data: condoCtx } = await userClient
-      .from('condominios')
-      .select('nome, modelo_notificacao_texto, ai_instrucoes')
-      .eq('id', ocorrencia.condominio_id)
-      .maybeSingle()
+    const [{ data: condoCtx }, { data: anexosModelo }] = await Promise.all([
+      userClient
+        .from('condominios')
+        .select('nome, modelo_notificacao_texto, ai_instrucoes')
+        .eq('id', ocorrencia.condominio_id)
+        .maybeSingle(),
+      userClient
+        .from('condominio_anexos')
+        .select('tipo, nome, texto_extraido')
+        .eq('condominio_id', ocorrencia.condominio_id)
+        .in('tipo', ['modelo_notificacao', 'modelo_multa'])
+        .eq('ativo', true)
+        .not('texto_extraido', 'is', null),
+    ])
     const aiInstrucoes: string | null = (condoCtx?.ai_instrucoes ?? '').trim() || null
     const condoNome: string = condoCtx?.nome ?? 'condomínio'
-
-    const { data: anexosModelo } = await userClient
-      .from('condominio_anexos')
-      .select('tipo, nome, texto_extraido')
-      .eq('condominio_id', ocorrencia.condominio_id)
-      .in('tipo', ['modelo_notificacao', 'modelo_multa'])
-      .eq('ativo', true)
-      .not('texto_extraido', 'is', null)
     const modelosAtivos = (anexosModelo ?? []) as Array<{ tipo: string; nome: string; texto_extraido: string }>
     // Junta os modelos num único bloco com cabeçalho identificando cada um
     let modelosTexto: string | null = null

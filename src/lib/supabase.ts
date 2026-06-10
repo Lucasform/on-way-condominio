@@ -6,7 +6,7 @@ import { createClient } from '@supabase/supabase-js'
 const SUPABASE_URL_FALLBACK = 'https://lkxnngzgmyfqgbbpmjvc.supabase.co'
 const SUPABASE_ANON_KEY_FALLBACK = 'sb_publishable_o52adZa2cHtX6ywPG7IThg_A17CRkmz'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || SUPABASE_URL_FALLBACK
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY_FALLBACK
+export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || SUPABASE_URL_FALLBACK
+export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY_FALLBACK
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)

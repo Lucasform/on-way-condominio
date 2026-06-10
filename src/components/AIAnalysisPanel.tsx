@@ -51,6 +51,11 @@ export default function AIAnalysisPanel({ ocorrenciaId, createdAt, canAnalyse, c
   const resultRef = useRef<IAResult | null>(null)
   resultRef.current = result
 
+  // Permite cancelar/reiniciar uma análise em andamento.
+  const abortRef = useRef<AbortController | null>(null)
+  // Timeout duro: se a edge não responder nisso, aborta e oferece reiniciar.
+  const ANALYZE_TIMEOUT_MS = 60 * 1000
+
   // Carrega análise persistida ao montar
   useEffect(() => {
     let mounted = true
@@ -153,22 +158,42 @@ export default function AIAnalysisPanel({ ocorrenciaId, createdAt, canAnalyse, c
   if (!canAnalyse) return null
 
   async function handleAnalyze() {
+    // Cancela qualquer análise anterior ainda em voo antes de começar outra.
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    const timeoutId = setTimeout(() => controller.abort('timeout'), ANALYZE_TIMEOUT_MS)
+
     setLoading(true)
     setError(null)
     setEditando(false)
     setWaitingBackground(false)
     setBackgroundTimedOut(false)
     try {
-      const r = await analisarOcorrenciaIA(ocorrenciaId, comentario.trim() || undefined)
+      const r = await analisarOcorrenciaIA(ocorrenciaId, comentario.trim() || undefined, controller.signal)
       setResult(r)
       setAnalisadaEm(new Date().toISOString())
       setComentario('')
       setShowComment(false)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro na análise.')
+      if (controller.signal.aborted) {
+        setError(
+          controller.signal.reason === 'timeout'
+            ? 'A análise demorou demais e foi interrompida. Clique em Analisar novamente.'
+            : 'Análise pausada. Clique em Analisar novamente quando quiser.',
+        )
+      } else {
+        setError(e instanceof Error ? e.message : 'Erro na análise.')
+      }
     } finally {
+      clearTimeout(timeoutId)
+      if (abortRef.current === controller) abortRef.current = null
       setLoading(false)
     }
+  }
+
+  function handlePausar() {
+    abortRef.current?.abort('user')
   }
 
   function handleEditar() {
@@ -233,6 +258,11 @@ export default function AIAnalysisPanel({ ocorrenciaId, createdAt, canAnalyse, c
               + Comentário
             </Button>
           )}
+          {loading && (
+            <Button variant="ghost" onClick={handlePausar}>
+              ⏸ Pausar
+            </Button>
+          )}
           {!result && !showComment && !waitingBackground && (
             <Button onClick={handleAnalyze} disabled={loading}>
               {loading ? 'Analisando...' : backgroundTimedOut ? 'Analisar agora' : 'Analisar'}
@@ -240,7 +270,7 @@ export default function AIAnalysisPanel({ ocorrenciaId, createdAt, canAnalyse, c
           )}
           {result && !showComment && !editando && (
             <>
-              <Button variant="ghost" onClick={handleEditar}>
+              <Button variant="ghost" onClick={handleEditar} disabled={loading}>
                 ✎ Editar
               </Button>
               <Button variant="ghost" onClick={handleAnalyze} disabled={loading}>
@@ -280,15 +310,17 @@ export default function AIAnalysisPanel({ ocorrenciaId, createdAt, canAnalyse, c
         </div>
       )}
 
-      {error && (
-        <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
-          {error}
+      {error && !loading && (
+        <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2 flex items-center justify-between gap-3 flex-wrap">
+          <span>{error}</span>
+          <Button onClick={handleAnalyze}>🔄 Analisar novamente</Button>
         </div>
       )}
 
       {loading && !result && (
-        <div className="text-sm text-slate-400 italic">
-          Aguardando análise... Aguarde um momento
+        <div className="flex items-center gap-3 text-sm text-slate-400 italic">
+          <span className="inline-block h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
+          Analisando... se estiver demorando, clique em <strong className="not-italic">⏸ Pausar</strong> e tente de novo.
         </div>
       )}
 

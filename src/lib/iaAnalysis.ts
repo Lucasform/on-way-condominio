@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase'
 
 export interface IAAnalysis {
   cabe_multa: boolean
@@ -33,11 +33,28 @@ export interface IAResult {
 export async function analisarOcorrenciaIA(
   ocorrenciaId: string,
   comentario_extra?: string,
+  signal?: AbortSignal,
 ): Promise<IAResult> {
-  const { data, error } = await supabase.functions.invoke('analyze-ocorrencia', {
-    body: { ocorrencia_id: ocorrenciaId, comentario_extra: comentario_extra ?? null },
+  // Usamos fetch direto (em vez de supabase.functions.invoke) pra poder passar
+  // um AbortSignal e permitir que o usuário cancele/reinicie a análise.
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token ?? SUPABASE_ANON_KEY
+
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/analyze-ocorrencia`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'authorization': `Bearer ${token}`,
+      'apikey': SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify({ ocorrencia_id: ocorrenciaId, comentario_extra: comentario_extra ?? null }),
+    signal,
   })
-  if (error) throw error
+
+  const data = await res.json().catch(() => null)
+  if (!res.ok) {
+    throw new Error(data?.error || `Falha na análise (HTTP ${res.status}).`)
+  }
   if (!data || !data.analysis) {
     throw new Error('Resposta inválida da IA: ' + JSON.stringify(data).slice(0, 200))
   }

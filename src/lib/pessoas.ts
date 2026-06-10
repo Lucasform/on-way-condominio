@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { edgeErrorMessage } from './edgeError'
 import type { Pessoa, PessoaInput } from '../types/pessoa'
 
 export async function listPessoas(opts: { condominio_id?: string; ativo?: boolean } = {}): Promise<Pessoa[]> {
@@ -37,7 +38,7 @@ export async function excluirUsuarioAuth(user_id: string, motivo?: string): Prom
   const { data, error } = await supabase.functions.invoke('delete-user-account', {
     body: { user_id, motivo: motivo ?? null },
   })
-  if (error) throw error
+  if (error) throw new Error(await edgeErrorMessage(error))
   if (data?.error) throw new Error(data.error)
   return { email_enviado: !!data?.email_enviado }
 }
