@@ -57,15 +57,15 @@ export default function CondominioSwitcher() {
   }
 
   return (
-    <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800">
-      <label className="block text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-500 mb-1">
+    <div className="px-4 py-3 border-b border-slate-800">
+      <label className="block text-[10px] uppercase tracking-wide text-slate-500 mb-1">
         Condomínio ativo
       </label>
       <select
         value={perfil.condominio_id ?? ''}
         onChange={(e) => trocar(e.target.value)}
         disabled={trocando}
-        className="w-full text-xs px-2 py-1.5 rounded bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+        className="w-full text-xs px-2 py-1.5 rounded bg-slate-950 border border-slate-700 text-slate-100"
       >
         {opts.map((o) => (
           <option key={o.condominio_id} value={o.condominio_id}>

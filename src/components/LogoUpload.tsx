@@ -61,7 +61,7 @@ export default function LogoUpload({ condominio_id, current, onChange }: Props) 
 
   return (
     <div className="flex items-center gap-4">
-      <div className="w-20 h-20 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center justify-center overflow-hidden">
+      <div className="w-20 h-20 rounded-md border border-slate-700 bg-slate-900 flex items-center justify-center overflow-hidden">
         {current ? (
           <img src={current} alt="Logo" className="w-full h-full object-contain" />
         ) : (

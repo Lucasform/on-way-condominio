@@ -147,7 +147,7 @@ export default function Servicos() {
       )}
 
       {/* Tabs */}
-      <div className="mb-5 border-b border-slate-200 dark:border-slate-800 flex gap-1">
+      <div className="mb-5 border-b border-slate-800 flex gap-1">
         <TabButton active={tab === 'prestadores'} onClick={() => setTab('prestadores')}>
           Prestadores de serviço <span className="ml-1.5 text-xs text-slate-400">({prestadores.length})</span>
         </TabButton>
@@ -255,8 +255,8 @@ function TabButton({ active, onClick, children }: { active: boolean; onClick: ()
       onClick={onClick}
       className={`px-4 py-2 -mb-px text-sm font-medium border-b-2 transition ${
         active
-          ? 'border-brand-600 text-brand-700 dark:text-brand-400'
-          : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+          ? 'border-brand-600 text-brand-400'
+          : 'border-transparent text-slate-400 hover:text-slate-200'
       }`}
     >
       {children}
@@ -296,23 +296,23 @@ function ServicoList({
       {servicos.map((s) => (
         <div
           key={s.id}
-          className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-4"
+          className="rounded-lg border border-slate-800 bg-slate-900/40 p-4"
         >
           <div className="flex items-start gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100">{s.titulo}</h3>
+                <h3 className="font-semibold text-slate-100">{s.titulo}</h3>
                 <Pill tone={STATUS_TONE[s.status]}>{STATUS_LABEL[s.status]}</Pill>
               </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400">
+              <div className="text-xs text-slate-400">
                 {CATEGORIA_LABEL[s.categoria]} · {prestadorNome(s.prestador_id)}
                 {s.valor != null && ` · R$ ${Number(s.valor).toFixed(2).replace('.', ',')}`}
               </div>
               {s.descricao && (
-                <p className="mt-2 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{s.descricao}</p>
+                <p className="mt-2 text-sm text-slate-300 whitespace-pre-wrap">{s.descricao}</p>
               )}
               {(s.data_inicio || s.data_fim) && (
-                <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-500">
+                <div className="mt-2 text-[11px] text-slate-500">
                   {s.data_inicio && `início: ${new Date(s.data_inicio).toLocaleString('pt-BR')}`}
                   {s.data_inicio && s.data_fim && ' · '}
                   {s.data_fim && `fim: ${new Date(s.data_fim).toLocaleString('pt-BR')}`}
@@ -360,7 +360,7 @@ function StatusMenu({ current, onChange }: { current: StatusServico; onChange: (
     <select
       value={current}
       onChange={(e) => { const novo = e.target.value as StatusServico; if (novo !== current) onChange(novo) }}
-      className="text-xs px-2 py-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:border-slate-400 dark:hover:border-slate-600 transition"
+      className="text-xs px-2 py-1 rounded-md border border-slate-700 bg-slate-900 text-slate-200 hover:border-slate-600 transition"
       title="Mudar status"
     >
       {STATUSES.map((s) => (
@@ -396,17 +396,17 @@ function PrestadorList({
           key={p.id}
           className={`rounded-lg border p-4 ${
             p.ativo
-              ? 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40'
-              : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/20 opacity-70'
+              ? 'border-slate-800 bg-slate-900/40'
+              : 'border-slate-800 bg-slate-900/20 opacity-70'
           }`}
         >
           <div className="flex items-start gap-3">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">{p.nome}</h3>
+                <h3 className="font-semibold text-slate-100 truncate">{p.nome}</h3>
                 {!p.ativo && <span className="text-[10px] uppercase tracking-wide text-slate-400">Inativo</span>}
               </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400">{CATEGORIA_LABEL[p.categoria]}</div>
+              <div className="text-xs text-slate-400">{CATEGORIA_LABEL[p.categoria]}</div>
               <dl className="mt-2 space-y-0.5 text-xs">
                 {p.telefone && <Info label="📞" value={p.telefone} />}
                 {p.email && <Info label="✉" value={p.email} />}
@@ -416,7 +416,7 @@ function PrestadorList({
                 )}
               </dl>
               {p.observacoes && (
-                <p className="mt-2 text-xs text-slate-600 dark:text-slate-400 whitespace-pre-wrap">{p.observacoes}</p>
+                <p className="mt-2 text-xs text-slate-400 whitespace-pre-wrap">{p.observacoes}</p>
               )}
             </div>
             <div className="flex flex-col items-end gap-1 shrink-0">
@@ -426,7 +426,7 @@ function PrestadorList({
                     try { await setPrestadorAtivo(p.id, !p.ativo); onChange() }
                     catch (e) { toast.error('Erro', e instanceof Error ? e.message : '') }
                   }}
-                  className="text-[11px] text-slate-500 hover:text-brand-700 dark:hover:text-brand-400 transition"
+                  className="text-[11px] text-slate-500 hover:text-brand-400 transition"
                   title={p.ativo ? 'Desativar' : 'Reativar'}
                 >
                   {p.ativo ? 'Desativar' : 'Reativar'}
@@ -458,7 +458,7 @@ function PrestadorList({
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex gap-2 text-slate-600 dark:text-slate-400">
+    <div className="flex gap-2 text-slate-400">
       <span className="shrink-0">{label}</span>
       <span className="truncate">{value}</span>
     </div>
@@ -684,15 +684,15 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
       onClick={onClose}
     >
       <div
-        className="w-full max-w-2xl my-10 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 shadow-xl"
+        className="w-full max-w-2xl my-10 rounded-lg border border-slate-800 bg-slate-950 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+        <header className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-100">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-md text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition text-lg"
+            className="w-8 h-8 rounded-md text-slate-500 hover:bg-slate-800 transition text-lg"
             title="Fechar"
           >
             ✕

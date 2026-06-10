@@ -72,8 +72,8 @@ export default function Logo({ size = 48, withText = false, className = '' }: Pr
 
       {withText && (
         <span className="font-bold text-lg tracking-tight">
-          <span className="text-brand-700 dark:text-brand-400">OnWay</span>
-          <span className="text-slate-700 dark:text-slate-300"> Condomínio</span>
+          <span className="text-brand-400">OnWay</span>
+          <span className="text-slate-300"> Condomínio</span>
         </span>
       )}
     </div>

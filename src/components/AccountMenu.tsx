@@ -5,6 +5,7 @@ import { signOut } from '../lib/auth'
 import { roleLabel } from '../lib/nav'
 import { supabase } from '../lib/supabase'
 import CondominioSwitcher from './CondominioSwitcher'
+import ThemeToggle from './ThemeToggle'
 
 /**
  * Menu de conta no topo (substitui o rodapé da antiga sidebar): perfil, troca
@@ -106,6 +107,11 @@ export default function AccountMenu() {
               {viewAsMorador ? '👁 Voltar ao meu papel' : '👁 Ver como morador'}
             </button>
           )}
+
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-800">
+            <span className="text-sm text-slate-300">Tema</span>
+            <ThemeToggle compact />
+          </div>
 
           <button
             onClick={handleSignOut}

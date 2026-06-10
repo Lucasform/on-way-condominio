@@ -39,8 +39,8 @@ const COPY_POR_TIPO: Record<NonNullable<Tipo>, { title: string; subtitle: string
 const TIPOS_COM_CONVITE: Tipo[] = ['admin', 'morador']
 
 const inputCls =
-  'w-full px-3 py-2 rounded-md bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 ' +
-  'text-slate-900 dark:text-slate-100 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700 text-sm'
+  'w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 ' +
+  'text-slate-100 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700 text-sm'
 
 const primaryBtn =
   'w-full py-2 rounded-md bg-brand-700 hover:bg-brand-800 active:bg-brand-900 text-white font-semibold text-sm transition disabled:opacity-50'
@@ -75,7 +75,7 @@ export default function Login() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-brand-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400">
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-400">
         Carregando...
       </div>
     )
@@ -155,7 +155,7 @@ export default function Login() {
         <div className="space-y-3">
           {TIPOS_COM_CONVITE.includes(tipo) && (brand?.permite_signup ?? true) && (
             <div className="text-center">
-              <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Primeiro acesso?</div>
+              <div className="text-xs text-slate-400 mb-1">Primeiro acesso?</div>
               <Link
                 to="/signup"
                 className="inline-block px-4 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-semibold transition"
@@ -165,7 +165,7 @@ export default function Login() {
             </div>
           )}
           <div className="text-center">
-            <Link to="/entrar" className="text-xs text-slate-500 hover:text-brand-700 dark:hover:text-brand-400">
+            <Link to="/entrar" className="text-xs text-slate-500 hover:text-brand-400">
               ← Trocar tipo de acesso
             </Link>
           </div>
@@ -184,14 +184,14 @@ export default function Login() {
       )}
 
       {/* Toggle senha / entrar por e-mail */}
-      <div className="flex bg-slate-100 dark:bg-slate-800/60 rounded-md p-1 mb-5">
+      <div className="flex bg-slate-800/60 rounded-md p-1 mb-5">
         <button
           type="button"
           onClick={() => { setModo('senha'); setError(null); setMagicSent(false) }}
           className={`flex-1 text-sm py-1.5 rounded transition font-medium ${
             modo === 'senha'
-              ? 'bg-white dark:bg-slate-700 text-brand-700 dark:text-white shadow-sm'
-              : 'text-slate-500 dark:text-slate-400'
+              ? 'bg-slate-700 text-white shadow-sm'
+              : 'text-slate-400'
           }`}
         >
           🔒 Senha
@@ -201,8 +201,8 @@ export default function Login() {
           onClick={() => { setModo('email'); setError(null) }}
           className={`flex-1 text-sm py-1.5 rounded transition font-medium ${
             modo === 'email'
-              ? 'bg-white dark:bg-slate-700 text-brand-700 dark:text-white shadow-sm'
-              : 'text-slate-500 dark:text-slate-400'
+              ? 'bg-slate-700 text-white shadow-sm'
+              : 'text-slate-400'
           }`}
         >
           ✉ Entrar por e-mail
@@ -213,7 +213,7 @@ export default function Login() {
         <form onSubmit={handleMfaSubmit} className="space-y-4">
           <div className="text-center">
             <div className="text-3xl mb-2">🔐</div>
-            <p className="text-sm text-slate-700 dark:text-slate-300">
+            <p className="text-sm text-slate-300">
               Digite o código do app autenticador
             </p>
           </div>
@@ -224,7 +224,7 @@ export default function Login() {
             placeholder="000000"
             maxLength={6}
             autoFocus
-            className="w-full px-3 py-2 rounded-md bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-center text-2xl font-mono tracking-widest"
+            className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-center text-2xl font-mono tracking-widest"
           />
           {error && (
             <div className="text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-md px-3 py-2">
@@ -249,7 +249,7 @@ export default function Login() {
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block">
-            <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mail</span>
+            <span className="block text-sm font-medium text-slate-300 mb-1">E-mail</span>
             <input
               type="email"
               required
@@ -262,9 +262,9 @@ export default function Login() {
 
           {modo === 'senha' && (
             <label className="block">
-              <span className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              <span className="flex items-center justify-between text-sm font-medium text-slate-300 mb-1">
                 Senha
-                <Link to="/esqueci-senha" className="text-xs text-slate-500 hover:text-brand-700 dark:hover:text-brand-400">
+                <Link to="/esqueci-senha" className="text-xs text-slate-500 hover:text-brand-400">
                   Esqueci a senha
                 </Link>
               </span>
@@ -280,7 +280,7 @@ export default function Login() {
           )}
 
           {modo === 'email' && (
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-400">
               Sem senha. Vamos enviar um link de acesso direto pro seu e-mail.
             </p>
           )}
@@ -303,16 +303,16 @@ export default function Login() {
 
       {GOOGLE_AUTH_ENABLED && (
         <>
-          <div className="my-5 flex items-center gap-3 text-xs text-slate-400 dark:text-slate-600">
-            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
+          <div className="my-5 flex items-center gap-3 text-xs text-slate-600">
+            <div className="flex-1 h-px bg-slate-800" />
             ou
-            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
+            <div className="flex-1 h-px bg-slate-800" />
           </div>
 
           <button
             type="button"
             onClick={handleGoogle}
-            className="w-full py-2 rounded-md bg-white border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-100 text-slate-900 font-medium text-sm transition flex items-center justify-center gap-2"
+            className="w-full py-2 rounded-md bg-white border border-zinc-300 hover:bg-zinc-100 text-zinc-900 font-medium text-sm transition flex items-center justify-center gap-2"
           >
             <svg width="18" height="18" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />

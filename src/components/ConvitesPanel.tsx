@@ -157,11 +157,11 @@ export default function ConvitesPanel({ condominio_id }: Props) {
   }
 
   return (
-    <fieldset className="border border-slate-200 dark:border-slate-700 rounded-md p-4 space-y-4">
-      <legend className="px-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+    <fieldset className="border border-slate-700 rounded-md p-4 space-y-4">
+      <legend className="px-2 text-sm font-semibold text-slate-200">
         Códigos de convite
       </legend>
-      <p className="text-xs text-slate-500 dark:text-slate-400 -mt-2">
+      <p className="text-xs text-slate-400 -mt-2">
         Gere um código pra liberar criação de contas.
       </p>
 
@@ -251,7 +251,7 @@ export default function ConvitesPanel({ condominio_id }: Props) {
       {/* Em mobile mostra cards. Em sm+ tabela tradicional. */}
       <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm min-w-[640px]">
-          <thead className="text-xs uppercase text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+          <thead className="text-xs uppercase text-slate-400 border-b border-slate-700">
             <tr>
               <th className="text-left py-2">Código</th>
               <th className="text-left py-2">Tipo</th>
@@ -261,7 +261,7 @@ export default function ConvitesPanel({ condominio_id }: Props) {
               <th className="text-right py-2">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+          <tbody className="divide-y divide-slate-700">
             {loading && (
               <tr><td colSpan={6} className="py-4 text-center text-slate-500">Carregando...</td></tr>
             )}
@@ -272,7 +272,7 @@ export default function ConvitesPanel({ condominio_id }: Props) {
               const st = statusDe(c)
               return (
                 <tr key={c.id}>
-                  <td className="py-2 font-mono text-brand-700 dark:text-brand-400">{c.codigo}</td>
+                  <td className="py-2 font-mono text-brand-400">{c.codigo}</td>
                   <td className="py-2 capitalize">{c.role}</td>
                   <td className="py-2">{c.usos}/{c.usos_max}</td>
                   <td className="py-2 text-xs">{formatDate(c.expira_em)}</td>

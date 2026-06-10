@@ -624,7 +624,7 @@ export default function App() {
 
 function PageLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-50 dark:bg-slate-950 text-slate-500 dark:text-slate-400 text-sm">
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-400 text-sm">
       Carregando...
     </div>
   )
@@ -632,14 +632,14 @@ function PageLoader() {
 
 function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-50 dark:bg-slate-950 p-6 transition-colors">
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 p-6 transition-colors">
       <div className="max-w-md text-center">
         <div className="flex justify-center mb-6 opacity-90">
           <Logo size={80} />
         </div>
-        <h1 className="text-6xl font-bold text-brand-700 dark:text-brand-400 tracking-tight">404</h1>
-        <h2 className="mt-3 text-xl font-semibold text-slate-900 dark:text-slate-100">Página não encontrada</h2>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+        <h1 className="text-6xl font-bold text-brand-400 tracking-tight">404</h1>
+        <h2 className="mt-3 text-xl font-semibold text-slate-100">Página não encontrada</h2>
+        <p className="mt-2 text-sm text-slate-400">
           Essa rota não existe ou foi movida.
         </p>
         <div className="mt-6 flex gap-3 justify-center">
@@ -651,7 +651,7 @@ function NotFound() {
           </Link>
           <button
             onClick={() => history.back()}
-            className="px-5 py-2 rounded-md bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-medium text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+            className="px-5 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 font-medium text-sm hover:bg-slate-700 transition"
           >
             ← Voltar
           </button>

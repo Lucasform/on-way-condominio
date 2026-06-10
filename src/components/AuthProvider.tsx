@@ -253,19 +253,19 @@ function RecoveryScreen({ message }: { message: string }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-brand-50 dark:bg-slate-950 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 p-6">
       <div className="max-w-sm text-center">
         <div className="text-5xl mb-4">🤔</div>
-        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
+        <h1 className="text-xl font-semibold text-slate-100">
           Não conseguimos te conectar
         </h1>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+        <p className="mt-2 text-sm text-slate-400">
           Pode ser uma instabilidade momentânea. Faça login novamente.
         </p>
         <div className="mt-6 flex gap-2 justify-center">
           <button
             onClick={() => window.location.reload()}
-            className="px-5 py-2 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-700"
+            className="px-5 py-2 rounded-md bg-slate-800 text-slate-200 text-sm font-medium hover:bg-slate-700"
           >
             Recarregar
           </button>

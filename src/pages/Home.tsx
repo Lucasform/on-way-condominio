@@ -35,22 +35,22 @@ export default function Home() {
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-4xl mx-auto">
       <OnboardingChecklist />
 
-      <h1 className="text-3xl font-bold tracking-tight text-brand-700 dark:text-brand-400">
-        OnWay <span className="text-slate-700 dark:text-slate-300">Condomínio</span>
+      <h1 className="text-3xl font-bold tracking-tight text-brand-400">
+        OnWay <span className="text-slate-300">Condomínio</span>
       </h1>
-      <p className="mt-2 text-slate-600 dark:text-slate-400">
+      <p className="mt-2 text-slate-400">
         Bem-vindo, {perfil?.nome_exibicao ?? user?.email}.
       </p>
 
       {/* Launcher de apps — navegação principal (sem sidebar) */}
       <AppLauncher className="md:hidden mt-6" />
 
-      <section className="mt-8 max-w-md rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-5">
-        <div className="text-sm text-slate-500 dark:text-slate-400">Logado como</div>
-        <div className="mt-1 text-base font-medium text-slate-900 dark:text-slate-100">{user?.email}</div>
+      <section className="mt-8 max-w-md rounded-lg border border-slate-800 bg-slate-900/40 p-5">
+        <div className="text-sm text-slate-400">Logado como</div>
+        <div className="mt-1 text-base font-medium text-slate-100">{user?.email}</div>
         {perfil && (
-          <div className="mt-1 text-xs text-slate-500 dark:text-slate-500">
-            Perfil: <span className="text-slate-700 dark:text-slate-300 font-medium">{roleLabel(perfil.role)}</span>
+          <div className="mt-1 text-xs text-slate-500">
+            Perfil: <span className="text-slate-300 font-medium">{roleLabel(perfil.role)}</span>
           </div>
         )}
       </section>
@@ -68,7 +68,7 @@ export default function Home() {
             </Link>
             <Link
               to="/painel"
-              className="px-4 py-2 rounded-md bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+              className="px-4 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium hover:bg-slate-700 transition"
             >
               🗂 Abrir Painel Kanban
             </Link>

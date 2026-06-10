@@ -117,8 +117,8 @@ function cellColor(intensity: number, value: number): string {
   if (intensity > 0.85) return 'bg-red-500 text-white'
   if (intensity > 0.65) return 'bg-red-500/80 text-white'
   if (intensity > 0.45) return 'bg-amber-500/70 text-white'
-  if (intensity > 0.25) return 'bg-amber-400/60 text-slate-900'
-  return 'bg-amber-300/40 text-slate-900'
+  if (intensity > 0.25) return 'bg-amber-400/60 text-zinc-900'
+  return 'bg-amber-300/40 text-zinc-900'
 }
 
 function Legenda({ max }: { max: number }) {

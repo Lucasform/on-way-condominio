@@ -140,26 +140,26 @@ export default function OnboardingChecklist() {
   if (completed === total) return null
 
   return (
-    <section className="mb-6 rounded-lg border border-brand-700/30 bg-brand-50 dark:bg-brand-700/10 p-5">
+    <section className="mb-6 rounded-lg border border-brand-700/30 bg-brand-700/10 p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-semibold text-brand-700 dark:text-brand-300">
+          <div className="text-sm font-semibold text-brand-300">
             {titulo}
           </div>
-          <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+          <p className="mt-1 text-xs text-slate-400">
             {completed} de {total} etapas concluídas. Termine pra liberar todos os recursos.
           </p>
         </div>
         <button
           onClick={() => { localStorage.setItem(dismissKey, '1'); setDismissed(true) }}
-          className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+          className="text-xs text-slate-500 hover:text-slate-300"
           title="Esconder permanentemente"
         >
           Dispensar ✕
         </button>
       </div>
 
-      <div className="mt-3 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+      <div className="mt-3 h-1.5 bg-slate-800 rounded-full overflow-hidden">
         <div
           className="h-full bg-brand-700 transition-all"
           style={{ width: `${(completed / total) * 100}%` }}
@@ -169,8 +169,8 @@ export default function OnboardingChecklist() {
       <ul className="mt-4 space-y-2">
         {steps.map((s, i) => (
           <li key={i} className="flex items-center justify-between gap-3 text-sm">
-            <span className={`flex items-center gap-2 ${s.done ? 'text-slate-400 line-through' : 'text-slate-700 dark:text-slate-200'}`}>
-              <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs ${s.done ? 'bg-emerald-500 text-white' : 'bg-slate-300 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}>
+            <span className={`flex items-center gap-2 ${s.done ? 'text-slate-400 line-through' : 'text-slate-200'}`}>
+              <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs ${s.done ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400'}`}>
                 {s.done ? '✓' : i + 1}
               </span>
               {s.label}

@@ -311,7 +311,7 @@ export default function MeuPerfil() {
   }
 
   if (!perfil || !user) {
-    return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-500 dark:text-slate-400">Carregando seu perfil...</div>
+    return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando seu perfil...</div>
   }
 
   const iniciais = (perfil.nome_exibicao ?? user.email ?? '?').slice(0, 1).toUpperCase()
@@ -346,7 +346,7 @@ export default function MeuPerfil() {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingAvatar}
-                className="w-28 h-28 rounded-full bg-brand-50 dark:bg-brand-700/20 border-2 border-slate-200 dark:border-slate-700 overflow-hidden flex items-center justify-center text-3xl font-bold text-brand-700 dark:text-brand-300 hover:border-brand-500 transition disabled:opacity-50"
+                className="w-28 h-28 rounded-full bg-brand-700/20 border-2 border-slate-700 overflow-hidden flex items-center justify-center text-3xl font-bold text-brand-300 hover:border-brand-500 transition disabled:opacity-50"
                 title="Trocar foto"
               >
                 {perfil.avatar_url ? (
@@ -355,7 +355,7 @@ export default function MeuPerfil() {
                   iniciais
                 )}
               </button>
-              <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-brand-700 text-white text-xs flex items-center justify-center border-2 border-white dark:border-slate-950 pointer-events-none">
+              <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-brand-700 text-white text-xs flex items-center justify-center border-2 border-slate-950 pointer-events-none">
                 📷
               </div>
             </div>
@@ -496,7 +496,7 @@ export default function MeuPerfil() {
           <button
             type="submit"
             disabled={savingEmail || !emailMudou}
-            className="px-4 py-2 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium text-sm hover:bg-slate-300 dark:hover:bg-slate-700 disabled:opacity-50 whitespace-nowrap"
+            className="px-4 py-2 rounded-md bg-slate-800 text-slate-200 font-medium text-sm hover:bg-slate-700 disabled:opacity-50 whitespace-nowrap"
           >
             {savingEmail ? 'Enviando...' : 'Alterar e-mail'}
           </button>
@@ -510,24 +510,24 @@ export default function MeuPerfil() {
         <div className="space-y-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="font-medium text-slate-900 dark:text-slate-100">Senha</div>
-              <div className="text-xs text-slate-500 dark:text-slate-400">
+              <div className="font-medium text-slate-100">Senha</div>
+              <div className="text-xs text-slate-400">
                 Recomendado trocar a cada 90 dias.
               </div>
             </div>
             <Link
               to="/atualizar-senha"
-              className="px-4 py-2 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium text-sm hover:bg-slate-300 dark:hover:bg-slate-700"
+              className="px-4 py-2 rounded-md bg-slate-800 text-slate-200 font-medium text-sm hover:bg-slate-700"
             >
               Alterar senha
             </Link>
           </div>
 
-          <div className="border-t border-slate-200 dark:border-slate-800 pt-5">
+          <div className="border-t border-slate-800 pt-5">
             <TwoFactorPanel />
           </div>
 
-          <div className="border-t border-slate-200 dark:border-slate-800 pt-5">
+          <div className="border-t border-slate-800 pt-5">
             <PushToggle />
           </div>
         </div>
@@ -549,13 +549,13 @@ export default function MeuPerfil() {
             ]).map(({ k, label, icon, detail }) => (
               <label
                 key={k}
-                className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-3 cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition"
+                className="flex items-center justify-between gap-3 rounded-lg border border-slate-800 px-4 py-3 cursor-pointer hover:border-slate-700 transition"
               >
                 <span className="flex items-center gap-3 min-w-0">
                   <span className="text-xl leading-none">{icon}</span>
                   <span className="min-w-0">
-                    <span className="block text-sm font-medium text-slate-900 dark:text-slate-100">{label}</span>
-                    <span className="block text-xs text-slate-500 dark:text-slate-400 truncate">{detail}</span>
+                    <span className="block text-sm font-medium text-slate-100">{label}</span>
+                    <span className="block text-xs text-slate-400 truncate">{detail}</span>
                   </span>
                 </span>
                 <input
@@ -576,31 +576,31 @@ export default function MeuPerfil() {
       {/* ============================================================ */}
       <Section title="Conta">
         <dl className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-y-2 gap-x-4 text-sm">
-          <dt className="text-slate-500 dark:text-slate-400">Papel</dt>
-          <dd className="text-slate-900 dark:text-slate-100">{roleLabel(perfil.role)}</dd>
+          <dt className="text-slate-400">Papel</dt>
+          <dd className="text-slate-100">{roleLabel(perfil.role)}</dd>
 
           {condoNome && (
             <>
-              <dt className="text-slate-500 dark:text-slate-400">Condomínio</dt>
-              <dd className="text-slate-900 dark:text-slate-100">{condoNome}</dd>
+              <dt className="text-slate-400">Condomínio</dt>
+              <dd className="text-slate-100">{condoNome}</dd>
             </>
           )}
 
-          <dt className="text-slate-500 dark:text-slate-400">Conta criada</dt>
-          <dd className="text-slate-900 dark:text-slate-100">
+          <dt className="text-slate-400">Conta criada</dt>
+          <dd className="text-slate-100">
             {user.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : '—'}
           </dd>
 
           {user.last_sign_in_at && (
             <>
-              <dt className="text-slate-500 dark:text-slate-400">Último acesso</dt>
-              <dd className="text-slate-900 dark:text-slate-100">
+              <dt className="text-slate-400">Último acesso</dt>
+              <dd className="text-slate-100">
                 {new Date(user.last_sign_in_at).toLocaleString('pt-BR')}
               </dd>
             </>
           )}
 
-          <dt className="text-slate-500 dark:text-slate-400">ID</dt>
+          <dt className="text-slate-400">ID</dt>
           <dd className="text-[11px] font-mono text-slate-500">{user.id}</dd>
         </dl>
       </Section>
@@ -626,23 +626,23 @@ export default function MeuPerfil() {
           hint="Dados de morador. Pra alterar, fale com a administração."
         >
           <dl className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-y-2 gap-x-4 text-sm">
-            <dt className="text-slate-500 dark:text-slate-400">Vínculo</dt>
-            <dd className="text-slate-900 dark:text-slate-100">
+            <dt className="text-slate-400">Vínculo</dt>
+            <dd className="text-slate-100">
               {pessoa.tipo_vinculo}
               {pessoa.relacao_unidade && ` · ${pessoa.relacao_unidade}`}
             </dd>
 
             {pessoa.cpf && (
               <>
-                <dt className="text-slate-500 dark:text-slate-400">CPF</dt>
-                <dd className="text-slate-900 dark:text-slate-100">{pessoa.cpf}</dd>
+                <dt className="text-slate-400">CPF</dt>
+                <dd className="text-slate-100">{pessoa.cpf}</dd>
               </>
             )}
 
             {pessoa.data_nascimento && (
               <>
-                <dt className="text-slate-500 dark:text-slate-400">Nascimento</dt>
-                <dd className="text-slate-900 dark:text-slate-100">
+                <dt className="text-slate-400">Nascimento</dt>
+                <dd className="text-slate-100">
                   {new Date(pessoa.data_nascimento + 'T12:00').toLocaleDateString('pt-BR')}
                 </dd>
               </>
@@ -659,7 +659,7 @@ export default function MeuPerfil() {
           <button
             type="button"
             onClick={() => exportarMeusDados(perfil, pessoa, user.email)}
-            className="px-4 py-2 rounded-md bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-700 transition"
+            className="px-4 py-2 rounded-md bg-slate-800 text-slate-200 text-sm font-medium hover:bg-slate-700 transition"
           >
             📥 Baixar meus dados
           </button>
@@ -677,7 +677,7 @@ export default function MeuPerfil() {
 // ============================================================
 
 const inputCls =
-  'w-full px-3 py-2 rounded-md bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 text-sm text-slate-900 dark:text-slate-100'
+  'w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 text-sm text-slate-100'
 
 function Section({
   title,
@@ -689,10 +689,10 @@ function Section({
   children: React.ReactNode
 }) {
   return (
-    <section className="mb-8 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-6">
+    <section className="mb-8 rounded-lg border border-slate-800 bg-slate-900/40 p-6">
       <header className="mb-5">
-        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
-        {hint && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{hint}</p>}
+        <h2 className="text-base font-semibold text-slate-100">{title}</h2>
+        {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
       </header>
       {children}
     </section>
@@ -712,9 +712,9 @@ function Field({
 }) {
   return (
     <label className={`block ${className ?? ''}`}>
-      <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{label}</span>
+      <span className="block text-sm font-medium text-slate-300 mb-1">{label}</span>
       {children}
-      {hint && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
     </label>
   )
 }

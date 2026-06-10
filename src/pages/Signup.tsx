@@ -13,8 +13,8 @@ import AuthShell from '../components/AuthShell'
 import { validatePassword, PASSWORD_HINT } from '../lib/passwordPolicy'
 
 const inputCls =
-  'w-full px-3 py-2 rounded-md bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 ' +
-  'text-slate-900 dark:text-slate-100 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700 text-sm'
+  'w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 ' +
+  'text-slate-100 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700 text-sm'
 
 const primaryBtn =
   'w-full py-2 rounded-md bg-brand-700 hover:bg-brand-800 active:bg-brand-900 text-white font-semibold text-sm transition disabled:opacity-50'
@@ -70,7 +70,7 @@ export default function Signup() {
   const [error, setError] = useState<string | null>(null)
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-brand-50 dark:bg-slate-950 text-slate-500">Carregando...</div>
+    return <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-500">Carregando...</div>
   }
   if (user) return <Navigate to="/" replace />
 
@@ -159,7 +159,7 @@ export default function Signup() {
         footer={
           <>
             Já tem conta?{' '}
-            <Link to="/login?tipo=morador" className="text-brand-700 dark:text-brand-400 font-medium hover:underline">
+            <Link to="/login?tipo=morador" className="text-brand-400 font-medium hover:underline">
               Entrar
             </Link>
           </>
@@ -167,7 +167,7 @@ export default function Signup() {
       >
         <form onSubmit={handleValidarCodigo} className="space-y-4">
           <label className="block">
-            <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Código de convite</span>
+            <span className="block text-sm font-medium text-slate-300 mb-1">Código de convite</span>
             <input
               type="text"
               required
@@ -211,7 +211,7 @@ export default function Signup() {
         <button
           type="button"
           onClick={() => { setEtapa('codigo'); setPreview(null) }}
-          className="text-brand-700 dark:text-brand-400 font-medium hover:underline"
+          className="text-brand-400 font-medium hover:underline"
         >
           ← Trocar código
         </button>
@@ -219,7 +219,7 @@ export default function Signup() {
     >
       <form onSubmit={handleFinalizar} className="space-y-4">
         <label className="block">
-          <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nome completo</span>
+          <span className="block text-sm font-medium text-slate-300 mb-1">Nome completo</span>
           <input
             type="text" required value={nome}
             onChange={(e) => setNome(e.target.value)}
@@ -232,12 +232,12 @@ export default function Signup() {
         </label>
 
         <label className="block">
-          <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mail</span>
+          <span className="block text-sm font-medium text-slate-300 mb-1">E-mail</span>
           <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
         </label>
 
         <label className="block">
-          <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Senha</span>
+          <span className="block text-sm font-medium text-slate-300 mb-1">Senha</span>
           <input type="password" required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} className={inputCls} />
           <span className="text-xs text-slate-500 mt-1 block">{PASSWORD_HINT}</span>
         </label>
@@ -245,7 +245,7 @@ export default function Signup() {
         {isMorador && (
           <>
             <label className="block">
-              <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Unidade</span>
+              <span className="block text-sm font-medium text-slate-300 mb-1">Unidade</span>
               {unidadeTravada ? (
                 <input type="text" disabled value={preview.unidade_label ?? '(travada)'} className={inputCls} />
               ) : (
@@ -262,7 +262,7 @@ export default function Signup() {
             </label>
 
             <label className="block">
-              <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Vínculo com a unidade</span>
+              <span className="block text-sm font-medium text-slate-300 mb-1">Vínculo com a unidade</span>
               <select
                 value={tipoVinculo}
                 onChange={(e) => setTipoVinculo(e.target.value as TipoVinculo)}
@@ -283,7 +283,7 @@ export default function Signup() {
 
         {isFuncionario && (
           <label className="block">
-            <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Setor / Função</span>
+            <span className="block text-sm font-medium text-slate-300 mb-1">Setor / Função</span>
             <input
               type="text"
               value={setor}
@@ -300,16 +300,16 @@ export default function Signup() {
 
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
-            <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">CPF <span className="text-slate-500 font-normal">(opcional)</span></span>
+            <span className="block text-sm font-medium text-slate-300 mb-1">CPF <span className="text-slate-500 font-normal">(opcional)</span></span>
             <input type="text" value={cpf} onChange={(e) => setCpf(e.target.value)} className={inputCls} />
           </label>
           <label className="block">
-            <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Telefone <span className="text-slate-500 font-normal">(opcional)</span></span>
+            <span className="block text-sm font-medium text-slate-300 mb-1">Telefone <span className="text-slate-500 font-normal">(opcional)</span></span>
             <input type="tel" value={telefone} onChange={(e) => setTelefone(e.target.value)} className={inputCls} />
           </label>
         </div>
 
-        <label className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400 cursor-pointer">
+        <label className="flex items-start gap-2 text-xs text-slate-400 cursor-pointer">
           <input
             type="checkbox"
             checked={aceitouTermos}
@@ -318,9 +318,9 @@ export default function Signup() {
           />
           <span>
             Li e aceito os{' '}
-            <Link to="/termos" target="_blank" className="text-brand-700 dark:text-brand-400 hover:underline">termos de uso</Link>
+            <Link to="/termos" target="_blank" className="text-brand-400 hover:underline">termos de uso</Link>
             {' '}e a{' '}
-            <Link to="/privacidade" target="_blank" className="text-brand-700 dark:text-brand-400 hover:underline">política de privacidade</Link>.
+            <Link to="/privacidade" target="_blank" className="text-brand-400 hover:underline">política de privacidade</Link>.
           </span>
         </label>
 

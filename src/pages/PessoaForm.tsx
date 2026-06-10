@@ -423,7 +423,7 @@ export default function PessoaForm() {
                 type="button"
                 onClick={() => fotoInputRef.current?.click()}
                 disabled={uploadingFoto || !form.condominio_id}
-                className="text-sm text-brand-700 dark:text-brand-400 hover:underline disabled:opacity-50 text-left"
+                className="text-sm text-brand-400 hover:underline disabled:opacity-50 text-left"
               >
                 {uploadingFoto ? 'Enviando...' : form.foto_url ? 'Trocar foto' : 'Adicionar foto'}
               </button>

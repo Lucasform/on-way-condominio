@@ -224,11 +224,11 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
     : null
 
   return (
-    <fieldset className="border border-slate-200 dark:border-slate-700 rounded-md p-4 space-y-4">
-      <legend className="px-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+    <fieldset className="border border-slate-700 rounded-md p-4 space-y-4">
+      <legend className="px-2 text-sm font-semibold text-slate-200">
         Importar moradores em massa
       </legend>
-      <p className="text-xs text-slate-500 dark:text-slate-400 -mt-2">
+      <p className="text-xs text-slate-400 -mt-2">
         Aceita CSV ou XLSX. Cria unidades automaticamente quando "Bloco-Número" não existir.
         Linhas duplicadas (mesmo CPF ou e-mail) são ignoradas.
       </p>
@@ -251,7 +251,7 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
         <button
           type="button"
           onClick={baixarTemplate}
-          className="px-4 py-2 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700"
+          className="px-4 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium hover:bg-slate-700"
         >
           ⬇ Baixar modelo
         </button>
@@ -272,7 +272,7 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
 
       {rows.length > 0 && !results && (
         <div>
-          <div className="text-sm text-slate-700 dark:text-slate-300 mb-2 flex items-baseline justify-between">
+          <div className="text-sm text-slate-300 mb-2 flex items-baseline justify-between">
             <span><strong>{rows.length}</strong> linhas prontas pra importar.</span>
             <button
               type="button"
@@ -309,7 +309,7 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
           </div>
           {totais.erro > 0 && (
             <details className="text-xs">
-              <summary className="cursor-pointer text-slate-600 dark:text-slate-400">Ver erros</summary>
+              <summary className="cursor-pointer text-slate-400">Ver erros</summary>
               <ul className="mt-2 space-y-1">
                 {results.filter((r) => r.status === 'erro').map((r, i) => (
                   <li key={i} className="text-red-600 dark:text-red-400">
@@ -322,7 +322,7 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
           <button
             type="button"
             onClick={() => { setRows([]); setResults(null); if (inputRef.current) inputRef.current.value = '' }}
-            className="text-sm text-brand-700 dark:text-brand-400 hover:underline"
+            className="text-sm text-brand-400 hover:underline"
           >
             Importar outro arquivo
           </button>
@@ -334,9 +334,9 @@ export default function PessoasImport({ condominio_id, onDone }: Props) {
 
 function PreviewTabela({ rows, max }: { rows: Row[]; max: number }) {
   return (
-    <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded">
+    <div className="overflow-x-auto border border-slate-700 rounded">
       <table className="w-full text-xs">
-        <thead className="bg-slate-50 dark:bg-slate-900/60 text-slate-500 uppercase">
+        <thead className="bg-slate-900/60 text-slate-500 uppercase">
           <tr>
             <th className="text-left px-2 py-1.5">Nome</th>
             <th className="text-left px-2 py-1.5">E-mail</th>
@@ -346,7 +346,7 @@ function PreviewTabela({ rows, max }: { rows: Row[]; max: number }) {
             <th className="text-left px-2 py-1.5">Vínculo</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+        <tbody className="divide-y divide-slate-700">
           {rows.slice(0, max).map((r, i) => (
             <tr key={i}>
               <td className="px-2 py-1.5">{r.nome}</td>
@@ -360,7 +360,7 @@ function PreviewTabela({ rows, max }: { rows: Row[]; max: number }) {
         </tbody>
       </table>
       {rows.length > max && (
-        <div className="px-2 py-1.5 text-xs text-slate-500 bg-slate-50 dark:bg-slate-900/30">
+        <div className="px-2 py-1.5 text-xs text-slate-500 bg-slate-900/30">
           ...e mais {rows.length - max} linhas.
         </div>
       )}

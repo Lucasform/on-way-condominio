@@ -1,3 +1,63 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+  Tema via rampa de neutros (slate) em CSS vars.
+  - .dark  = rampa normal do slate (app autorado em dark).
+  - :root  = rampa INVERTIDA (tema claro): slate-950 ~ branco, slate-100 ~ preto.
+  Default do app é dark (applyTheme adiciona .dark), então sem regressão.
+*/
+.dark {
+  --s-50:  248 250 252;
+  --s-100: 241 245 249;
+  --s-200: 226 232 240;
+  --s-300: 203 213 225;
+  --s-400: 148 163 184;
+  --s-500: 100 116 139;
+  --s-600: 71 85 105;
+  --s-700: 51 65 85;
+  --s-800: 30 41 59;
+  --s-900: 15 23 42;
+  --s-950: 2 6 23;
+  color-scheme: dark;
+}
+
+:root {
+  /* tema claro = rampa invertida + leves ajustes pra contraste/conforto */
+  --s-50:  15 23 42;     /* texto forte */
+  --s-100: 30 41 59;     /* texto principal */
+  --s-200: 51 65 85;
+  --s-300: 71 85 105;
+  --s-400: 100 116 139;  /* texto secundário (legível em fundo claro) */
+  --s-500: 100 116 139;
+  --s-600: 148 163 184;
+  --s-700: 203 213 225;  /* bordas mais fortes */
+  --s-800: 226 232 240;  /* bordas */
+  --s-900: 241 245 249;  /* superfícies (cards) */
+  --s-950: 248 250 252;  /* fundo da página */
+  color-scheme: light;
+}
+
+/*
+  Tema claro: os acentos usados como TEXTO (tons 200/300/400, pensados pra
+  fundo escuro) ficam claros demais sobre superfície clara. Aqui escurecemos
+  só esses tons de texto, só no claro (html:not(.dark)), sem mexer nos sólidos
+  (-500/-600) nem nos componentes. Mantém o contraste bom no claro.
+*/
+html:not(.dark) .text-emerald-200, html:not(.dark) .text-emerald-300, html:not(.dark) .text-emerald-400 { color: rgb(4 120 87); }
+html:not(.dark) .text-red-200,     html:not(.dark) .text-red-300,     html:not(.dark) .text-red-400     { color: rgb(185 28 28); }
+html:not(.dark) .text-amber-200,   html:not(.dark) .text-amber-300,   html:not(.dark) .text-amber-400   { color: rgb(180 83 9); }
+html:not(.dark) .text-sky-200,     html:not(.dark) .text-sky-300,     html:not(.dark) .text-sky-400     { color: rgb(3 105 161); }
+html:not(.dark) .text-indigo-200,  html:not(.dark) .text-indigo-300,  html:not(.dark) .text-indigo-400  { color: rgb(67 56 202); }
+html:not(.dark) .text-violet-200,  html:not(.dark) .text-violet-300,  html:not(.dark) .text-violet-400  { color: rgb(109 40 217); }
+html:not(.dark) .text-blue-200,    html:not(.dark) .text-blue-300,    html:not(.dark) .text-blue-400    { color: rgb(29 78 216); }
+html:not(.dark) .text-orange-200,  html:not(.dark) .text-orange-300,  html:not(.dark) .text-orange-400  { color: rgb(194 65 12); }
+html:not(.dark) .text-teal-200,    html:not(.dark) .text-teal-300,    html:not(.dark) .text-teal-400    { color: rgb(15 118 110); }
+html:not(.dark) .text-lime-200,    html:not(.dark) .text-lime-300,    html:not(.dark) .text-lime-400    { color: rgb(77 124 15); }
+html:not(.dark) .text-pink-200,    html:not(.dark) .text-pink-300,    html:not(.dark) .text-pink-400    { color: rgb(190 24 93); }
+html:not(.dark) .text-fuchsia-200, html:not(.dark) .text-fuchsia-300, html:not(.dark) .text-fuchsia-400 { color: rgb(162 28 175); }
+html:not(.dark) .text-green-200,   html:not(.dark) .text-green-300,   html:not(.dark) .text-green-400   { color: rgb(21 128 61); }
+html:not(.dark) .text-purple-200,  html:not(.dark) .text-purple-300,  html:not(.dark) .text-purple-400  { color: rgb(126 34 206); }
+html:not(.dark) .text-rose-200,    html:not(.dark) .text-rose-300,    html:not(.dark) .text-rose-400    { color: rgb(190 18 60); }
+html:not(.dark) .text-cyan-200,    html:not(.dark) .text-cyan-300,    html:not(.dark) .text-cyan-400    { color: rgb(14 116 144); }

@@ -231,7 +231,7 @@ export default function AuditLog() {
       {Object.keys(totaisPorAcao).length > 0 && (
         <div className="flex flex-wrap gap-2 mb-5">
           {Object.entries(totaisPorAcao).map(([a, n]) => (
-            <span key={a} className="px-2 py-1 rounded text-xs bg-brand-700/10 text-brand-700 dark:text-brand-300 border border-brand-700/20">
+            <span key={a} className="px-2 py-1 rounded text-xs bg-brand-700/10 text-brand-300 border border-brand-700/20">
               {a}: <strong>{n}</strong>
             </span>
           ))}
@@ -244,9 +244,9 @@ export default function AuditLog() {
         </div>
       )}
 
-      <div className="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-md">
+      <div className="overflow-x-auto border border-slate-700 rounded-md">
         <table className="w-full text-sm">
-          <thead className="text-xs uppercase text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/60">
+          <thead className="text-xs uppercase text-slate-400 bg-slate-900/60">
             <tr>
               {podeApagar && (
                 <th className="px-3 py-2 w-8">
@@ -267,7 +267,7 @@ export default function AuditLog() {
               <th className="text-left px-3 py-2">Detalhes</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+          <tbody className="divide-y divide-slate-700">
             {loading && (
               <tr><td colSpan={podeApagar ? 7 : 6} className="text-center py-6 text-slate-500">Carregando...</td></tr>
             )}
@@ -279,8 +279,8 @@ export default function AuditLog() {
               return (
                 <tr
                   key={r.id}
-                  className={`hover:bg-slate-50 dark:hover:bg-slate-900/30 ${
-                    checked ? 'bg-brand-500/5 dark:bg-brand-700/10' : ''
+                  className={`hover:bg-slate-900/30 ${
+                    checked ? 'bg-brand-700/10' : ''
                   }`}
                 >
                   {podeApagar && (
@@ -296,7 +296,7 @@ export default function AuditLog() {
                   <td className="px-3 py-2 text-xs text-slate-500 whitespace-nowrap">{fmtTs(r.created_at)}</td>
                   <td className="px-3 py-2 text-xs">{r.ator_email ?? '—'}</td>
                   <td className="px-3 py-2 text-xs"><span className="capitalize">{r.ator_role ?? '—'}</span></td>
-                  <td className="px-3 py-2 font-mono text-xs text-brand-700 dark:text-brand-400">{r.acao}</td>
+                  <td className="px-3 py-2 font-mono text-xs text-brand-400">{r.acao}</td>
                   <td className="px-3 py-2 text-xs">{r.alvo_tipo}{r.alvo_id ? ` · ${r.alvo_id.slice(0, 8)}…` : ''}</td>
                   <td className="px-3 py-2 text-xs text-slate-500 max-w-md truncate" title={JSON.stringify(r.detalhes)}>
                     {fmtDetalhes(r.detalhes)}

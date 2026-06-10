@@ -36,10 +36,10 @@ export default function PlanoUsoWidget() {
   if (loading || !uso) return null
 
   return (
-    <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-5">
+    <section className="rounded-lg border border-slate-800 bg-slate-900/40 p-5">
       <div className="flex items-baseline justify-between mb-4">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Uso do plano</h3>
-        <span className="text-xs px-2 py-0.5 rounded bg-brand-700/10 text-brand-700 dark:text-brand-300 border border-brand-700/20 uppercase font-medium">
+        <h3 className="text-sm font-semibold text-slate-100">Uso do plano</h3>
+        <span className="text-xs px-2 py-0.5 rounded bg-brand-700/10 text-brand-300 border border-brand-700/20 uppercase font-medium">
           {uso.plano}
         </span>
       </div>
@@ -60,12 +60,12 @@ function Bar({ label, atual, max }: { label: string; atual: number; max: number 
   return (
     <div>
       <div className="flex items-baseline justify-between text-xs mb-1">
-        <span className="text-slate-600 dark:text-slate-300 font-medium">{label}</span>
+        <span className="text-slate-300 font-medium">{label}</span>
         <span className={`tabular-nums ${danger ? 'text-red-600 font-semibold' : 'text-slate-500'}`}>
           {atual} / {max}
         </span>
       </div>
-      <div className="h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
         <div className={`h-full ${color} transition-all`} style={{ width: `${pct}%` }} />
       </div>
     </div>

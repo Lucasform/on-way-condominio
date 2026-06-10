@@ -174,7 +174,7 @@ export default function NotificacaoNova() {
             value={form.descricao}
             onChange={(e) => setForm({ ...form, descricao: e.target.value })}
             rows={5}
-            className="w-full px-3 py-2 rounded-md bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700 text-sm"
+            className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700 text-sm"
           />
         </Field>
 
@@ -191,7 +191,7 @@ export default function NotificacaoNova() {
             value={form.observacoes}
             onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
             rows={2}
-            className="w-full px-3 py-2 rounded-md bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm"
+            className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm"
           />
         </Field>
 

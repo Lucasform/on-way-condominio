@@ -29,7 +29,7 @@ export default function EsqueciSenha() {
       title="Recuperar senha"
       subtitle="Vamos enviar um link no seu e-mail pra definir uma nova senha."
       footer={
-        <Link to="/entrar" className="text-brand-700 dark:text-brand-400 font-medium hover:underline">
+        <Link to="/entrar" className="text-brand-400 font-medium hover:underline">
           ← Voltar pra tela inicial
         </Link>
       }
@@ -43,14 +43,14 @@ export default function EsqueciSenha() {
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           <label className="block">
-            <span className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">E-mail</span>
+            <span className="block text-sm font-medium text-slate-300 mb-1">E-mail</span>
             <input
               type="email"
               required
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 rounded-md bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700 text-sm"
+              className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700 text-sm"
             />
           </label>
 

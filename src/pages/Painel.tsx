@@ -349,9 +349,9 @@ export default function Painel() {
           </div>
         )}
         <div className="ml-auto flex flex-wrap items-center gap-3 text-sm">
-          <Link to="/ocorrencias/novo" className="text-brand-700 dark:text-brand-400 hover:underline">+ Nova ocorrência</Link>
-          <span className="text-slate-300 dark:text-slate-700">·</span>
-          <Link to="/chamados/novo" className="text-brand-700 dark:text-brand-400 hover:underline">+ Novo chamado</Link>
+          <Link to="/ocorrencias/novo" className="text-brand-400 hover:underline">+ Nova ocorrência</Link>
+          <span className="text-slate-700">·</span>
+          <Link to="/chamados/novo" className="text-brand-400 hover:underline">+ Novo chamado</Link>
         </div>
       </div>
 
