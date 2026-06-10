@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 import { edgeErrorMessage } from './edgeError'
-import type { Pessoa, PessoaInput } from '../types/pessoa'
+import type { Pessoa, PessoaInput, CanaisNotificacao } from '../types/pessoa'
 
 export async function listPessoas(opts: { condominio_id?: string; ativo?: boolean } = {}): Promise<Pessoa[]> {
   let q = supabase
@@ -52,6 +52,11 @@ export async function updatePessoa(id: string, input: PessoaInput): Promise<Pess
     .single()
   if (error) throw error
   return data as Pessoa
+}
+
+export async function updateCanaisNotificacao(id: string, canais: CanaisNotificacao): Promise<void> {
+  const { error } = await supabase.from('pessoas').update({ canais_notificacao: canais }).eq('id', id)
+  if (error) throw error
 }
 
 export async function deletePessoa(id: string): Promise<void> {

@@ -6,6 +6,8 @@ import { roleLabel } from '../lib/nav'
 import PushToggle from '../components/PushToggle'
 import TwoFactorPanel from '../components/TwoFactorPanel'
 import MeusCondominios from '../components/MeusCondominios'
+import { updateCanaisNotificacao } from '../lib/pessoas'
+import { CANAIS_NOTIFICACAO_PADRAO, type CanaisNotificacao } from '../types/pessoa'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
@@ -23,6 +25,7 @@ interface Pessoa {
   foto_url: string | null
   tipo_vinculo: string
   relacao_unidade: string | null
+  canais_notificacao: CanaisNotificacao | null
 }
 
 const AVATAR_BUCKET = 'avatares'
@@ -38,6 +41,8 @@ export default function MeuPerfil() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [pessoa, setPessoa] = useState<Pessoa | null>(null)
+  const [canais, setCanais] = useState<CanaisNotificacao>(CANAIS_NOTIFICACAO_PADRAO)
+  const [savingCanais, setSavingCanais] = useState(false)
   const [condoNome, setCondoNome] = useState<string | null>(null)
 
   const [form, setForm] = useState({
@@ -76,7 +81,10 @@ export default function MeuPerfil() {
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle()
-      if (mounted && data) setPessoa(data as Pessoa)
+      if (mounted && data) {
+        setPessoa(data as Pessoa)
+        setCanais((data as Pessoa).canais_notificacao ?? CANAIS_NOTIFICACAO_PADRAO)
+      }
     })()
     return () => { mounted = false }
   }, [user])
@@ -92,6 +100,22 @@ export default function MeuPerfil() {
   function flash(kind: 'ok' | 'err', msg: string) {
     setFeedback({ kind, msg })
     if (kind === 'ok') window.setTimeout(() => setFeedback(null), 3000)
+  }
+
+  async function toggleCanal(canal: keyof CanaisNotificacao) {
+    if (!pessoa) return
+    const prev = canais
+    const next = { ...canais, [canal]: !canais[canal] }
+    setCanais(next)
+    setSavingCanais(true)
+    try {
+      await updateCanaisNotificacao(pessoa.id, next)
+    } catch (e) {
+      setCanais(prev)
+      flash('err', e instanceof Error ? e.message : 'Erro ao salvar preferência.')
+    } finally {
+      setSavingCanais(false)
+    }
   }
 
   async function handleSaveProfile(e: FormEvent) {
@@ -508,6 +532,44 @@ export default function MeuPerfil() {
           </div>
         </div>
       </Section>
+
+      {/* ============================================================ */}
+      {/* Preferências de notificação — só pra quem tem cadastro residencial */}
+      {/* ============================================================ */}
+      {pessoa && (
+        <Section
+          title="Como você quer ser avisado"
+          hint="Escolha por quais canais quer receber avisos do condomínio (multas, notificações, encomendas). O sininho dentro do app é sempre mantido."
+        >
+          <div className="space-y-3">
+            {([
+              { k: 'email' as const, label: 'E-mail', icon: '✉️', detail: pessoa.email ?? 'sem e-mail cadastrado' },
+              { k: 'whatsapp' as const, label: 'WhatsApp', icon: '🟢', detail: pessoa.telefone ?? 'sem telefone cadastrado' },
+              { k: 'push' as const, label: 'Notificação push', icon: '🔔', detail: 'alerta no celular/navegador' },
+            ]).map(({ k, label, icon, detail }) => (
+              <label
+                key={k}
+                className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-800 px-4 py-3 cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 transition"
+              >
+                <span className="flex items-center gap-3 min-w-0">
+                  <span className="text-xl leading-none">{icon}</span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-slate-900 dark:text-slate-100">{label}</span>
+                    <span className="block text-xs text-slate-500 dark:text-slate-400 truncate">{detail}</span>
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={canais[k]}
+                  disabled={savingCanais}
+                  onChange={() => toggleCanal(k)}
+                  className="w-5 h-5 shrink-0 accent-brand-600"
+                />
+              </label>
+            ))}
+          </div>
+        </Section>
+      )}
 
       {/* ============================================================ */}
       {/* Conta — info da sessão */}

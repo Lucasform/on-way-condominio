@@ -40,7 +40,13 @@ export async function enviarNotificacaoMulticanal(args: {
   canais?: CanaisEnvio
 }): Promise<EnvioNotificacaoResultado> {
   const { notificacao, pessoa, condominio } = args
-  const canais = args.canais ?? { email: true, whatsapp: true }
+  const escolhidos = args.canais ?? { email: true, whatsapp: true }
+  // Preferência do morador (opt-out). Ausente = todos ligados (comportamento atual).
+  const pref = pessoa?.canais_notificacao
+  const canais = {
+    email: escolhidos.email && (pref?.email ?? true),
+    whatsapp: escolhidos.whatsapp && (pref?.whatsapp ?? true),
+  }
   const res: EnvioNotificacaoResultado = {
     email: canais.email ? 'sem_email' : 'nao_escolhido',
     whatsapp: canais.whatsapp ? 'sem_whatsapp' : 'nao_escolhido',
@@ -104,14 +110,17 @@ export async function enviarNotificacaoMulticanal(args: {
     } catch (e) {
       console.warn('[notificacao] alerta in-app falhou:', e instanceof Error ? e.message : e)
     }
-    sendPush({
-      user_ids: [pessoa.user_id],
-      titulo: `📋 Nova notificação · ${condominio.nome}`,
-      corpo: notificacao.assunto,
-      link: `/notificacoes/${notificacao.id}`,
-    }).then(() => { res.push = true }).catch((e) =>
-      console.warn('[notificacao] push falhou:', e instanceof Error ? e.message : e),
-    )
+    // Push respeita o opt-out do morador (o sininho in-app acima é sempre gravado).
+    if (pref?.push ?? true) {
+      sendPush({
+        user_ids: [pessoa.user_id],
+        titulo: `📋 Nova notificação · ${condominio.nome}`,
+        corpo: notificacao.assunto,
+        link: `/notificacoes/${notificacao.id}`,
+      }).then(() => { res.push = true }).catch((e) =>
+        console.warn('[notificacao] push falhou:', e instanceof Error ? e.message : e),
+      )
+    }
   }
 
   res.entregue = res.email === 'ok' || res.whatsapp === 'ok' || res.app
