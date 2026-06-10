@@ -4,7 +4,6 @@ import { useAuth } from './AuthProvider'
 import { bottomNavFor, iconFor } from '../lib/nav'
 import { supabase } from '../lib/supabase'
 import NotificationBell from './NotificationBell'
-import BottomNav from './BottomNav'
 import Logo from './Logo'
 import AccountMenu from './AccountMenu'
 import { prefetchRoutes } from '../lib/prefetchRoutes'
@@ -118,11 +117,9 @@ export default function AppShell() {
         </div>
       )}
 
-      <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 pb-16 md:pb-0">
+      <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950">
         <Outlet />
       </main>
-
-      <BottomNav />
     </div>
   )
 }
