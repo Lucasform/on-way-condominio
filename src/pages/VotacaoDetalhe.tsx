@@ -333,6 +333,12 @@ export default function VotacaoDetalhe() {
           })}
         </div>
 
+        {canManage && votos.some((v) => !v.verificado) && (
+          <div className="mt-3 text-[11px] text-amber-300">
+            {votos.filter((v) => !v.verificado).length} voto(s) de convidado (não verificado) incluído(s) na contagem.
+          </div>
+        )}
+
         {meuVoto && votacaoAtiva && (
           <div className="mt-4 text-xs italic text-emerald-400">
             ✓ Seu voto foi registrado. Você pode trocar até o encerramento — o voto final é o que vale.
@@ -346,6 +352,46 @@ export default function VotacaoDetalhe() {
           </div>
         )}
       </div>
+
+      {canManage && votacao.modo === 'qrcode' && (
+        <div className="mt-6 rounded-lg border border-sky-500/30 bg-sky-500/5 p-5">
+          <div className="text-sm font-medium text-sky-200 mb-3">📲 QR / link de votação</div>
+          <div className="flex flex-col sm:flex-row gap-5 items-center sm:items-start">
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=${encodeURIComponent(`${window.location.origin}/votar/${votacao.id}`)}`}
+              alt="QR code da votação"
+              className="w-44 h-44 rounded-lg bg-white p-2 shrink-0"
+            />
+            <div className="flex-1 min-w-0 w-full">
+              <p className="text-xs text-slate-400 mb-2">
+                Exiba o QR na assembleia. Quem está logado vota pelo app; quem não está abre o link e vota por unidade.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  readOnly
+                  value={`${window.location.origin}/votar/${votacao.id}`}
+                  onFocus={(e) => e.currentTarget.select()}
+                  className="flex-1 min-w-0 px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-200 text-xs font-mono"
+                />
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(`${window.location.origin}/votar/${votacao.id}`)
+                    toast.success('Link copiado.')
+                  }}
+                >
+                  Copiar
+                </Button>
+              </div>
+              {votacao.codigo_acesso && (
+                <p className="mt-3 text-xs text-slate-300">
+                  Código de acesso: <strong className="font-mono tracking-wide text-sky-200">{votacao.codigo_acesso}</strong> (anuncie pros presentes)
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {canManage && votacao.status === 'aberta' && (
         <div className="mt-6 rounded-lg border border-slate-800 bg-slate-900/40 p-5">

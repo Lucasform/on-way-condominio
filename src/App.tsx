@@ -16,6 +16,7 @@ import AuthCallback from './pages/AuthCallback'
 import EscolhaPerfil from './pages/EscolhaPerfil'
 
 // Lazy: tudo o mais
+const VotarPublico = lazy(() => import('./pages/VotarPublico'))
 const EsqueciSenha = lazy(() => import('./pages/EsqueciSenha'))
 const AtualizarSenha = lazy(() => import('./pages/AtualizarSenha'))
 const Termos = lazy(() => import('./pages/Termos'))
@@ -100,6 +101,7 @@ export default function App() {
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/termos" element={<Termos />} />
           <Route path="/privacidade" element={<Privacidade />} />
+          <Route path="/votar/:id" element={<VotarPublico />} />
           <Route
             element={
               <ProtectedRoute>
