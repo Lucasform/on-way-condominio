@@ -101,16 +101,22 @@ export async function enviarNotificacaoMulticanal(args: {
         link: `/notificacoes/${notificacao.id}`,
       })
       res.app = true
-    } catch { /* ignora */ }
+    } catch (e) {
+      console.warn('[notificacao] alerta in-app falhou:', e instanceof Error ? e.message : e)
+    }
     sendPush({
       user_ids: [pessoa.user_id],
       titulo: `📋 Nova notificação · ${condominio.nome}`,
       corpo: notificacao.assunto,
       link: `/notificacoes/${notificacao.id}`,
-    }).then(() => { res.push = true }).catch(() => {})
+    }).then(() => { res.push = true }).catch((e) =>
+      console.warn('[notificacao] push falhou:', e instanceof Error ? e.message : e),
+    )
   }
 
   res.entregue = res.email === 'ok' || res.whatsapp === 'ok' || res.app
-  await changeNotificacaoStatus(notificacao.id, 'enviada').catch(() => {})
+  await changeNotificacaoStatus(notificacao.id, 'enviada').catch((e) =>
+    console.warn('[notificacao] marcar enviada falhou:', e instanceof Error ? e.message : e),
+  )
   return res
 }

@@ -21,6 +21,7 @@ import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import { DetailSkeleton } from '../components/ui/Skeleton'
 import TemplatePicker from '../components/TemplatePicker'
 
 interface AutorInfo {
@@ -293,7 +294,7 @@ export default function ChatConversa() {
     }
   }
 
-  if (loading) return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando...</div>
+  if (loading) return <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto"><DetailSkeleton /></div>
 
   if (error || !conversa) {
     return (
