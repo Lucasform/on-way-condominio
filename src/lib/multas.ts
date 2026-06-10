@@ -79,9 +79,9 @@ export async function listMultaStatusLog(multa_id: string): Promise<MultaStatusL
 
 /**
  * Cria uma multa a partir de uma ocorrência e atualiza a ocorrência
- * pra status `virou_multa`. Não é atômico (2 calls), mas em caso de
- * falha na 2ª chamada a multa fica criada (e a ocorrência mantém o
- * status antigo — fácil de detectar e corrigir manualmente).
+ * pra status `virou_multa`. Não é atômico (2 calls); se a 2ª falhar, a multa
+ * fica criada e a ocorrência mantém o status antigo (detectável). Cancelar a
+ * multa depois reverte a ocorrência automaticamente (ver changeMultaStatus).
  */
 export async function createMultaFromOcorrencia(
   input: MultaInput,
@@ -199,6 +199,13 @@ export async function deleteMulta(id: string): Promise<void> {
 }
 
 export async function changeMultaStatus(id: string, newStatus: StatusMulta): Promise<void> {
+  const cur = await getMulta(id)
+  if (!cur) throw new Error('Multa não encontrada.')
+  // Guard: rejeita transição que não está no mapa (protege chamadas fora da UI).
+  if (cur.status !== newStatus && !MULTA_STATUS_TRANSITIONS[cur.status].includes(newStatus)) {
+    throw new Error(`Transição inválida: ${MULTA_STATUS_LABEL[cur.status]} → ${MULTA_STATUS_LABEL[newStatus]}.`)
+  }
+
   const patch: Record<string, unknown> = { status: newStatus }
   const today = new Date().toISOString().slice(0, 10)
   if (newStatus === 'aplicada') {
@@ -206,10 +213,27 @@ export async function changeMultaStatus(id: string, newStatus: StatusMulta): Pro
   }
   if (newStatus === 'paga') {
     patch.data_pagamento = today
-    // se ainda não tiver data_aplicacao, preenche também (não pode ser null se status='paga')
-    const cur = await getMulta(id)
-    if (cur && !cur.data_aplicacao) patch.data_aplicacao = today
+    // não pode ser null se status='paga'
+    if (!cur.data_aplicacao) patch.data_aplicacao = today
   }
   const { error } = await supabase.from('multas').update(patch).eq('id', id)
   if (error) throw error
+
+  // Reversão: ao cancelar a multa, destrava a ocorrência de origem (virou_multa →
+  // em_analise) e a notificação ligada (multa_gerada → enviada). Os filtros de
+  // status deixam isso idempotente — só mexe se estiver exatamente no estado preso.
+  if (newStatus === 'cancelada') {
+    if (cur.ocorrencia_id) {
+      await supabase
+        .from('ocorrencias')
+        .update({ status: 'em_analise' })
+        .eq('id', cur.ocorrencia_id)
+        .eq('status', 'virou_multa')
+    }
+    await supabase
+      .from('notificacoes')
+      .update({ status: 'enviada' })
+      .eq('multa_id', id)
+      .eq('status', 'multa_gerada')
+  }
 }

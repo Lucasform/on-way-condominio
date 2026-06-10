@@ -377,7 +377,24 @@ export default function MultaDetalhe() {
         )}
       </div>
 
-      {canChange && transitions.length > 0 && (
+      {canChange && multa.status === 'contestada' && (
+        <div className="mt-6 rounded-lg border border-amber-500/30 bg-amber-500/5 p-5">
+          <div className="text-sm font-medium text-amber-200 mb-1">Decidir a contestação</div>
+          <p className="text-xs text-slate-400 mb-3">
+            O morador contestou esta multa. Responda na conversa abaixo e registre a decisão.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => handleChange('aplicada')} disabled={changing}>
+              Manter decisão (segue aplicada)
+            </Button>
+            <Button variant="secondary" onClick={() => handleChange('cancelada')} disabled={changing}>
+              Acatar contestação (cancelar multa)
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {canChange && multa.status !== 'contestada' && transitions.length > 0 && (
         <div className="mt-6 rounded-lg border border-slate-800 bg-slate-900/40 p-5">
           <div className="text-sm font-medium text-slate-300 mb-3">Mudar status para:</div>
           <div className="flex flex-wrap gap-2">
