@@ -22,6 +22,7 @@ import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import { DetailSkeleton } from '../components/ui/Skeleton'
 import DeleteButton from '../components/ui/DeleteButton'
 import AIAnalysisPanel from '../components/AIAnalysisPanel'
 
@@ -210,7 +211,7 @@ export default function OcorrenciaDetalhe() {
   }
 
   if (loading) {
-    return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando...</div>
+    return <DetailSkeleton />
   }
 
   if (error || !ocorrencia) {

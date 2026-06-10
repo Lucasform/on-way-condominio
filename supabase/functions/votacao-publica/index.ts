@@ -118,11 +118,12 @@ Deno.serve(async (req: Request) => {
         return jsonResponse({ error: 'Código de acesso incorreto.' }, 400)
       }
 
-      // Rate limit por IP (anti-abuso de criação de conta)
+      // Rate limit por IP (anti-abuso de criação de conta). Limite alto pra não
+      // travar assembleia presencial (muitos cadastros pelo mesmo Wi-Fi do prédio).
       const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
         ?? req.headers.get('cf-connecting-ip') ?? 'unknown'
       const { data: allowed } = await admin.rpc('check_rate_limit', {
-        p_bucket: 'votacao_signup', p_identifier: ip, p_limit: 10, p_window_secs: 600,
+        p_bucket: 'votacao_signup', p_identifier: ip, p_limit: 80, p_window_secs: 600,
       })
       if (allowed === false) return jsonResponse({ error: 'Muitas tentativas. Aguarde alguns minutos.' }, 429)
 

@@ -22,6 +22,7 @@ import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import { DetailSkeleton } from '../components/ui/Skeleton'
 import ContestacaoThread from '../components/ContestacaoThread'
 import DeleteButton from '../components/ui/DeleteButton'
 import { gerarPdfNotificacao } from '../lib/multaPdf'
@@ -158,7 +159,7 @@ export default function MultaDetalhe() {
     }
   }
 
-  if (loading) return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando...</div>
+  if (loading) return <DetailSkeleton />
 
   if (error || !multa) {
     return (
