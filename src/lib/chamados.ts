@@ -60,6 +60,11 @@ export async function updateChamadoStatus(
   if (error) throw error
 }
 
+export async function assignChamado(id: string, user_id: string | null): Promise<void> {
+  const { error } = await supabase.from('chamados').update({ atribuido_para: user_id }).eq('id', id)
+  if (error) throw error
+}
+
 export async function deleteChamado(id: string): Promise<void> {
   const { error } = await supabase.from('chamados').delete().eq('id', id)
   if (error) throw error

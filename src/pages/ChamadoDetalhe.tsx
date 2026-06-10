@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { deleteChamado, getChamado, updateChamadoStatus } from '../lib/chamados'
+import { assignChamado, deleteChamado, getChamado, updateChamadoStatus } from '../lib/chamados'
+import { listStaffCondominio } from '../lib/chat'
 import { getUnidade } from '../lib/unidades'
 import type { Chamado, StatusChamado } from '../types/chamado'
 import type { Unidade } from '../types/unidade'
@@ -12,7 +13,7 @@ import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
 import { DetailSkeleton } from '../components/ui/Skeleton'
-import { Field, TextArea } from '../components/ui/Input'
+import { Field, TextArea, Select } from '../components/ui/Input'
 
 const STATUS_LABEL: Record<StatusChamado, string> = {
   aberto: 'Aberto',
@@ -57,6 +58,7 @@ export default function ChamadoDetalhe() {
   const [changing, setChanging] = useState(false)
   const [resolNota, setResolNota] = useState('')
   const [showResolForm, setShowResolForm] = useState(false)
+  const [staff, setStaff] = useState<Array<{ id: string; nome_exibicao: string | null; role: string }>>([])
 
   async function load() {
     if (!id) return
@@ -72,6 +74,9 @@ export default function ChamadoDetalhe() {
       if (c.unidade_id) {
         const u = await getUnidade(c.unidade_id)
         setUnidade(u)
+      }
+      if (canManage && c.condominio_id) {
+        listStaffCondominio(c.condominio_id).then(setStaff).catch(() => {})
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar.')
@@ -120,6 +125,19 @@ export default function ChamadoDetalhe() {
       navigate('/chamados')
     } catch (e) {
       toast.error('Erro ao excluir', e instanceof Error ? e.message : '')
+      setChanging(false)
+    }
+  }
+
+  async function handleAssign(user_id: string | null) {
+    if (!chamado) return
+    setChanging(true)
+    try {
+      await assignChamado(chamado.id, user_id)
+      await load()
+    } catch (e) {
+      toast.error('Erro', e instanceof Error ? e.message : '')
+    } finally {
       setChanging(false)
     }
   }
@@ -198,6 +216,22 @@ export default function ChamadoDetalhe() {
                 em {new Date(chamado.resolvido_em).toLocaleString('pt-BR')}
               </p>
             )}
+          </div>
+        )}
+
+        {canManage && (
+          <div className="border-t border-slate-800 pt-4 mt-4">
+            <div className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Responsável</div>
+            <Select
+              value={chamado.atribuido_para ?? ''}
+              onChange={(e) => handleAssign(e.target.value || null)}
+              disabled={changing}
+            >
+              <option value="">Ninguém atribuído</option>
+              {staff.map((s) => (
+                <option key={s.id} value={s.id}>{s.nome_exibicao ?? 'Staff'}</option>
+              ))}
+            </Select>
           </div>
         )}
 

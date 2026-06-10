@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listChamados, updateChamadoStatus } from '../lib/chamados'
 import { listCondominios } from '../lib/condominios'
-import type { Chamado, StatusChamado, PrioridadeChamado } from '../types/chamado'
+import { supabase } from '../lib/supabase'
+import type { Chamado, StatusChamado, PrioridadeChamado, CategoriaChamado } from '../types/chamado'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
 import { useConfirm } from '../components/ui/ConfirmProvider'
@@ -55,6 +56,17 @@ const PRIO_LABEL: Record<PrioridadeChamado, string> = {
   urgente: '🚨 urgente',
 }
 
+const CATEGORIAS: CategoriaChamado[] = [
+  'eletrica', 'hidraulica', 'jardim', 'limpeza', 'seguranca', 'elevador', 'estrutural', 'outro',
+]
+
+// Status em que o chamado conta como "aberto" pra fins de SLA.
+const STATUS_ABERTOS: StatusChamado[] = ['aberto', 'em_andamento', 'aguardando']
+
+function diasAberto(c: Chamado): number {
+  return Math.floor((Date.now() - new Date(c.created_at).getTime()) / (24 * 60 * 60 * 1000))
+}
+
 export default function Chamados() {
   const { perfil } = useAuth()
   const confirm = useConfirm()
@@ -73,6 +85,11 @@ export default function Chamados() {
   const dataAteRef = useRef<HTMLInputElement>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkBusy, setBulkBusy] = useState(false)
+  const [prioFilter, setPrioFilter] = useState<'' | PrioridadeChamado>('')
+  const [catFilter, setCatFilter] = useState<'' | CategoriaChamado>('')
+  const [busca, setBusca] = useState('')
+  const [soMeus, setSoMeus] = useState(false)
+  const [assigneeNomes, setAssigneeNomes] = useState<Record<string, string>>({})
 
   async function reload() {
     if (isAdmin && !scopeId) return
@@ -110,17 +127,40 @@ export default function Chamados() {
   const podeAbrir = perfil?.role !== 'morador'
   const podeBulk = perfil?.role !== 'morador'
 
+  // Resolve nomes dos responsáveis presentes nas linhas
+  useEffect(() => {
+    const ids = Array.from(new Set(rows.map((r) => r.atribuido_para).filter((id): id is string => !!id && !assigneeNomes[id])))
+    if (ids.length === 0) return
+    supabase
+      .from('perfis')
+      .select('id, nome_exibicao')
+      .in('id', ids)
+      .then(({ data }) => {
+        if (!data) return
+        setAssigneeNomes((prev) => {
+          const novo = { ...prev }
+          for (const p of data) novo[p.id] = p.nome_exibicao ?? 'Staff'
+          return novo
+        })
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows])
+
   const filteredRows = useMemo(() => {
     const de = dataDe ? new Date(dataDe + 'T00:00:00').getTime() : null
     const ate = dataAte ? new Date(dataAte + 'T23:59:59').getTime() : null
-    if (de === null && ate === null) return rows
+    const q = busca.trim().toLowerCase()
     return rows.filter((r) => {
       const t = new Date(r.created_at).getTime()
       if (de !== null && t < de) return false
       if (ate !== null && t > ate) return false
+      if (prioFilter && r.prioridade !== prioFilter) return false
+      if (catFilter && r.categoria !== catFilter) return false
+      if (soMeus && r.atribuido_para !== perfil?.id) return false
+      if (q && !(r.titulo.toLowerCase().includes(q) || r.descricao.toLowerCase().includes(q))) return false
       return true
     })
-  }, [rows, dataDe, dataAte])
+  }, [rows, dataDe, dataAte, prioFilter, catFilter, soMeus, busca, perfil?.id])
 
   const arquivaveis = filteredRows.filter((c) => c.status !== 'cancelado' && c.status !== 'finalizado').map((c) => c.id)
   const todosSelecionados = arquivaveis.length > 0 && arquivaveis.every((id) => selected.has(id))
@@ -179,6 +219,41 @@ export default function Chamados() {
             ))}
           </Select>
         </div>
+        <div className="min-w-[150px]">
+          <label className="block text-xs font-medium text-slate-400 mb-1">Prioridade</label>
+          <Select value={prioFilter} onChange={(e) => setPrioFilter(e.target.value as '' | PrioridadeChamado)}>
+            <option value="">Todas</option>
+            <option value="urgente">🚨 Urgente</option>
+            <option value="alta">Alta</option>
+            <option value="media">Média</option>
+            <option value="baixa">Baixa</option>
+          </Select>
+        </div>
+        <div className="min-w-[150px]">
+          <label className="block text-xs font-medium text-slate-400 mb-1">Categoria</label>
+          <Select value={catFilter} onChange={(e) => setCatFilter(e.target.value as '' | CategoriaChamado)}>
+            <option value="">Todas</option>
+            {CATEGORIAS.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </Select>
+        </div>
+        <div className="min-w-[200px] flex-1">
+          <label className="block text-xs font-medium text-slate-400 mb-1">Buscar</label>
+          <input
+            type="text"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Título ou descrição..."
+            className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:border-emerald-500 focus:outline-none"
+          />
+        </div>
+        {podeAbrir && (
+          <label className="flex items-center gap-2 text-sm text-slate-300 pb-2 cursor-pointer">
+            <input type="checkbox" checked={soMeus} onChange={(e) => setSoMeus(e.target.checked)} />
+            Só os meus
+          </label>
+        )}
         <div>
           <label className="block text-xs font-medium text-slate-400 mb-1">De</label>
           <input ref={dataDeRef} type="date" value={dataDe} onChange={(e) => setDataDe(e.target.value)} onClick={() => dataDeRef.current?.showPicker?.()} className="px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm" />
@@ -250,8 +325,16 @@ export default function Chamados() {
                     <span className="text-xs text-slate-500">· {c.categoria}</span>
                   </div>
                   <p className="text-sm text-slate-300 mt-1 line-clamp-2">{c.descricao}</p>
-                  <div className="text-xs text-slate-500 mt-1">
-                    {new Date(c.created_at).toLocaleString('pt-BR')}
+                  <div className="text-xs text-slate-500 mt-1 flex flex-wrap gap-x-2 items-center">
+                    <span>{new Date(c.created_at).toLocaleString('pt-BR')}</span>
+                    {c.atribuido_para && (
+                      <span className="text-violet-300">👤 {assigneeNomes[c.atribuido_para] ?? '...'}</span>
+                    )}
+                    {STATUS_ABERTOS.includes(c.status) && diasAberto(c) >= 3 && (
+                      <span className={diasAberto(c) >= 7 ? 'text-red-300 font-medium' : 'text-amber-300'}>
+                        ⏱ aberto há {diasAberto(c)}d
+                      </span>
+                    )}
                   </div>
                 </div>
                 <span className={`shrink-0 px-2 py-0.5 rounded text-xs border ${STATUS_CLASS[c.status]}`}>
