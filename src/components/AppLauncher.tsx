@@ -21,12 +21,16 @@ export default function AppLauncher({ className = '', flat = false, max }: AppLa
   if (!effectiveRole) return null
   const items = menuFor(effectiveRole)
 
-  // Achata grupos em seções
+  // Achata grupos em seções. Remove "Início" (/) — a home já é o launcher.
   const secoes: { titulo: string | null; leafs: MenuLeaf[] }[] = []
   const topo: MenuLeaf[] = []
   for (const item of items) {
-    if (isGroup(item)) secoes.push({ titulo: item.label, leafs: item.children })
-    else topo.push(item)
+    if (isGroup(item)) {
+      const leafs = item.children.filter((c) => c.to !== '/')
+      if (leafs.length) secoes.push({ titulo: item.label, leafs })
+    } else if (item.to !== '/') {
+      topo.push(item)
+    }
   }
   if (topo.length) secoes.unshift({ titulo: null, leafs: topo })
 

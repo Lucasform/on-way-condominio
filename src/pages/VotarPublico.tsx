@@ -30,6 +30,9 @@ export default function VotarPublico() {
   const [unidadeId, setUnidadeId] = useState('')
   const [nome, setNome] = useState('')
   const [codigo, setCodigo] = useState('')
+  const [criarConta, setCriarConta] = useState(false)
+  const [email, setEmail] = useState('')
+  const [senha, setSenha] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [feito, setFeito] = useState(false)
   const [erroVoto, setErroVoto] = useState<string | null>(null)
@@ -63,21 +66,42 @@ export default function VotarPublico() {
     if (!unidadeId) { setErroVoto('Selecione sua unidade.'); return }
     if (!nome.trim()) { setErroVoto('Informe seu nome.'); return }
     if (info?.votacao.requer_codigo && !codigo.trim()) { setErroVoto('Informe o código de acesso.'); return }
+    if (criarConta) {
+      if (!email.trim()) { setErroVoto('Informe seu e-mail.'); return }
+      if (senha.length < 8) { setErroVoto('A senha precisa ter no mínimo 8 caracteres.'); return }
+    }
     setEnviando(true)
     setErroVoto(null)
     try {
       const { data, error } = await supabase.functions.invoke('votacao-publica', {
-        body: {
-          action: 'votar',
-          votacao_id: id,
-          opcao_id: opcaoId,
-          unidade_id: unidadeId,
-          eleitor_nome: nome.trim(),
-          codigo: codigo.trim(),
-        },
+        body: criarConta
+          ? {
+              action: 'cadastrar_votar',
+              votacao_id: id,
+              opcao_id: opcaoId,
+              unidade_id: unidadeId,
+              nome: nome.trim(),
+              email: email.trim(),
+              senha,
+              codigo: codigo.trim(),
+            }
+          : {
+              action: 'votar',
+              votacao_id: id,
+              opcao_id: opcaoId,
+              unidade_id: unidadeId,
+              eleitor_nome: nome.trim(),
+              codigo: codigo.trim(),
+            },
       })
       if (error) throw error
       if (data?.error) throw new Error(data.error)
+      // Cadastro: já loga e leva pro app.
+      if (criarConta && data?.session) {
+        await supabase.auth.setSession(data.session)
+        navigate(`/votacoes/${id}`, { replace: true })
+        return
+      }
       setFeito(true)
     } catch (e) {
       setErroVoto(e instanceof Error ? e.message : 'Erro ao registrar o voto.')
@@ -172,6 +196,49 @@ export default function VotarPublico() {
                   </div>
                 )}
 
+                <div className="flex gap-2 rounded-lg bg-slate-800/40 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setCriarConta(false)}
+                    className={`flex-1 px-3 py-2 rounded-md text-xs font-medium transition ${!criarConta ? 'bg-slate-700 text-white' : 'text-slate-400'}`}
+                  >
+                    Votar sem conta
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCriarConta(true)}
+                    className={`flex-1 px-3 py-2 rounded-md text-xs font-medium transition ${criarConta ? 'bg-slate-700 text-white' : 'text-slate-400'}`}
+                  >
+                    Criar conta e votar
+                  </button>
+                </div>
+
+                {criarConta && (
+                  <div className="space-y-3 rounded-lg border border-slate-800 p-3">
+                    <p className="text-[11px] text-slate-400">Cria sua conta de morador já vinculada à unidade e abre o app.</p>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 mb-1">E-mail</label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="seu@email.com"
+                        className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-400 mb-1">Senha (mín. 8)</label>
+                      <input
+                        type="password"
+                        value={senha}
+                        onChange={(e) => setSenha(e.target.value)}
+                        placeholder="crie uma senha"
+                        className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {erroVoto && (
                   <div className="rounded-md border border-red-500/30 bg-red-500/10 text-red-200 px-3 py-2 text-sm">{erroVoto}</div>
                 )}
@@ -181,14 +248,12 @@ export default function VotarPublico() {
                   disabled={enviando}
                   className="w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition disabled:opacity-50"
                 >
-                  {enviando ? 'Registrando...' : 'Confirmar voto'}
+                  {enviando ? 'Registrando...' : criarConta ? 'Criar conta e votar' : 'Confirmar voto'}
                 </button>
 
                 <p className="text-[11px] text-slate-500 text-center">
                   1 voto por unidade. Já tem conta?{' '}
-                  <Link to="/login" className="text-emerald-400 hover:underline">entre pelo app</Link>
-                  {' '}ou{' '}
-                  <Link to="/signup" className="text-emerald-400 hover:underline">crie a sua</Link>.
+                  <Link to="/login" className="text-emerald-400 hover:underline">entre pelo app</Link>.
                 </p>
               </div>
             )}
