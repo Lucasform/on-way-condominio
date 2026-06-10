@@ -258,6 +258,21 @@ export async function unreadCountsByConversa(
 }
 
 /**
+ * Conta quantas conversas têm pelo menos uma mensagem não-lida de outro autor,
+ * pro usuário atual. Usado no badge da navegação. Respeita RLS.
+ */
+export async function countConversasNaoLidas(current_user_id: string): Promise<number> {
+  const { data, error } = await supabase
+    .from('mensagens')
+    .select('conversa_id')
+    .is('lida_em', null)
+    .neq('autor_id', current_user_id)
+  if (error) throw error
+  const conversas = new Set((data ?? []).map((m) => (m as { conversa_id: string }).conversa_id))
+  return conversas.size
+}
+
+/**
  * Lista usuários staff de um condomínio (pra select de assignee).
  */
 export async function listStaffCondominio(condominio_id: string): Promise<Array<{ id: string; nome_exibicao: string | null; role: string }>> {

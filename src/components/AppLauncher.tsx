@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
 import { menuFor, isGroup, iconFor, iconColorFor, type MenuLeaf } from '../lib/nav'
+import { useNavBadges } from '../hooks/useNavBadges'
 
 interface AppLauncherProps {
   /** Classe extra no container (ex.: `md:hidden` pra só mobile). */
@@ -56,24 +57,35 @@ export default function AppLauncher({ className = '', flat = false, max }: AppLa
 }
 
 function Grade({ leafs }: { leafs: MenuLeaf[] }) {
+  const badges = useNavBadges()
   return (
     <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-x-3 gap-y-5">
-      {leafs.map((leaf) => (
-        <Link
-          key={leaf.to}
-          to={leaf.to}
-          className="group flex flex-col items-center gap-1.5 text-center"
-        >
-          <span
-            className={`w-16 h-16 rounded-[1.25rem] flex items-center justify-center text-3xl text-white
-              shadow-lg shadow-black/20 ring-1 ring-white/10 transition-transform duration-150
-              group-hover:scale-105 group-active:scale-95 ${iconColorFor(leaf.to)}`}
+      {leafs.map((leaf) => {
+        const n = badges[leaf.to] ?? 0
+        return (
+          <Link
+            key={leaf.to}
+            to={leaf.to}
+            className="group flex flex-col items-center gap-1.5 text-center"
           >
-            {iconFor(leaf.to)}
-          </span>
-          <span className="text-[11px] text-slate-300 leading-tight line-clamp-2">{leaf.label}</span>
-        </Link>
-      ))}
+            <span className="relative">
+              <span
+                className={`w-16 h-16 rounded-[1.25rem] flex items-center justify-center text-3xl text-white
+                  shadow-lg shadow-black/20 ring-1 ring-white/10 transition-transform duration-150
+                  group-hover:scale-105 group-active:scale-95 ${iconColorFor(leaf.to)}`}
+              >
+                {iconFor(leaf.to)}
+              </span>
+              {n > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 rounded-full bg-emerald-500 text-white text-[11px] font-bold flex items-center justify-center ring-2 ring-slate-950">
+                  {n > 9 ? '9+' : n}
+                </span>
+              )}
+            </span>
+            <span className="text-[11px] text-slate-300 leading-tight line-clamp-2">{leaf.label}</span>
+          </Link>
+        )
+      })}
     </div>
   )
 }
