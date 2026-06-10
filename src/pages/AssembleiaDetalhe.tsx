@@ -14,6 +14,7 @@ import {
 import type { AssembleiaPresenca } from '../types/assembleia'
 import { listVotacoes } from '../lib/votacoes'
 import { supabase } from '../lib/supabase'
+import { resolveNomesUsuarios } from '../lib/nomes'
 import type { Assembleia, StatusAssembleia, TipoAssembleia } from '../types/assembleia'
 import type { Votacao } from '../types/votacao'
 import { useAuth } from '../components/AuthProvider'
@@ -57,6 +58,7 @@ export default function AssembleiaDetalhe() {
   const [assembleia, setAssembleia] = useState<Assembleia | null>(null)
   const [votacoes, setVotacoes] = useState<Votacao[]>([])
   const [presencas, setPresencas] = useState<AssembleiaPresenca[]>([])
+  const [nomesPresenca, setNomesPresenca] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -82,6 +84,9 @@ export default function AssembleiaDetalhe() {
       ])
       setVotacoes(vs)
       setPresencas(ps)
+      resolveNomesUsuarios(ps.map((p) => p.user_id))
+        .then(setNomesPresenca)
+        .catch(() => {})
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar.')
     } finally {
@@ -252,6 +257,7 @@ export default function AssembleiaDetalhe() {
       {/* Presenças */}
       <PresencasCard
         presencas={presencas}
+        nomes={nomesPresenca}
         userId={user?.id ?? null}
         canManage={canEdit}
         onToggle={handleTogglePresenca}
@@ -353,9 +359,10 @@ export default function AssembleiaDetalhe() {
 }
 
 function PresencasCard({
-  presencas, userId, canManage, onToggle, onCheckIn, busy,
+  presencas, nomes, userId, canManage, onToggle, onCheckIn, busy,
 }: {
   presencas: AssembleiaPresenca[]
+  nomes: Record<string, string>
   userId: string | null
   canManage: boolean
   onToggle: () => void
@@ -398,7 +405,7 @@ function PresencasCard({
           <ul className="space-y-1.5">
             {presencas.map((p) => (
               <li key={p.id} className="flex items-center justify-between text-sm gap-2">
-                <span className="text-slate-300 font-mono text-xs">{p.user_id.slice(0, 8)}…</span>
+                <span className="text-slate-200 text-sm">{nomes[p.user_id] ?? 'Morador'}</span>
                 {p.presente_em ? (
                   <span className="text-emerald-400 text-xs">
                     ✓ presente em {new Date(p.presente_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}

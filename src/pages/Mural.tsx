@@ -19,6 +19,7 @@ import {
   votarEnquete,
 } from '../lib/mural'
 import { listCondominios } from '../lib/condominios'
+import { resolveNomesUsuarios } from '../lib/nomes'
 import type { Publicacao, Reacao, ComentarioPublicacao, PublicacaoVoto } from '../types/mural'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
@@ -46,6 +47,7 @@ export default function Mural() {
   const [lidasIds, setLidasIds] = useState<Set<string>>(new Set())
   const [expandidas, setExpandidas] = useState<Set<string>>(new Set())
   const [novoComent, setNovoComent] = useState<Record<string, string>>({})
+  const [nomesAutores, setNomesAutores] = useState<Record<string, string>>({})
   const [thumbs, setThumbs] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -98,6 +100,9 @@ export default function Mural() {
         cmap.set(c.publicacao_id, list)
       }
       setComentsByPub(cmap)
+      resolveNomesUsuarios(coments.map((c) => c.user_id))
+        .then((m) => setNomesAutores((prev) => ({ ...prev, ...m })))
+        .catch(() => {})
       const vmap = new Map<string, PublicacaoVoto[]>()
       for (const v of votos) {
         const list = vmap.get(v.publicacao_id) ?? []
@@ -538,7 +543,7 @@ export default function Mural() {
                           <div key={c.id} className="rounded-md bg-slate-800/40 px-3 py-2 text-sm">
                             <div className="flex items-baseline justify-between gap-2">
                               <span className="text-xs text-slate-500">
-                                {c.user_id === user?.id ? 'você' : `usuário ${c.user_id.slice(0, 6)}…`}
+                                {c.user_id === user?.id ? 'você' : (nomesAutores[c.user_id] ?? 'Morador')}
                                 {' · '}
                                 {new Date(c.created_at).toLocaleString('pt-BR', {
                                   day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',

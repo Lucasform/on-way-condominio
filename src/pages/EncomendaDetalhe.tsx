@@ -341,9 +341,6 @@ export default function EncomendaDetalhe() {
         </div>
       )}
 
-      <div className="mt-8 text-xs text-slate-600">
-        ID: <span className="font-mono">{encomenda.id}</span>
-      </div>
     </div>
   )
 }

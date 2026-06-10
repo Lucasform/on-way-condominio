@@ -51,9 +51,6 @@ export default function Home() {
         {perfil && (
           <div className="mt-1 text-xs text-slate-500 dark:text-slate-500">
             Perfil: <span className="text-slate-700 dark:text-slate-300 font-medium">{roleLabel(perfil.role)}</span>
-            {perfil.condominio_id && (
-              <span className="ml-2 opacity-60">· condomínio {perfil.condominio_id.slice(0, 8)}…</span>
-            )}
           </div>
         )}
       </section>
