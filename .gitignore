@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 supabase/.temp/
+
+# Credenciais de demo/acesso (não commitar)
+CREDENCIAIS-ACESSO.txt
+scripts/_tmp-*.mjs
