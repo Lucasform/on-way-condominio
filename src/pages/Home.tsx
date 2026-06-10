@@ -42,10 +42,10 @@ export default function Home() {
         Bem-vindo, {perfil?.nome_exibicao ?? user?.email}.
       </p>
 
-      {/* Launcher de apps — só mobile (no desktop a sidebar cobre) */}
-      <AppLauncher className="md:hidden mt-6" />
+      {/* Launcher de apps — navegação principal (sem sidebar) */}
+      <AppLauncher className="mt-6" />
 
-      <section className="mt-8 max-w-md rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-5 hidden md:block">
+      <section className="mt-8 max-w-md rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 p-5">
         <div className="text-sm text-slate-500 dark:text-slate-400">Logado como</div>
         <div className="mt-1 text-base font-medium text-slate-900 dark:text-slate-100">{user?.email}</div>
         {perfil && (
@@ -138,8 +138,8 @@ function MoradorHome() {
       </p>
       <OnboardingChecklist />
 
-      {/* Launcher de apps — só mobile */}
-      <AppLauncher className="md:hidden mt-6" />
+      {/* Launcher de apps — navegação principal (sem sidebar) */}
+      <AppLauncher className="mt-6" />
 
       {loading ? (
         <div className="mt-8 text-slate-400">Carregando...</div>

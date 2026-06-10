@@ -57,7 +57,7 @@ export default function AppLauncher({ className = '', flat = false, max }: AppLa
 
 function Grade({ leafs }: { leafs: MenuLeaf[] }) {
   return (
-    <div className="grid grid-cols-4 sm:grid-cols-6 gap-x-2 gap-y-5">
+    <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-x-3 gap-y-5">
       {leafs.map((leaf) => (
         <Link
           key={leaf.to}
@@ -65,8 +65,8 @@ function Grade({ leafs }: { leafs: MenuLeaf[] }) {
           className="group flex flex-col items-center gap-1.5 text-center"
         >
           <span
-            className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-3xl
-              border border-white/5 shadow-sm transition-transform duration-150
+            className={`w-16 h-16 rounded-[1.25rem] flex items-center justify-center text-3xl text-white
+              shadow-lg shadow-black/20 ring-1 ring-white/10 transition-transform duration-150
               group-hover:scale-105 group-active:scale-95 ${iconColorFor(leaf.to)}`}
           >
             {iconFor(leaf.to)}

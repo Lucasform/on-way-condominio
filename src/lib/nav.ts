@@ -420,44 +420,44 @@ export function iconFor(to: string): string {
   return NAV_ICON[to] ?? '•'
 }
 
-// Cor do "chip" do ícone no launcher (classes completas — Tailwind precisa delas
-// estáticas pra não fazer purge). Fallback slate.
+// Fundo do ícone no launcher — gradiente sólido, estilo ícone de app (classes
+// completas porque o Tailwind faz purge das dinâmicas). Fallback slate.
 export const NAV_COLOR: Record<string, string> = {
-  '/': 'bg-brand-500/15 text-brand-300',
-  '/dashboard': 'bg-sky-500/15 text-sky-300',
-  '/painel': 'bg-sky-500/15 text-sky-300',
-  '/meu-perfil': 'bg-brand-500/15 text-brand-300',
-  '/ajuda': 'bg-slate-500/15 text-slate-300',
-  '/condominios': 'bg-blue-500/15 text-blue-300',
-  '/unidades': 'bg-slate-500/15 text-slate-300',
-  '/pessoas': 'bg-indigo-500/15 text-indigo-300',
-  '/veiculos': 'bg-cyan-500/15 text-cyan-300',
-  '/pets': 'bg-orange-500/15 text-orange-300',
-  '/regimento': 'bg-amber-500/15 text-amber-300',
-  '/ocorrencias': 'bg-amber-500/15 text-amber-300',
-  '/notificacoes': 'bg-indigo-500/15 text-indigo-300',
-  '/multas': 'bg-red-500/15 text-red-300',
-  '/chamados': 'bg-orange-500/15 text-orange-300',
-  '/encomendas': 'bg-sky-500/15 text-sky-300',
-  '/acessos': 'bg-teal-500/15 text-teal-300',
-  '/servicos': 'bg-lime-500/15 text-lime-300',
-  '/mural': 'bg-pink-500/15 text-pink-300',
-  '/calendario': 'bg-violet-500/15 text-violet-300',
-  '/chat': 'bg-emerald-500/15 text-emerald-300',
-  '/comunicados': 'bg-cyan-500/15 text-cyan-300',
-  '/classificados': 'bg-fuchsia-500/15 text-fuchsia-300',
-  '/whatsapp': 'bg-green-500/15 text-green-300',
-  '/emails-log': 'bg-blue-500/15 text-blue-300',
-  '/assembleias': 'bg-purple-500/15 text-purple-300',
-  '/votacoes': 'bg-amber-500/15 text-amber-300',
-  '/relatorios': 'bg-sky-500/15 text-sky-300',
-  '/templates': 'bg-slate-500/15 text-slate-300',
-  '/auditoria': 'bg-rose-500/15 text-rose-300',
-  '/mais': 'bg-slate-500/15 text-slate-300',
+  '/': 'bg-gradient-to-br from-brand-500 to-brand-600',
+  '/dashboard': 'bg-gradient-to-br from-sky-500 to-sky-600',
+  '/painel': 'bg-gradient-to-br from-sky-500 to-sky-600',
+  '/meu-perfil': 'bg-gradient-to-br from-brand-500 to-brand-600',
+  '/ajuda': 'bg-gradient-to-br from-slate-500 to-slate-600',
+  '/condominios': 'bg-gradient-to-br from-blue-500 to-blue-600',
+  '/unidades': 'bg-gradient-to-br from-slate-500 to-slate-600',
+  '/pessoas': 'bg-gradient-to-br from-indigo-500 to-indigo-600',
+  '/veiculos': 'bg-gradient-to-br from-cyan-500 to-cyan-600',
+  '/pets': 'bg-gradient-to-br from-orange-500 to-orange-600',
+  '/regimento': 'bg-gradient-to-br from-amber-500 to-amber-600',
+  '/ocorrencias': 'bg-gradient-to-br from-amber-500 to-amber-600',
+  '/notificacoes': 'bg-gradient-to-br from-indigo-500 to-indigo-600',
+  '/multas': 'bg-gradient-to-br from-red-500 to-red-600',
+  '/chamados': 'bg-gradient-to-br from-orange-500 to-orange-600',
+  '/encomendas': 'bg-gradient-to-br from-sky-500 to-sky-600',
+  '/acessos': 'bg-gradient-to-br from-teal-500 to-teal-600',
+  '/servicos': 'bg-gradient-to-br from-lime-500 to-lime-600',
+  '/mural': 'bg-gradient-to-br from-pink-500 to-pink-600',
+  '/calendario': 'bg-gradient-to-br from-violet-500 to-violet-600',
+  '/chat': 'bg-gradient-to-br from-emerald-500 to-emerald-600',
+  '/comunicados': 'bg-gradient-to-br from-cyan-500 to-cyan-600',
+  '/classificados': 'bg-gradient-to-br from-fuchsia-500 to-fuchsia-600',
+  '/whatsapp': 'bg-gradient-to-br from-green-500 to-green-600',
+  '/emails-log': 'bg-gradient-to-br from-blue-500 to-blue-600',
+  '/assembleias': 'bg-gradient-to-br from-purple-500 to-purple-600',
+  '/votacoes': 'bg-gradient-to-br from-amber-500 to-amber-600',
+  '/relatorios': 'bg-gradient-to-br from-sky-500 to-sky-600',
+  '/templates': 'bg-gradient-to-br from-slate-500 to-slate-600',
+  '/auditoria': 'bg-gradient-to-br from-rose-500 to-rose-600',
+  '/mais': 'bg-gradient-to-br from-slate-500 to-slate-600',
 }
 
 export function iconColorFor(to: string): string {
-  return NAV_COLOR[to] ?? 'bg-slate-500/15 text-slate-300'
+  return NAV_COLOR[to] ?? 'bg-gradient-to-br from-slate-500 to-slate-600'
 }
 
 // ============================================================
