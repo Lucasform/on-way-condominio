@@ -1,0 +1,16 @@
+{
+  "name": "OnWay Condomínio",
+  "short_name": "OnWay",
+  "description": "Gestão do seu condomínio: avisos, multas, encomendas e atendimento.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "pt-BR",
+  "background_color": "#020617",
+  "theme_color": "#4338CA",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}
