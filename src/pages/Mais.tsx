@@ -4,7 +4,6 @@ import { roleLabel } from '../lib/nav'
 import { signOut } from '../lib/auth'
 import AppLauncher from '../components/AppLauncher'
 import CondominioSwitcher from '../components/CondominioSwitcher'
-import ThemeToggle from '../components/ThemeToggle'
 
 /**
  * Hub do mobile: launcher de apps (grade de ícones) + conta (perfil, troca de
@@ -53,8 +52,7 @@ export default function Mais() {
       <AppLauncher />
 
       {/* Conta */}
-      <div className="mt-2 border-t border-slate-800 pt-5 flex items-center justify-between gap-3">
-        <ThemeToggle />
+      <div className="mt-2 border-t border-slate-800 pt-5 flex justify-end">
         <button
           onClick={handleSignOut}
           className="px-4 py-2 rounded-lg text-sm font-medium text-red-300 bg-red-500/10 border border-red-500/30 hover:bg-red-500/20 transition"
