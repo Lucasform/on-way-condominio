@@ -13,6 +13,7 @@ export interface Encomenda {
   local_armazenamento: string | null
   foto_url: string | null
   observacoes: string | null
+  codigo_retirada: string | null
   recebido_por: string
   entregue_em: string | null
   entregue_para: string | null

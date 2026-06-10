@@ -28,6 +28,11 @@ export async function getEncomenda(id: string): Promise<Encomenda | null> {
   return data as Encomenda | null
 }
 
+/** Código de 4 dígitos pra confirmar retirada na portaria. */
+function gerarCodigoRetirada(): string {
+  return String(Math.floor(1000 + Math.random() * 9000))
+}
+
 export async function createEncomenda(input: EncomendaInput, recebido_por: string): Promise<Encomenda> {
   const { data, error } = await supabase
     .from('encomendas')
@@ -42,6 +47,7 @@ export async function createEncomenda(input: EncomendaInput, recebido_por: strin
       local_armazenamento: trimOrNull(input.local_armazenamento),
       foto_url: trimOrNull(input.foto_url),
       observacoes: trimOrNull(input.observacoes),
+      codigo_retirada: gerarCodigoRetirada(),
       recebido_por,
     })
     .select('*')
@@ -94,6 +100,7 @@ async function abrirChatEncomenda(encomenda: Encomenda, staff_user_id: string): 
   if (encomenda.descricao) partes.push(`Descrição: ${encomenda.descricao}`)
   if (encomenda.transportadora) partes.push(`Transportadora: ${encomenda.transportadora}`)
   if (encomenda.local_armazenamento) partes.push(`Local: ${encomenda.local_armazenamento}`)
+  if (encomenda.codigo_retirada) partes.push(`🔑 Código de retirada: ${encomenda.codigo_retirada} (informe na portaria)`)
   const mensagem = partes.join('\n')
 
   for (const m of moradores) {
@@ -143,6 +150,7 @@ async function notifyMoradorEncomenda(
           condominio_nome: condo?.nome ?? undefined,
           encomenda_tipo: encomenda.tipo,
           descricao: encomenda.descricao ?? undefined,
+          codigo_retirada: encomenda.codigo_retirada ?? undefined,
           link: `${window.location.origin}/encomendas/${encomenda.id}`,
         },
       }).catch((e) => console.warn('[encomenda] email falhou:', e.message))
@@ -153,10 +161,11 @@ async function notifyMoradorEncomenda(
     const userIds = moradores.map((p) => p.user_id).filter((u): u is string => !!u)
     if (userIds.length > 0) {
       const titulo = encomenda.tipo === 'comida' ? '🍔 Sua comida chegou' : '📦 Encomenda na portaria'
+      const corpoBase = encomenda.descricao ?? 'Retire na portaria.'
       sendPush({
         user_ids: userIds,
         titulo,
-        corpo: encomenda.descricao ?? 'Retire na portaria.',
+        corpo: encomenda.codigo_retirada ? `${corpoBase} · Código: ${encomenda.codigo_retirada}` : corpoBase,
         link: `/encomendas/${encomenda.id}`,
       }).catch((e) => console.warn('[encomenda] push falhou:', e.message))
     }
@@ -172,7 +181,8 @@ async function notifyMoradorEncomenda(
       texto:
         `*OnWay Condomínio*\n\n${tituloWa}.\n\n` +
         (encomenda.descricao ? `${encomenda.descricao}\n\n` : '') +
-        `Retire na portaria. Detalhes no app.`,
+        (encomenda.codigo_retirada ? `🔑 *Código de retirada:* ${encomenda.codigo_retirada}\nInforme na portaria pra retirar.\n\n` : '') +
+        `Detalhes no app.`,
     }).catch((e) => console.warn('[encomenda] whatsapp falhou:', e.message))
   }
 }

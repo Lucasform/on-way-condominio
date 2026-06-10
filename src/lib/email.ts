@@ -15,6 +15,7 @@ export interface EmailVars {
   artigo?: string
   link?: string
   encomenda_tipo?: string
+  codigo_retirada?: string
   publicacao_titulo?: string
   publicacao_conteudo?: string
   evento_titulo?: string

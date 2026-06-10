@@ -78,6 +78,7 @@ export interface TemplateVars {
   artigo?: string
   link?: string
   encomenda_tipo?: string
+  codigo_retirada?: string
   publicacao_titulo?: string
   publicacao_conteudo?: string
   evento_titulo?: string
@@ -139,11 +140,12 @@ ${p(vars.encomenda_tipo === 'comida'
             ? `Sua <strong>comida</strong> acabou de chegar na portaria. Retire o quanto antes.`
             : `Uma encomenda chegou pra você na portaria.`)}
 ${vars.descricao ? p(escape(vars.descricao)) : ''}
+${vars.codigo_retirada ? pRaw(`<strong>🔑 Código de retirada:</strong> <span style="font-size:18px;letter-spacing:2px;font-weight:bold">${escape(vars.codigo_retirada)}</span><br><span style="color:#64748b">Informe esse código na portaria pra retirar.</span>`) : ''}
 ${vars.link ? button('Ver detalhes', vars.link) : ''}`,
           vars.condominio_nome,
           vars.sender_name,
         ),
-        text: `Olá, ${nome}.\n${vars.encomenda_tipo === 'comida' ? 'Sua comida chegou na portaria.' : 'Uma encomenda chegou na portaria.'}\n${vars.descricao ?? ''}\n${vars.link ?? ''}`,
+        text: `Olá, ${nome}.\n${vars.encomenda_tipo === 'comida' ? 'Sua comida chegou na portaria.' : 'Uma encomenda chegou na portaria.'}\n${vars.descricao ?? ''}\n${vars.codigo_retirada ? `Código de retirada: ${vars.codigo_retirada}\n` : ''}${vars.link ?? ''}`,
       }
 
     case 'mural-nova-publicacao':

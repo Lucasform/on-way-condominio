@@ -68,6 +68,7 @@ export default function EncomendaDetalhe() {
 
   const [showBaixaForm, setShowBaixaForm] = useState(false)
   const [entreguePara, setEntreguePara] = useState('')
+  const [codigoInput, setCodigoInput] = useState('')
   const [submittingBaixa, setSubmittingBaixa] = useState(false)
 
   async function load() {
@@ -104,6 +105,22 @@ export default function EncomendaDetalhe() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
+  async function efetuarBaixa() {
+    if (!encomenda || !user) return
+    setSubmittingBaixa(true)
+    try {
+      await darBaixaEncomenda(encomenda.id, entreguePara, user.id)
+      await load()
+      setShowBaixaForm(false)
+      setCodigoInput('')
+      toast.success('Encomenda entregue.')
+    } catch (e) {
+      toast.error('Erro ao dar baixa', e instanceof Error ? e.message : '')
+    } finally {
+      setSubmittingBaixa(false)
+    }
+  }
+
   async function handleBaixa(e: FormEvent) {
     e.preventDefault()
     if (!encomenda || !user) return
@@ -111,17 +128,29 @@ export default function EncomendaDetalhe() {
       toast.warning('Informe quem retirou a encomenda.')
       return
     }
-    setSubmittingBaixa(true)
-    try {
-      await darBaixaEncomenda(encomenda.id, entreguePara, user.id)
-      await load()
-      setShowBaixaForm(false)
-      toast.success('Encomenda entregue.')
-    } catch (e) {
-      toast.error('Erro ao dar baixa', e instanceof Error ? e.message : '')
-    } finally {
-      setSubmittingBaixa(false)
+    // Confere o código de retirada quando a encomenda tem um.
+    if (encomenda.codigo_retirada) {
+      if (codigoInput.trim() !== encomenda.codigo_retirada) {
+        toast.error('Código não confere', 'Peça o código pro morador ou use "dar baixa sem código".')
+        return
+      }
     }
+    await efetuarBaixa()
+  }
+
+  async function handleBaixaSemCodigo() {
+    if (!encomenda) return
+    const ok = await confirm({
+      title: 'Dar baixa sem o código',
+      message: 'O morador não informou o código de retirada. Confirmar a entrega mesmo assim?',
+      confirmText: 'Confirmar entrega',
+    })
+    if (!ok) return
+    if (!entreguePara.trim()) {
+      toast.warning('Informe quem retirou a encomenda.')
+      return
+    }
+    await efetuarBaixa()
   }
 
   async function handleDelete() {
@@ -278,13 +307,34 @@ export default function EncomendaDetalhe() {
                   autoFocus
                 />
               </Field>
-              <div className="flex gap-2">
+              {encomenda.codigo_retirada && (
+                <Field
+                  label="Código de retirada"
+                  required
+                  hint="Os 4 dígitos que o morador recebeu no aviso."
+                >
+                  <TextInput
+                    inputMode="numeric"
+                    maxLength={4}
+                    placeholder="0000"
+                    value={codigoInput}
+                    onChange={(e) => setCodigoInput(e.target.value.replace(/\D/g, ''))}
+                    className="font-mono tracking-[0.4em] text-lg"
+                  />
+                </Field>
+              )}
+              <div className="flex flex-wrap gap-2">
                 <Button type="submit" disabled={submittingBaixa}>
                   {submittingBaixa ? 'Confirmando...' : 'Confirmar entrega'}
                 </Button>
-                <Button type="button" variant="secondary" onClick={() => setShowBaixaForm(false)}>
+                <Button type="button" variant="secondary" onClick={() => { setShowBaixaForm(false); setCodigoInput('') }}>
                   Cancelar
                 </Button>
+                {encomenda.codigo_retirada && (
+                  <Button type="button" variant="ghost" onClick={handleBaixaSemCodigo} disabled={submittingBaixa}>
+                    Dar baixa sem o código
+                  </Button>
+                )}
               </div>
             </form>
           )}
