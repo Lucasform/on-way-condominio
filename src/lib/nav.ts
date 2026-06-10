@@ -475,7 +475,8 @@ const BOTTOM_BY_ROLE: Record<Role, MenuLeaf[]> = {
 }
 
 export function bottomNavFor(role: Role): MenuLeaf[] {
-  const base = BOTTOM_BY_ROLE[role] ?? [{ to: '/', label: 'Início' }]
+  // "Início" sai da barra: o logo no topo já leva pra home/launcher (evita duplicar).
+  const base = (BOTTOM_BY_ROLE[role] ?? []).filter((i) => i.to !== '/')
   return [...base, { to: '/mais', label: 'Mais' }]
 }
 
