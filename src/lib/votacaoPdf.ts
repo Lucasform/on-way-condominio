@@ -77,6 +77,11 @@ export async function gerarPdfAtaVotacao(args: {
 
   const totalVotos = votos.length
   doc.text(`Total de votos: ${totalVotos}`, 20, y); y += 5
+  const convidados = votos.filter((v) => v.verificado === false).length
+  if (votacao.modo === 'qrcode' || convidados > 0) {
+    const verificados = totalVotos - convidados
+    doc.text(`Verificados (com login): ${verificados}  ·  Convidados (sem login): ${convidados}`, 20, y); y += 5
+  }
   if (quorumMinimo != null) {
     const atingiu = totalVotos >= quorumMinimo
     doc.text(`Quórum mínimo: ${quorumMinimo} — ${atingiu ? 'ATINGIDO' : 'NÃO ATINGIDO'}`, 20, y)
