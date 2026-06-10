@@ -19,6 +19,8 @@ const EMPTY: VotacaoInput = {
   data_inicio: new Date().toISOString().slice(0, 16), // datetime-local format
   data_fim: null,
   quorum_minimo: null,
+  modo: 'todos',
+  codigo_acesso: null,
   opcoes: ['Sim', 'Não'],
 }
 
@@ -177,6 +179,27 @@ export default function VotacaoNova() {
             value={form.quorum_minimo ?? ''}
             onChange={(e) => setForm({ ...form, quorum_minimo: e.target.value === '' ? null : Number(e.target.value) })}
             placeholder="ex: 30"
+          />
+        </Field>
+
+        <Field label="Quem vota?" hint="Todos = aparece pra votar no app pra todo o condomínio. QR code = vale só pra quem abre o QR/link (presencial), com voto por unidade e opção de convidado.">
+          <Select
+            value={form.modo ?? 'todos'}
+            onChange={(e) => setForm({ ...form, modo: e.target.value as 'todos' | 'qrcode' })}
+          >
+            <option value="todos">Todos os usuários do condomínio</option>
+            <option value="qrcode">Somente via QR code / link (presencial)</option>
+          </Select>
+        </Field>
+
+        <Field
+          label="Código de acesso (opcional)"
+          hint="Exibido na assembleia; quando preenchido, é exigido pra votar. Garante que só os presentes votem."
+        >
+          <TextInput
+            value={form.codigo_acesso ?? ''}
+            onChange={(e) => setForm({ ...form, codigo_acesso: e.target.value || null })}
+            placeholder="ex: ASSEMBLEIA-2026"
           />
         </Field>
 

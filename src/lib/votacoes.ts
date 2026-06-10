@@ -44,6 +44,8 @@ export async function createVotacao(input: VotacaoInput): Promise<Votacao> {
       data_inicio: input.data_inicio,
       data_fim: input.data_fim || null,
       quorum_minimo: input.quorum_minimo ?? null,
+      modo: input.modo ?? 'todos',
+      codigo_acesso: input.codigo_acesso?.trim() || null,
     })
     .select('*')
     .single()
@@ -79,15 +81,26 @@ export async function cancelarVotacao(id: string): Promise<void> {
   if (error) throw error
 }
 
-export async function votar(votacao_id: string, opcao_id: string, user_id: string): Promise<void> {
-  // Tenta INSERT; se já existir voto, faz UPDATE pra mudar a opção
+export async function votar(
+  votacao_id: string,
+  opcao_id: string,
+  user_id: string,
+  unidade_id?: string | null,
+): Promise<void> {
+  // Tenta INSERT; se já existir voto do mesmo usuário, faz UPDATE pra mudar a opção.
+  // No modo qrcode passamos unidade_id (1 voto por unidade, garantido por índice único).
+  const row: Record<string, unknown> = { votacao_id, opcao_id, user_id }
+  if (unidade_id) row.unidade_id = unidade_id
   const { error } = await supabase
     .from('votos')
-    .upsert(
-      { votacao_id, opcao_id, user_id },
-      { onConflict: 'votacao_id,user_id' },
-    )
-  if (error) throw error
+    .upsert(row, { onConflict: 'votacao_id,user_id' })
+  if (error) {
+    // Violação do índice por unidade → outra pessoa da unidade já votou.
+    if ((error as { code?: string }).code === '23505') {
+      throw new Error('Esta unidade já registrou um voto nesta votação.')
+    }
+    throw error
+  }
 }
 
 export async function removerVoto(votacao_id: string, user_id: string): Promise<void> {

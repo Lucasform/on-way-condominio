@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { deleteVotacao, getVotacao, votar, encerrarVotacao, cancelarVotacao } from '../lib/votacoes'
 import { getCondominio } from '../lib/condominios'
+import { supabase } from '../lib/supabase'
 import type { Condominio } from '../types/condominio'
 import { gerarPdfAtaVotacao } from '../lib/votacaoPdf'
 import type { Votacao, VotacaoOpcao, Voto, StatusVotacao } from '../types/votacao'
@@ -40,6 +41,8 @@ export default function VotacaoDetalhe() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [codigoInput, setCodigoInput] = useState('')
+  const [minhaUnidadeId, setMinhaUnidadeId] = useState<string | null>(null)
 
   async function load() {
     if (!id) return
@@ -53,6 +56,17 @@ export default function VotacaoDetalhe() {
         setVotacao(result.votacao)
         setOpcoes(result.opcoes)
         setVotos(result.votos)
+        // No modo qrcode o voto é por unidade: resolve a unidade do usuário logado.
+        if (result.votacao.modo === 'qrcode' && user) {
+          const { data } = await supabase
+            .from('pessoas')
+            .select('unidade_id')
+            .eq('user_id', user.id)
+            .not('unidade_id', 'is', null)
+            .limit(1)
+            .maybeSingle()
+          setMinhaUnidadeId((data?.unidade_id as string | undefined) ?? null)
+        }
         try {
           const co = await getCondominio(result.votacao.condominio_id)
           setCondominio(co)
@@ -92,9 +106,23 @@ export default function VotacaoDetalhe() {
       })
       if (!ok) return
     }
+    // Código de acesso (quando configurado): exigido pra votar.
+    if (votacao.codigo_acesso && codigoInput.trim() !== votacao.codigo_acesso) {
+      toast.error('Código incorreto', 'Confira o código de acesso exibido na assembleia.')
+      return
+    }
+    // Modo QR: voto por unidade. Precisa de unidade vinculada.
+    let unidade: string | null | undefined
+    if (votacao.modo === 'qrcode') {
+      if (!minhaUnidadeId) {
+        toast.error('Sem unidade', 'Seu cadastro não tem unidade vinculada. Peça à administração pra vincular.')
+        return
+      }
+      unidade = minhaUnidadeId
+    }
     setSubmitting(true)
     try {
-      await votar(votacao.id, opcaoId, user.id)
+      await votar(votacao.id, opcaoId, user.id, unidade)
       await load()
       toast.success('Voto registrado.')
     } catch (e) {
@@ -240,6 +268,27 @@ export default function VotacaoDetalhe() {
             </>
           )}
         </div>
+
+        {votacao.modo === 'qrcode' && (
+          <div className="mb-4 text-xs rounded-md border border-sky-500/30 bg-sky-500/5 px-3 py-2 text-sky-200">
+            📲 Votação por QR/link · 1 voto por unidade.
+            {canManage && votacao.codigo_acesso && (
+              <span> Código pra anunciar: <strong className="font-mono tracking-wide">{votacao.codigo_acesso}</strong></span>
+            )}
+          </div>
+        )}
+
+        {podeVotar && votacao.codigo_acesso && (
+          <div className="mb-4">
+            <label className="block text-xs font-medium text-slate-400 mb-1">Código de acesso (informe pra votar)</label>
+            <input
+              value={codigoInput}
+              onChange={(e) => setCodigoInput(e.target.value)}
+              placeholder="código exibido na assembleia"
+              className="w-full sm:w-72 px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:border-emerald-500 focus:outline-none"
+            />
+          </div>
+        )}
 
         <div className="space-y-3">
           {votosPorOpcao.map(({ opcao, count }) => {
