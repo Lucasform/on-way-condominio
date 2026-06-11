@@ -64,6 +64,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/classificados', label: 'Classificados' },
         { to: '/emails-log', label: 'E-mail' },
         { to: '/whatsapp', label: 'WhatsApp' },
+        { to: '/fila-envios', label: 'Fila de envios' },
       ],
     },
     {
@@ -122,6 +123,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/comunicados', label: 'Comunicados' },
         { to: '/classificados', label: 'Classificados' },
         { to: '/whatsapp', label: 'WhatsApp' },
+        { to: '/fila-envios', label: 'Fila de envios' },
       ],
     },
     {
@@ -180,6 +182,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/comunicados', label: 'Comunicados' },
         { to: '/classificados', label: 'Classificados' },
         { to: '/whatsapp', label: 'WhatsApp' },
+        { to: '/fila-envios', label: 'Fila de envios' },
       ],
     },
     {
@@ -238,6 +241,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/comunicados', label: 'Comunicados' },
         { to: '/classificados', label: 'Classificados' },
         { to: '/whatsapp', label: 'WhatsApp' },
+        { to: '/fila-envios', label: 'Fila de envios' },
       ],
     },
     {
@@ -408,6 +412,7 @@ export const NAV_ICON: Record<string, string> = {
   '/classificados': '🏷',
   '/whatsapp': '🟢',
   '/emails-log': '✉️',
+  '/fila-envios': '📤',
   '/assembleias': '🏛',
   '/votacoes': '🗳',
   '/relatorios': '📈',
@@ -448,6 +453,7 @@ export const NAV_COLOR: Record<string, string> = {
   '/classificados': 'bg-gradient-to-br from-fuchsia-500 to-fuchsia-600',
   '/whatsapp': 'bg-gradient-to-br from-green-500 to-green-600',
   '/emails-log': 'bg-gradient-to-br from-blue-500 to-blue-600',
+  '/fila-envios': 'bg-gradient-to-br from-slate-500 to-slate-600',
   '/assembleias': 'bg-gradient-to-br from-purple-500 to-purple-600',
   '/votacoes': 'bg-gradient-to-br from-amber-500 to-amber-600',
   '/relatorios': 'bg-gradient-to-br from-sky-500 to-sky-600',

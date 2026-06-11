@@ -67,6 +67,7 @@ const ChamadoNovo = lazy(() => import('./pages/ChamadoNovo'))
 const ChamadoDetalhe = lazy(() => import('./pages/ChamadoDetalhe'))
 const Relatorios = lazy(() => import('./pages/Relatorios'))
 const EmailsLog = lazy(() => import('./pages/EmailsLog'))
+const FilaEnvios = lazy(() => import('./pages/FilaEnvios'))
 const Chat = lazy(() => import('./pages/Chat'))
 const ChatConversa = lazy(() => import('./pages/ChatConversa'))
 const WhatsappConfig = lazy(() => import('./pages/WhatsappConfig'))
@@ -111,6 +112,14 @@ export default function App() {
           >
             <Route path="/" element={<Home />} />
             <Route path="/mais" element={<Mais />} />
+            <Route
+              path="/fila-envios"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
+                  <FilaEnvios />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/meu-perfil" element={<MeuPerfil />} />
             <Route
               path="/condominios"
