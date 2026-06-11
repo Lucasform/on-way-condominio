@@ -226,13 +226,13 @@ export default function AppShell() {
         </header>
 
         {emViewAs && (
-          <div className="shrink-0 bg-amber-500/15 border-b border-amber-500/40 px-4 py-2 flex items-center justify-between gap-3 text-xs">
-            <span className="text-amber-200 font-medium">
+          <div className="shrink-0 bg-amber-400 border-b border-amber-500 px-4 py-2 flex items-center justify-between gap-3 text-xs">
+            <span className="text-zinc-900 font-medium">
               👁 Você está em modo "Ver como". Assumiu o condomínio <strong>{condoNome ?? '...'}</strong> como Administrador OnWay.
             </span>
             <button
               onClick={handleExitViewAs}
-              className="px-3 py-1 rounded bg-amber-500/30 hover:bg-amber-500/40 text-amber-200 font-semibold whitespace-nowrap"
+              className="px-3 py-1 rounded bg-zinc-900/15 hover:bg-zinc-900/25 text-zinc-900 font-semibold whitespace-nowrap"
             >
               ← Voltar pra visão global
             </button>
