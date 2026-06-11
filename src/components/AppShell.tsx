@@ -90,8 +90,8 @@ export default function AppShell() {
   const navLinkCls = ({ isActive }: { isActive: boolean }) =>
     `block px-3 py-2 rounded-lg text-sm transition ${
       isActive
-        ? 'bg-brand-500/10 text-white font-semibold'
-        : 'text-slate-300 hover:bg-slate-800/40 hover:text-white'
+        ? 'bg-brand-500/15 text-slate-100 font-semibold'
+        : 'text-slate-300 hover:bg-slate-800/40 hover:text-slate-100'
     }`
 
   return (
@@ -226,13 +226,13 @@ export default function AppShell() {
         </header>
 
         {emViewAs && (
-          <div className="shrink-0 bg-amber-500/10 border-b border-amber-500/30 px-4 py-2 flex items-center justify-between gap-3 text-xs">
-            <span className="text-amber-300">
+          <div className="shrink-0 bg-amber-500/15 border-b border-amber-500/40 px-4 py-2 flex items-center justify-between gap-3 text-xs">
+            <span className="text-amber-200 font-medium">
               👁 Você está em modo "Ver como". Assumiu o condomínio <strong>{condoNome ?? '...'}</strong> como Administrador OnWay.
             </span>
             <button
               onClick={handleExitViewAs}
-              className="px-3 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-medium whitespace-nowrap"
+              className="px-3 py-1 rounded bg-amber-500/30 hover:bg-amber-500/40 text-amber-200 font-semibold whitespace-nowrap"
             >
               ← Voltar pra visão global
             </button>

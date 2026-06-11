@@ -16,9 +16,9 @@ import { Logger } from '../_shared/log.ts'
 // @ts-expect-error: Supabase.ai injetado pelo runtime
 const session = new Supabase.ai.Session('gte-small')
 
-// Sonnet 4.6: a análise gera a minuta jurídica da multa, então mantemos o
-// modelo mais forte aqui. (Troca pra Haiku está em avaliação de qualidade.)
-const CLAUDE_MODEL = 'claude-sonnet-4-6'
+// Haiku 4.5: decisão do Lucas (rápido/barato). A análise é bem guiada por
+// prompt + RAG + modelos do condomínio, então o custo/latência compensa.
+const CLAUDE_MODEL = 'claude-haiku-4-5'
 
 interface AnalysisResult {
   cabe_multa: boolean
