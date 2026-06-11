@@ -12,6 +12,7 @@ import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
+import Tabs from '../components/ui/Tabs'
 import { Select } from '../components/ui/Input'
 import { CardListSkeleton } from '../components/ui/Skeleton'
 
@@ -239,14 +240,15 @@ export default function Encomendas() {
       )}
 
       {/* Tabs Encomendas / Comida */}
-      <div className="mb-5 border-b border-slate-800 flex gap-1">
-        <TabButton active={tab === 'encomendas'} onClick={() => setTab('encomendas')}>
-          📦 Encomendas <span className="ml-1.5 text-xs text-slate-400">({totaisAba.encomendas})</span>
-        </TabButton>
-        <TabButton active={tab === 'comida'} onClick={() => setTab('comida')}>
-          🍔 Comidas <span className="ml-1.5 text-xs text-slate-400">({totaisAba.comida})</span>
-        </TabButton>
-      </div>
+      <Tabs
+        className="mb-5"
+        value={tab}
+        onChange={(k) => setTab(k as 'encomendas' | 'comida')}
+        tabs={[
+          { key: 'encomendas', label: 'Encomendas', icon: '📦', count: totaisAba.encomendas },
+          { key: 'comida', label: 'Comidas', icon: '🍔', count: totaisAba.comida },
+        ]}
+      />
 
       {error && (
         <div className="mb-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
@@ -276,25 +278,6 @@ export default function Encomendas() {
         />
       )}
     </div>
-  )
-}
-
-// ============================================================
-// Tab button
-// ============================================================
-function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${
-        active
-          ? 'text-slate-100 border-brand-500'
-          : 'text-slate-400 border-transparent hover:text-slate-200'
-      }`}
-    >
-      {children}
-    </button>
   )
 }
 

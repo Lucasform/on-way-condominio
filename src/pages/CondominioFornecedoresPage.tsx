@@ -28,6 +28,7 @@ import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import Tabs from '../components/ui/Tabs'
 import DeleteButton from '../components/ui/DeleteButton'
 import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
 
@@ -307,22 +308,17 @@ export default function CondominioFornecedoresPage() {
         }
       />
 
-      <div className="flex flex-wrap gap-2 mb-4">
-        <TabBtn ativo={aba === 'aprovados'} onClick={() => setAba('aprovados')}>
-          Aprovados
-        </TabBtn>
-        <TabBtn ativo={aba === 'feira'} onClick={() => setAba('feira')}>
-          🥬 Feira
-        </TabBtn>
-        {staff && (
-          <TabBtn ativo={aba === 'pendentes'} onClick={() => setAba('pendentes')}>
-            Pendentes
-          </TabBtn>
-        )}
-        <TabBtn ativo={aba === 'meus'} onClick={() => setAba('meus')}>
-          Meus cadastros
-        </TabBtn>
-      </div>
+      <Tabs
+        className="mb-4"
+        value={aba}
+        onChange={(k) => setAba(k as Aba)}
+        tabs={[
+          { key: 'aprovados', label: 'Aprovados' },
+          { key: 'feira', label: 'Feira', icon: '🥬' },
+          ...(staff ? [{ key: 'pendentes', label: 'Pendentes' }] : []),
+          { key: 'meus', label: 'Meus cadastros' },
+        ]}
+      />
 
       {showForm && (
         <form
@@ -585,17 +581,3 @@ function FeiraCabecalho({ rows }: { rows: CondominioFornecedor[] }) {
   )
 }
 
-function TabBtn({ ativo, onClick, children }: { ativo: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-3 py-1 text-xs rounded border ${
-        ativo
-          ? 'bg-brand-600 border-brand-600 text-white'
-          : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-600'
-      }`}
-    >
-      {children}
-    </button>
-  )
-}
