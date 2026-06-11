@@ -40,13 +40,17 @@ Guia objetivo pra quando algo der errado em produção. Leia antes de precisar.
   - Pra automatizar: adicionar os secrets `SUPABASE_ACCESS_TOKEN` e `SUPABASE_PROJECT_REF` no GitHub (Settings → Secrets → Actions). Aí o `.github/workflows/deploy-edges.yml` deploya sozinho no push.
 
 ## Backup e restauração (Supabase)
-- **Backup:** o Supabase faz backup automático diário (plano atual: retenção limitada). Conferir em Dashboard → Database → Backups.
-- **Antes de qualquer migration de risco:** baixar um dump manual:
-  `pg_dump` via Dashboard → Database → Backups → ou conexão direta (host pooler `aws-1-sa-east-1.pooler.supabase.com`).
-- **Restaurar (procedimento a TESTAR com o Lucas antes de precisar):**
-  1. Dashboard → Database → Backups → escolher ponto → Restore (cuidado: sobrescreve).
-  2. Alternativa cirúrgica: restaurar tabela específica de um dump com `psql`.
-- ⚠️ **Pendência:** fazer um **teste de restauração** num ambiente à parte pra validar o procedimento (não testado ainda).
+Estratégia: **schema = migrations versionadas** (`supabase/migrations/`, no git) + **dados = export lógico**. Pra restaurar do zero: aplicar as migrations num banco limpo e recarregar os dados.
+
+- **Backup automático do Supabase:** diário (plano atual, retenção limitada). Dashboard → Database → Backups. O "Restore" dali sobrescreve a produção — usar só em emergência real, **nunca pra teste**.
+- **Backup manual dos dados (sem Docker):** `node scripts/backup-dados.mjs` (com as envs `SUPABASE_DB_PASSWORD/PROJECT_REF/HOST` e `BACKUP_DIR`). Gera 1 JSON por tabela + `_manifest.json`, e **valida** que as contagens batem com a produção. Guardar a pasta fora do git (tem dados pessoais).
+- ✅ **Teste de restaurabilidade feito (2026-06-11):** export das **59 tabelas** com **0 divergências / 0 ilegíveis** — extração íntegra confirmada.
+- **Restaurar num banco descartável (drill completo, quando quiser):**
+  1. Criar projeto Supabase grátis novo (target descartável).
+  2. Aplicar todas as migrations nele (`apply-migration.mjs` apontando pro novo) → recria schema/RLS/triggers.
+  3. Carregar os dados dos JSON (ordem respeitando FKs, ou `set session_replication_role = replica;` pra desativar FKs durante a carga).
+  4. Conferir contagens e apagar o projeto descartável.
+- **Restauração cirúrgica (1 tabela):** pegar o `<tabela>.json` do backup e reinserir as linhas faltantes.
 
 ## Segredos / acessos
 - Credenciais (DB password, access token) em `[[reference-supabase-credentials-onway]]` (memória) e `CREDENCIAIS-ACESSO.txt` (gitignored).
