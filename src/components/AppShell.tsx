@@ -24,8 +24,11 @@ export default function AppShell() {
   const items = effectiveRole ? menuFor(effectiveRole) : []
 
   // Ao trocar de página, sempre começa no topo (corrige scroll preso).
+  // Rola tanto o <main> quanto a janela — dependendo do conteúdo, quem rola é um ou outro.
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0, left: 0 })
+    window.scrollTo({ top: 0, left: 0 })
+    document.scrollingElement?.scrollTo({ top: 0, left: 0 })
   }, [location.pathname])
 
   const [temPessoaResidencial, setTemPessoaResidencial] = useState(false)
