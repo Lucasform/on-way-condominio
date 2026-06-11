@@ -23,6 +23,7 @@ import BrandPreview from '../components/BrandPreview'
 import CondominioAnexosManager from '../components/CondominioAnexosManager'
 import CondominioDiretoria from '../components/CondominioDiretoria'
 import CondominioMandatos from '../components/CondominioMandatos'
+import Tabs from '../components/ui/Tabs'
 import VincularUserAoCondo from '../components/VincularUserAoCondo'
 import AgenteTreinamento from '../components/AgenteTreinamento'
 import { traduzErro } from '../lib/errorMessages'
@@ -69,6 +70,7 @@ export default function CondominioForm() {
   const [deleting, setDeleting] = useState(false)
   const [arquivando, setArquivando] = useState(false)
   const [showExcluirModal, setShowExcluirModal] = useState(false)
+  const [aba, setAba] = useState<'dados' | 'documentos' | 'identidade' | 'diretoria'>('dados')
   const [brandSaving, setBrandSaving] = useState(false)
   const [brandSavedAt, setBrandSavedAt] = useState<number | null>(null)
 
@@ -282,10 +284,24 @@ export default function CondominioForm() {
         </div>
       )}
 
+      {!isNew && id && (
+        <Tabs
+          className="mb-6"
+          value={aba}
+          onChange={(k) => setAba(k as typeof aba)}
+          tabs={[
+            { key: 'dados', label: 'Dados', icon: '🏢' },
+            { key: 'documentos', label: 'Documentos & IA', icon: '📑' },
+            { key: 'identidade', label: 'Identidade visual', icon: '🎨' },
+            { key: 'diretoria', label: 'Diretoria & convites', icon: '👔' },
+          ]}
+        />
+      )}
+
       {/* ============================================================ */}
       {/* 1) FOTO DO CONDOMÍNIO — primeira coisa */}
       {/* ============================================================ */}
-      {!isNew && id && (
+      {!isNew && id && aba === 'dados' && (
         <fieldset className="mb-8 border border-slate-700 rounded-md p-4 space-y-4">
           <legend className="px-2 text-sm font-semibold text-slate-200">
             Foto do condomínio
@@ -301,6 +317,7 @@ export default function CondominioForm() {
         </fieldset>
       )}
 
+      {(isNew || aba === 'dados') && (
       <form onSubmit={handleSubmit} className="space-y-5">
         <Field label="Nome" required>
           <TextInput
@@ -392,12 +409,9 @@ export default function CondominioForm() {
           </Link>
         </div>
       </form>
+      )}
 
-      {!isNew && id && (
-        <>
-          {/* ============================================================ */}
-          {/* 2) CONFIGURAÇÕES (sem auditoria) */}
-          {/* ============================================================ */}
+      {!isNew && id && aba === 'documentos' && (
           <div className="mt-10">
             <h2 className="text-base font-semibold text-slate-200 mb-3">
               Configurações do condomínio
@@ -466,10 +480,10 @@ export default function CondominioForm() {
               />
             </div>
           </div>
+      )}
 
-          {/* ============================================================ */}
-          {/* 2.5) IDENTIDADE VISUAL (white-label) */}
-          {/* ============================================================ */}
+      {/* Identidade visual (white-label) */}
+      {!isNew && id && aba === 'identidade' && (
           <fieldset className="mt-10 border border-slate-700 rounded-md p-4 space-y-4">
             <legend className="px-2 text-sm font-semibold text-slate-200 flex items-center gap-2">
               Identidade visual (área de acesso)
@@ -572,10 +586,11 @@ export default function CondominioForm() {
               </span>
             </label>
           </fieldset>
+      )}
 
-          {/* ============================================================ */}
-          {/* 3) DIRETORIA */}
-          {/* ============================================================ */}
+      {/* Diretoria & convites */}
+      {!isNew && id && aba === 'diretoria' && (
+        <>
           <div className="mt-10 space-y-6">
             <CondominioDiretoria condominio_id={id} />
             <CondominioMandatos condominio_id={id} />
