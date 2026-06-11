@@ -15,6 +15,7 @@ interface Body {
   texto: string
   conversa_id?: string
   documento?: { base64: string; filename: string }  // anexa PDF (Evolution sendMedia)
+  from_fila?: boolean  // true quando veio do reprocessador (não re-enfileira)
 }
 
 function normalizePhone(p: string): string {
@@ -125,6 +126,15 @@ Deno.serve(async (req: Request) => {
       // Detecta "número não tem WhatsApp" (Evolution: response.message[].exists=false)
       const raw = JSON.stringify(data)
       const semWhats = /"exists"\s*:\s*false/.test(raw)
+      // Falha transitória (não permanente) e não veio da fila → enfileira pra retry.
+      if (!semWhats && !body.from_fila) {
+        await admin.from('envio_fila').insert({
+          condominio_id: body.condominio_id,
+          canal: 'whatsapp',
+          payload: { condominio_id: body.condominio_id, telefone: body.telefone, texto: body.texto, documento: body.documento ?? null, conversa_id: body.conversa_id ?? null },
+          ultimo_erro: raw.slice(0, 500),
+        }).then(() => {}, () => {})
+      }
       return jsonResponse({
         ok: false,
         provider: cfg.provider,

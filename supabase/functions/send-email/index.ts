@@ -19,6 +19,7 @@ interface Body {
   custom?: { subject: string; html: string; text?: string }
   reply_to?: string                                  // sobrescreve; senão usa email_contato do condo
   attachments?: Array<{ filename: string; content: string }>  // content = base64
+  from_fila?: boolean                                // true quando veio do reprocessador
 }
 
 Deno.serve(async (req: Request) => {
@@ -80,6 +81,25 @@ Deno.serve(async (req: Request) => {
     }
 
     const results: Array<{ to: string; ok: boolean; id?: string; error?: string }> = []
+
+    // Enfileira pra retry (só se não veio da própria fila). Reenvia o HTML já
+    // renderizado via template 'custom', então independe das vars originais.
+    async function enfileirar(to: string, erro: string) {
+      if (body.from_fila) return
+      await admin.from('envio_fila').insert({
+        condominio_id: body.condominio_id ?? null,
+        canal: 'email',
+        payload: {
+          to,
+          template: 'custom',
+          custom: { subject: rendered.subject, html: rendered.html, text: rendered.text },
+          attachments: body.attachments ?? null,
+          condominio_id: body.condominio_id ?? null,
+          reply_to: body.reply_to ?? null,
+        },
+        ultimo_erro: erro.slice(0, 500),
+      }).then(() => {}, () => {})
+    }
 
     for (const to of recipients) {
       // Pré-insere log com status pending
@@ -145,6 +165,7 @@ Deno.serve(async (req: Request) => {
               tentativas: 1,
             })
             .eq('id', emailRow.id)
+          await enfileirar(to, JSON.stringify(data))
           results.push({ to, ok: false, error: data?.message ?? `HTTP ${rendaResp.status}` })
         }
       } catch (e) {
@@ -156,6 +177,7 @@ Deno.serve(async (req: Request) => {
             tentativas: 1,
           })
           .eq('id', emailRow.id)
+        await enfileirar(to, e instanceof Error ? e.message : String(e))
         results.push({ to, ok: false, error: e instanceof Error ? e.message : String(e) })
       }
     }
