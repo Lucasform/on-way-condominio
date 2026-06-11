@@ -425,6 +425,12 @@ export function iconFor(to: string): string {
   return NAV_ICON[to] ?? '•'
 }
 
+/** Ajusta rótulos conforme contexto (ex.: "Condomínios"→"Condomínio" quando logado num condomínio). */
+export function navLabel(to: string, label: string, emCondominio: boolean): string {
+  if (to === '/condominios' && emCondominio) return 'Condomínio'
+  return label
+}
+
 // Fundo do ícone no launcher — gradiente sólido, estilo ícone de app (classes
 // completas porque o Tailwind faz purge das dinâmicas). Fallback slate.
 export const NAV_COLOR: Record<string, string> = {

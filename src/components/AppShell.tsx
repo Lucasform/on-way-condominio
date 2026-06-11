@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
 import { signOut } from '../lib/auth'
-import { menuFor, roleLabel, isGroup, iconFor } from '../lib/nav'
+import { menuFor, roleLabel, isGroup, navLabel } from '../lib/nav'
+import { navIcon } from '../lib/navIcons'
 import { supabase } from '../lib/supabase'
 import { countWaUnread } from '../lib/whatsappInbox'
 import NotificationBell from './NotificationBell'
@@ -22,6 +23,7 @@ export default function AppShell() {
   const location = useLocation()
   const mainRef = useRef<HTMLElement>(null)
   const items = effectiveRole ? menuFor(effectiveRole) : []
+  const emCondo = !!perfil?.condominio_id
 
   // Ao trocar de página, sempre começa no topo (corrige scroll preso).
   // Rola tanto o <main> quanto a janela — dependendo do conteúdo, quem rola é um ou outro.
@@ -172,26 +174,30 @@ export default function AppShell() {
                     {item.label}
                   </div>
                   <div className="space-y-1">
-                    {item.children.map((child) => (
-                      <NavLink key={child.to} to={child.to} className={navLinkCls}>
-                        <span className="flex items-center gap-2.5">
-                          <span className="text-base leading-none w-5 text-center shrink-0">{iconFor(child.to)}</span>
-                          <span className="flex-1 truncate">{child.label}</span>
-                          {child.to === '/whatsapp' && waUnread > 0 && (
-                            <span className="shrink-0 text-[10px] bg-emerald-500 text-white rounded-full px-1.5 py-0.5">{waUnread}</span>
-                          )}
-                        </span>
-                      </NavLink>
-                    ))}
+                    {item.children.map((child) => {
+                      const Icon = navIcon(child.to)
+                      return (
+                        <NavLink key={child.to} to={child.to} className={navLinkCls}>
+                          <span className="flex items-center gap-2.5">
+                            <Icon className="w-4 h-4 shrink-0" />
+                            <span className="flex-1 truncate">{navLabel(child.to, child.label, emCondo)}</span>
+                            {child.to === '/whatsapp' && waUnread > 0 && (
+                              <span className="shrink-0 text-[10px] bg-emerald-500 text-white rounded-full px-1.5 py-0.5">{waUnread}</span>
+                            )}
+                          </span>
+                        </NavLink>
+                      )
+                    })}
                   </div>
                 </div>
               )
             }
+            const Icon = navIcon(item.to)
             return (
               <NavLink key={item.to} to={item.to} end={item.to === '/'} className={navLinkCls}>
                 <span className="flex items-center gap-2.5">
-                  <span className="text-base leading-none w-5 text-center shrink-0">{iconFor(item.to)}</span>
-                  <span className="flex-1 truncate">{item.label}</span>
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="flex-1 truncate">{navLabel(item.to, item.label, emCondo)}</span>
                 </span>
               </NavLink>
             )
