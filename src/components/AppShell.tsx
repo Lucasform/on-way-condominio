@@ -188,16 +188,15 @@ export default function AppShell() {
           })}
         </nav>
 
-        <div className="border-t border-slate-800 p-3 flex items-center justify-between gap-2">
+        <div className="border-t border-slate-800 p-3">
           <button
             onClick={handleSignOut}
             title={user?.email ?? 'Sair'}
-            className="flex-1 flex items-center gap-2 px-3 py-2 rounded-md text-sm text-slate-400 hover:text-red-300 hover:bg-red-500/10 transition"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm text-slate-400 hover:text-red-300 hover:bg-red-500/10 transition"
           >
             <SignOutIcon />
             <span>Sair</span>
           </button>
-          <ThemeToggle compact />
         </div>
       </aside>
 
@@ -219,6 +218,7 @@ export default function AppShell() {
             </div>
           </Link>
           <div className="hidden md:block flex-1" />
+          <ThemeToggle compact />
           <NotificationBell />
           <div className="md:hidden">
             <AccountMenu />

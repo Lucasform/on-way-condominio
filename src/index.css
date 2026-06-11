@@ -8,7 +8,7 @@
   - :root  = rampa INVERTIDA (tema claro): slate-950 ~ branco, slate-100 ~ preto.
   Default do app é dark (applyTheme adiciona .dark), então sem regressão.
 */
-.dark {
+html.dark {
   --s-50:  248 250 252;
   --s-100: 241 245 249;
   --s-200: 226 232 240;
