@@ -27,6 +27,7 @@ import { DetailSkeleton } from '../components/ui/Skeleton'
 import { gerarPdfNotificacao } from '../lib/notificacaoPdf'
 import { enviarNotificacaoMulticanal, type CanaisEnvio } from '../lib/enviarNotificacao'
 import DeleteButton from '../components/ui/DeleteButton'
+import ContestacaoThread from '../components/ContestacaoThread'
 
 const STATUS_CLASS: Record<StatusNotificacao, string> = {
   pendente:     'bg-amber-500/10 text-amber-300 border-amber-500/30',
@@ -371,6 +372,7 @@ export default function NotificacaoDetalhe() {
         </div>
       )}
 
+      <ContestacaoThread notificacaoId={notificacao.id} pessoaUserId={pessoa?.user_id ?? null} />
     </div>
   )
 }

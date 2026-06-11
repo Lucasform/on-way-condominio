@@ -7,11 +7,12 @@ import Button from './ui/Button'
 import { TextArea } from './ui/Input'
 
 interface Props {
-  multaId: string
-  pessoaUserId: string | null  // user_id da pessoa vinculada à multa (se houver)
+  multaId?: string
+  notificacaoId?: string
+  pessoaUserId: string | null  // user_id da pessoa vinculada (se houver)
 }
 
-export default function ContestacaoThread({ multaId, pessoaUserId }: Props) {
+export default function ContestacaoThread({ multaId, notificacaoId, pessoaUserId }: Props) {
   const { user, perfil } = useAuth()
   const [items, setItems] = useState<Contestacao[]>([])
   const [loading, setLoading] = useState(true)
@@ -19,10 +20,14 @@ export default function ContestacaoThread({ multaId, pessoaUserId }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const col = multaId ? 'multa_id' : 'notificacao_id'
+  const val = multaId ?? notificacaoId ?? ''
+  const alvo = multaId ? { multa_id: multaId } : { notificacao_id: notificacaoId! }
+
   async function load() {
     setLoading(true)
     try {
-      const data = await listContestacoes(multaId)
+      const data = await listContestacoes(alvo)
       setItems(data)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro.')
@@ -34,15 +39,16 @@ export default function ContestacaoThread({ multaId, pessoaUserId }: Props) {
   useEffect(() => {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [multaId])
+  }, [val])
 
   // Realtime: atualiza quando alguém posta
   useEffect(() => {
+    if (!val) return
     const channel = supabase
-      .channel(`contestacoes:${multaId}`)
+      .channel(`contestacoes:${val}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'contestacoes', filter: `multa_id=eq.${multaId}` },
+        { event: 'INSERT', schema: 'public', table: 'contestacoes', filter: `${col}=eq.${val}` },
         () => load(),
       )
       .subscribe()
@@ -50,7 +56,7 @@ export default function ContestacaoThread({ multaId, pessoaUserId }: Props) {
       supabase.removeChannel(channel)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [multaId])
+  }, [val])
 
   const isMorador = perfil?.role === 'morador'
   const isStaff = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
@@ -65,7 +71,7 @@ export default function ContestacaoThread({ multaId, pessoaUserId }: Props) {
     setError(null)
     try {
       const autorTipo = isMorador ? 'morador' : 'staff'
-      await postContestacao(multaId, user.id, autorTipo, mensagem)
+      await postContestacao(alvo, user.id, autorTipo, mensagem)
       setMensagem('')
       // load() é disparado pelo realtime
     } catch (e) {
@@ -87,7 +93,7 @@ export default function ContestacaoThread({ multaId, pessoaUserId }: Props) {
         <div className="text-xs text-slate-500 italic mb-3">
           Nenhuma mensagem ainda.{' '}
           {isMorador && podePostar
-            ? 'Você pode contestar esta multa abaixo.'
+            ? 'Você pode contestar abaixo.'
             : 'O morador pode iniciar uma contestação aqui.'}
         </div>
       ) : (
@@ -136,7 +142,7 @@ export default function ContestacaoThread({ multaId, pessoaUserId }: Props) {
             </Button>
             {isMorador && (
               <span className="text-xs text-slate-500">
-                Ao enviar, a multa passa a status "contestada".
+                Ao enviar, passa a status "contestada" e a administração é avisada.
               </span>
             )}
           </div>
@@ -146,7 +152,7 @@ export default function ContestacaoThread({ multaId, pessoaUserId }: Props) {
       {!podePostar && (
         <div className="text-xs text-slate-600 italic">
           {isMorador
-            ? 'Apenas o morador vinculado a esta multa pode contestar.'
+            ? 'Apenas o morador vinculado pode contestar.'
             : 'Apenas administração e morador participam desta thread.'}
         </div>
       )}
