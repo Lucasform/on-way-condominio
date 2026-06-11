@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
-import { menuFor, isGroup, iconFor, iconColorFor, type MenuLeaf } from '../lib/nav'
+import { menuFor, isGroup, iconFor, type MenuLeaf } from '../lib/nav'
 import { useNavBadges } from '../hooks/useNavBadges'
 
 interface AppLauncherProps {
@@ -74,19 +74,19 @@ function Grade({ leafs }: { leafs: MenuLeaf[] }) {
           >
             <span className="relative">
               <span
-                className={`w-16 h-16 rounded-[1.25rem] flex items-center justify-center text-3xl text-white
-                  shadow-lg shadow-black/20 ring-1 ring-white/10 transition-transform duration-150
-                  group-hover:scale-105 group-active:scale-95 ${iconColorFor(leaf.to)}`}
+                className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl
+                  bg-slate-800/60 border border-slate-700/70 text-slate-200
+                  transition-colors duration-150 group-hover:border-brand-500/60 group-hover:bg-slate-800"
               >
                 {iconFor(leaf.to)}
               </span>
               {n > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 rounded-full bg-emerald-500 text-white text-[11px] font-bold flex items-center justify-center ring-2 ring-slate-950">
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-brand-600 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-slate-950">
                   {n > 9 ? '9+' : n}
                 </span>
               )}
             </span>
-            <span className="text-[11px] text-slate-300 leading-tight line-clamp-2">{leaf.label}</span>
+            <span className="text-[11px] text-slate-400 leading-tight line-clamp-2">{leaf.label}</span>
           </Link>
         )
       })}

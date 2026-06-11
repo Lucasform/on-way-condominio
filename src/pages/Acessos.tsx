@@ -8,6 +8,7 @@ import type { AcessoAutorizado, StatusAcesso, TipoAcesso } from '../types/acesso
 import type { Unidade } from '../types/unidade'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import Tabs from '../components/ui/Tabs'
 
 const STATUS_LABEL: Record<StatusAcesso, string> = {
   ativo: 'Ativo',
@@ -111,24 +112,17 @@ export default function Acessos() {
         }
       />
 
-      <div className="flex flex-wrap gap-2 mb-4">
-        {(['ativos', 'hoje', 'historico', 'todos'] as Filtro[]).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFiltro(f)}
-            className={`px-3 py-1 text-xs rounded border ${
-              filtro === f
-                ? 'bg-brand-600 border-brand-600 text-white'
-                : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-600'
-            }`}
-          >
-            {f === 'ativos' && 'Ativos'}
-            {f === 'hoje' && 'Hoje'}
-            {f === 'historico' && 'Histórico'}
-            {f === 'todos' && 'Todos'}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        className="mb-4"
+        value={filtro}
+        onChange={(k) => setFiltro(k as Filtro)}
+        tabs={[
+          { key: 'ativos', label: 'Ativos' },
+          { key: 'hoje', label: 'Hoje' },
+          { key: 'historico', label: 'Histórico' },
+          { key: 'todos', label: 'Todos' },
+        ]}
+      />
 
       {loading && <div className="text-slate-400 text-sm">Carregando...</div>}
 

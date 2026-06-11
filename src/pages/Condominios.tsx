@@ -77,7 +77,7 @@ export default function Condominios() {
   return (
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-6xl mx-auto">
       <PageHeader
-        title={`Condomínios (${ativosCount}${showInactive && arquivadosCount > 0 ? ` + ${arquivadosCount} arquivados` : ''})`}
+        title={`${ativosCount === 1 ? 'Condomínio' : 'Condomínios'} (${ativosCount}${showInactive && arquivadosCount > 0 ? ` + ${arquivadosCount} arquivados` : ''})`}
         subtitle="Gestão dos condomínios cadastrados na plataforma."
         actions={
           <div className="flex gap-2">

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
 import { signOut } from '../lib/auth'
 import { menuFor, roleLabel, isGroup, iconFor } from '../lib/nav'
@@ -19,7 +19,14 @@ import { prefetchRoutes } from '../lib/prefetchRoutes'
 export default function AppShell() {
   const { perfil, user, effectiveRole, viewAsMorador, setViewAsMorador } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const mainRef = useRef<HTMLElement>(null)
   const items = effectiveRole ? menuFor(effectiveRole) : []
+
+  // Ao trocar de página, sempre começa no topo (corrige scroll preso).
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, left: 0 })
+  }, [location.pathname])
 
   const [temPessoaResidencial, setTemPessoaResidencial] = useState(false)
   useEffect(() => {
@@ -239,7 +246,7 @@ export default function AppShell() {
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto bg-slate-950">
+        <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-950">
           <Outlet />
         </main>
       </div>

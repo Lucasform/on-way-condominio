@@ -5,6 +5,7 @@ import { listCondominios } from '../lib/condominios'
 import type { Condominio } from '../types/condominio'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import Tabs from '../components/ui/Tabs'
 import DeleteButton from '../components/ui/DeleteButton'
 import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
@@ -146,15 +147,15 @@ export default function Servicos() {
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="mb-5 border-b border-slate-800 flex gap-1">
-        <TabButton active={tab === 'prestadores'} onClick={() => setTab('prestadores')}>
-          Prestadores de serviço <span className="ml-1.5 text-xs text-slate-400">({prestadores.length})</span>
-        </TabButton>
-        <TabButton active={tab === 'servicos'} onClick={() => setTab('servicos')}>
-          Serviços <span className="ml-1.5 text-xs text-slate-400">({servicos.length})</span>
-        </TabButton>
-      </div>
+      <Tabs
+        className="mb-5"
+        value={tab}
+        onChange={(k) => setTab(k as Tab)}
+        tabs={[
+          { key: 'prestadores', label: 'Prestadores de serviço', count: prestadores.length },
+          { key: 'servicos', label: 'Serviços', count: servicos.length },
+        ]}
+      />
 
       {/* Filtro de status interno da aba Serviços */}
       {tab === 'servicos' && (
@@ -243,24 +244,6 @@ export default function Servicos() {
         </div>
       )}
     </div>
-  )
-}
-
-// ============================================================
-// Tab button
-// ============================================================
-function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className={`px-4 py-2 -mb-px text-sm font-medium border-b-2 transition ${
-        active
-          ? 'border-brand-600 text-brand-400'
-          : 'border-transparent text-slate-400 hover:text-slate-200'
-      }`}
-    >
-      {children}
-    </button>
   )
 }
 

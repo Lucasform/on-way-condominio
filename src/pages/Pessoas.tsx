@@ -12,6 +12,7 @@ import { useConfirm } from '../components/ui/ConfirmProvider'
 import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
 import EmptyState from '../components/ui/EmptyState'
+import Tabs from '../components/ui/Tabs'
 import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
 import DataTable, { type Column } from '../components/ui/DataTable'
@@ -258,28 +259,17 @@ export default function Pessoas() {
         </div>
       )}
 
-      <div className="mb-4 flex flex-wrap gap-1 border-b border-slate-800">
-        {(['moradores', 'funcionarios', 'diretoria', 'sem_cadastro'] as const).map((t) => {
-          const label = t === 'moradores' ? '🏠 Moradores'
-            : t === 'funcionarios' ? '🛠 Funcionários'
-            : t === 'diretoria' ? '👔 Diretoria'
-            : '⚠ Sem cadastro'
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTab(t)}
-              className={`px-3 py-2 text-sm font-medium border-b-2 -mb-px transition ${
-                tab === t
-                  ? 'border-brand-500 text-slate-100'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {label} <span className="text-xs text-slate-500">({totais[t]})</span>
-            </button>
-          )
-        })}
-      </div>
+      <Tabs
+        className="mb-4"
+        value={tab}
+        onChange={(k) => setTab(k as typeof tab)}
+        tabs={[
+          { key: 'moradores', label: 'Moradores', icon: '🏠', count: totais.moradores },
+          { key: 'funcionarios', label: 'Funcionários', icon: '🛠', count: totais.funcionarios },
+          { key: 'diretoria', label: 'Diretoria', icon: '👔', count: totais.diretoria },
+          { key: 'sem_cadastro', label: 'Sem cadastro', icon: '⚠', count: totais.sem_cadastro },
+        ]}
+      />
 
       {tab === 'sem_cadastro' ? (
         perfisSemCadastro.length === 0 ? (

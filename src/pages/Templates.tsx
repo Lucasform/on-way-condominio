@@ -18,6 +18,7 @@ import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import EmptyState from '../components/ui/EmptyState'
 import Button from '../components/ui/Button'
+import Tabs from '../components/ui/Tabs'
 import DeleteButton from '../components/ui/DeleteButton'
 import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
 
@@ -194,37 +195,26 @@ export default function Templates() {
         }
       />
 
-      <div className="mb-4 flex flex-wrap gap-4 items-end">
-        {isAdmin && condos.length > 0 && (
-          <div className="min-w-[220px]">
-            <label className="block text-xs font-medium text-slate-400 mb-1">Condomínio</label>
-            <Select value={scopeId ?? ''} onChange={(e) => setScopeId(e.target.value)}>
-              {condos.map((c) => (
-                <option key={c.id} value={c.id}>{c.nome}</option>
-              ))}
-            </Select>
-          </div>
-        )}
-        <div>
-          <label className="block text-xs font-medium text-slate-400 mb-1">Tipo</label>
-          <div className="flex gap-1 rounded-md border border-slate-700 p-0.5 bg-slate-900">
-            {(['chat', 'email'] as TemplateTipo[]).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setTipo(t)}
-                className={`px-3 py-1.5 rounded text-sm transition ${
-                  tipo === t
-                    ? 'bg-brand-700 text-white'
-                    : 'text-slate-300 hover:bg-slate-800'
-                }`}
-              >
-                {t === 'chat' ? '💬 Chat' : '📧 E-mail'}
-              </button>
+      <Tabs
+        className="mb-4"
+        value={tipo}
+        onChange={(k) => setTipo(k as TemplateTipo)}
+        tabs={[
+          { key: 'chat', label: 'Chat', icon: '💬' },
+          { key: 'email', label: 'E-mail', icon: '📧' },
+        ]}
+      />
+
+      {isAdmin && condos.length > 0 && (
+        <div className="mb-4 min-w-[220px] max-w-xs">
+          <label className="block text-xs font-medium text-slate-400 mb-1">Condomínio</label>
+          <Select value={scopeId ?? ''} onChange={(e) => setScopeId(e.target.value)}>
+            {condos.map((c) => (
+              <option key={c.id} value={c.id}>{c.nome}</option>
             ))}
-          </div>
+          </Select>
         </div>
-      </div>
+      )}
 
       {showForm && (
         <form onSubmit={salvar} className="mb-6 rounded-lg border border-brand-500/30 bg-brand-500/5 p-5 space-y-4">
