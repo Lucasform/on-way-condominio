@@ -17,8 +17,9 @@ export function useNotifications(userId: string | null) {
     }
     setLoading(true)
     try {
+      // Sininho mostra só as não-lidas: ao marcar como lida, some da lista.
       const [list, count] = await Promise.all([
-        listMyNotifications({ limit: 20 }),
+        listMyNotifications({ onlyUnread: true, limit: 20 }),
         countUnread(),
       ])
       setItems(list)
