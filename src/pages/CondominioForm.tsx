@@ -60,7 +60,9 @@ export default function CondominioForm() {
   const confirm = useConfirm()
   const isNew = !id || id === 'novo'
   const isAdmin = perfil?.role === 'admin_onway'
-  const isSindico = ['administradora', 'sindico', 'subsindico'].includes(perfil?.role ?? '')
+  // Arquivar/excluir só no painel do admin global (sem condomínio assumido),
+  // nunca na visão de dentro de um condomínio.
+  const isAdminGlobal = isAdmin && !perfil?.condominio_id
 
   const [form, setForm] = useState<CondominioInput>(EMPTY)
   const [ativo, setAtivo] = useState(true)
@@ -239,12 +241,7 @@ export default function CondominioForm() {
         subtitle={isNew ? 'Cadastre um novo condomínio na plataforma.' : 'Atualize os dados.'}
         actions={
           <div className="flex items-center gap-2">
-            {!isNew && ativo && isSindico && !isAdmin && (
-              <Button variant="secondary" size="sm" onClick={handleArquivar} loading={arquivando}>
-                📦 Arquivar
-              </Button>
-            )}
-            {!isNew && ativo && isAdmin && (
+            {!isNew && ativo && isAdminGlobal && (
               <>
                 <Button variant="secondary" size="sm" onClick={handleArquivar} loading={arquivando}>
                   📦 Arquivar
@@ -254,7 +251,7 @@ export default function CondominioForm() {
                 </Button>
               </>
             )}
-            {!isNew && !ativo && isAdmin && (
+            {!isNew && !ativo && isAdminGlobal && (
               <>
                 <Button variant="secondary" size="sm" onClick={handleRestaurar} loading={arquivando}>
                   ↻ Restaurar
