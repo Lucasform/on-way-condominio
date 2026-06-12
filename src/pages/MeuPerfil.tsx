@@ -6,6 +6,7 @@ import { roleLabel } from '../lib/nav'
 import PushToggle from '../components/PushToggle'
 import TwoFactorPanel from '../components/TwoFactorPanel'
 import MeusCondominios from '../components/MeusCondominios'
+import Tabs from '../components/ui/Tabs'
 import { updateCanaisNotificacao } from '../lib/pessoas'
 import { CANAIS_NOTIFICACAO_PADRAO, type CanaisNotificacao } from '../types/pessoa'
 import { useConfirm } from '../components/ui/ConfirmProvider'
@@ -44,6 +45,7 @@ export default function MeuPerfil() {
   const [canais, setCanais] = useState<CanaisNotificacao>(CANAIS_NOTIFICACAO_PADRAO)
   const [savingCanais, setSavingCanais] = useState(false)
   const [condoNome, setCondoNome] = useState<string | null>(null)
+  const [aba, setAba] = useState<'perfil' | 'acesso' | 'notificacoes' | 'conta'>('perfil')
 
   const [form, setForm] = useState({
     nome_exibicao: '',
@@ -335,9 +337,21 @@ export default function MeuPerfil() {
 
       <MeusCondominios />
 
-      {/* ============================================================ */}
+      <Tabs
+        className="mb-6"
+        value={aba}
+        onChange={(k) => setAba(k as typeof aba)}
+        tabs={[
+          { key: 'perfil', label: 'Perfil', icon: '👤' },
+          { key: 'acesso', label: 'Acesso & segurança', icon: '🔒' },
+          { key: 'notificacoes', label: 'Notificações', icon: '🔔' },
+          { key: 'conta', label: 'Conta', icon: '⚙️' },
+        ]}
+      />
+
+      {aba === 'perfil' && (
+      <>
       {/* Identidade */}
-      {/* ============================================================ */}
       <Section title="Identidade">
         <div className="flex flex-col sm:flex-row gap-6">
           <div className="flex flex-col items-center gap-2">
@@ -479,9 +493,12 @@ export default function MeuPerfil() {
         </Section>
       )}
 
-      {/* ============================================================ */}
+      </>
+      )}
+
+      {aba === 'acesso' && (
+      <>
       {/* Contato — Email */}
-      {/* ============================================================ */}
       <Section title="E-mail" hint="Usado pra login. Trocar exige confirmação nos dois endereços.">
         <form onSubmit={handleChangeEmail} className="flex flex-col sm:flex-row gap-3 sm:items-end">
           <Field label="E-mail atual" className="flex-1">
@@ -533,10 +550,11 @@ export default function MeuPerfil() {
         </div>
       </Section>
 
-      {/* ============================================================ */}
+      </>
+      )}
+
       {/* Preferências de notificação — só pra quem tem cadastro residencial */}
-      {/* ============================================================ */}
-      {pessoa && (
+      {aba === 'notificacoes' && pessoa && (
         <Section
           title="Como você quer ser avisado"
           hint="Escolha por quais canais quer receber avisos do condomínio (multas, notificações, encomendas). O sininho dentro do app é sempre mantido."
@@ -571,9 +589,9 @@ export default function MeuPerfil() {
         </Section>
       )}
 
-      {/* ============================================================ */}
+      {aba === 'conta' && (
+      <>
       {/* Conta — info da sessão */}
-      {/* ============================================================ */}
       <Section title="Conta">
         <dl className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-y-2 gap-x-4 text-sm">
           <dt className="text-slate-400">Papel</dt>
@@ -668,6 +686,8 @@ export default function MeuPerfil() {
           </Button>
         </div>
       </Section>
+      </>
+      )}
     </div>
   )
 }
