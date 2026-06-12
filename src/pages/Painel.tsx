@@ -14,6 +14,7 @@ import { useAuth } from '../components/AuthProvider'
 import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
+import Tabs from '../components/ui/Tabs'
 import { Select } from '../components/ui/Input'
 
 // ----------------------------------------------------------------
@@ -128,6 +129,7 @@ export default function Painel() {
   const [chamados, setChamados] = useState<Chamado[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [tipoFiltro, setTipoFiltro] = useState<'tudo' | 'ocorrencias' | 'multas' | 'chamados'>('tudo')
 
   useEffect(() => {
     if (isAdmin) {
@@ -188,6 +190,7 @@ export default function Painel() {
     }
 
     // Ocorrências que NÃO viraram multa entram no fluxo
+    if (tipoFiltro === 'tudo' || tipoFiltro === 'ocorrencias')
     for (const o of ocorrencias) {
       if (o.status === 'virou_multa') continue // a multa correspondente representa
       const col = ocorrenciaColumn(o)
@@ -203,6 +206,7 @@ export default function Painel() {
     }
 
     // Multas: cada multa entra em sua coluna
+    if (tipoFiltro === 'tudo' || tipoFiltro === 'multas')
     for (const m of multas) {
       const col = multaColumn(m)
       acc[col].push({
@@ -218,6 +222,7 @@ export default function Painel() {
     }
 
     // Chamados: cada chamado entra em sua coluna (visualizacao; avancos pelo detalhe)
+    if (tipoFiltro === 'tudo' || tipoFiltro === 'chamados')
     for (const c of chamados) {
       const col = chamadoColumn(c)
       acc[col].push({
@@ -236,7 +241,7 @@ export default function Painel() {
       acc[k].sort((a, b) => (a.date < b.date ? 1 : -1))
     }
     return acc
-  }, [ocorrencias, multas, chamados, unidades])
+  }, [ocorrencias, multas, chamados, unidades, tipoFiltro])
 
   async function quickAdvance(card: Card) {
     try {
@@ -354,6 +359,18 @@ export default function Painel() {
           <Link to="/chamados/novo" className="text-brand-400 hover:underline">+ Novo chamado</Link>
         </div>
       </div>
+
+      <Tabs
+        className="mb-4"
+        value={tipoFiltro}
+        onChange={(k) => setTipoFiltro(k as typeof tipoFiltro)}
+        tabs={[
+          { key: 'tudo', label: 'Tudo' },
+          { key: 'ocorrencias', label: 'Ocorrências', icon: '⚠️' },
+          { key: 'multas', label: 'Multas', icon: '💰' },
+          { key: 'chamados', label: 'Chamados', icon: '🛠' },
+        ]}
+      />
 
       {error && (
         <div className="mb-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
