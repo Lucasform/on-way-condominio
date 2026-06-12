@@ -1,8 +1,11 @@
-// PDF de notificacao (advertencia formal sem valor). Mesmo layout da multa, sem caixa de valor.
+// PDF de notificacao (advertencia formal sem valor).
+// Se o condomínio tiver modelo_notificacao_url, usa pdf-lib para overlay sobre o template.
+// Caso contrário, gera layout padrão via jspdf.
 import type { Notificacao } from '../types/notificacao'
 import type { Unidade } from '../types/unidade'
 import type { Pessoa } from '../types/pessoa'
 import type { Condominio } from '../types/condominio'
+import { gerarPdfComTemplate, downloadPdfBytes } from './pdfTemplateOverlay'
 
 export async function gerarPdfNotificacao(args: {
   notificacao: Notificacao
@@ -13,9 +16,52 @@ export async function gerarPdfNotificacao(args: {
   emissorNome?: string | null
   output?: 'save' | 'base64'
 }): Promise<void | { base64: string; filename: string }> {
-  const { jsPDF } = await import('jspdf')
   const { notificacao, unidade, pessoa, condominio, assinaturaUrl, emissorNome } = args
+  const unidadeLabel = unidade ? (unidade.bloco ? `${unidade.bloco}-${unidade.numero}` : unidade.numero) : '—'
+  const nome = `notificacao-${unidadeLabel}-${notificacao.id.slice(0, 8)}.pdf`
 
+  // Overlay sobre modelo do condomínio quando disponível
+  if (condominio.modelo_notificacao_url) {
+    const bytes = await gerarPdfComTemplate(condominio.modelo_notificacao_url, {
+      titulo: 'NOTIFICAÇÃO / ADVERTÊNCIA',
+      numero: notificacao.id,
+      data: fmtData(notificacao.created_at),
+      destinatario: {
+        nome: pessoa?.nome ?? '(à unidade)',
+        unidade: unidadeLabel,
+        cpf: pessoa?.cpf ? formatarCPF(pessoa.cpf) : undefined,
+      },
+      campos: [
+        { label: 'Assunto', value: notificacao.assunto },
+        { label: 'Descrição', value: notificacao.descricao || '—' },
+        ...(notificacao.artigo_regimento
+          ? [{ label: 'Base no regimento interno', value: notificacao.artigo_regimento }]
+          : []),
+      ],
+      caixa: {
+        label: '⚠ Advertência formal',
+        value: 'Reincidência poderá resultar em multa',
+        bg: [254, 243, 199],
+        fg: [146, 64, 14],
+      },
+      corpo: [
+        'Comunicamos o registro da ocorrência descrita acima. Solicitamos atenção e regularização imediata da situação.',
+        'Esta notificação tem caráter administrativo e busca preservar a boa convivência entre condôminos. Em caso de dúvida ou contestação, procure a administração no prazo de 15 (quinze) dias.',
+      ],
+      assinaturaUrl,
+      emissorNome: emissorNome ?? undefined,
+      condominioNome: condominio.nome,
+      idDocumento: notificacao.id,
+    })
+    if (args.output === 'base64') {
+      const base64 = btoa(String.fromCharCode(...bytes))
+      return { base64, filename: nome }
+    }
+    downloadPdfBytes(bytes, nome)
+    return
+  }
+
+  const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const W = 210, H = 297
   let y = 20
@@ -67,7 +113,6 @@ export async function gerarPdfNotificacao(args: {
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
   y += 6
-  const unidadeLabel = unidade ? (unidade.bloco ? `${unidade.bloco}-${unidade.numero}` : unidade.numero) : '—'
   doc.text(`Nome: ${pessoa?.nome ?? '(à unidade)'}`, 20, y); y += 5
   doc.text(`Unidade: ${unidadeLabel}`, 20, y); y += 5
   if (pessoa?.cpf) { doc.text(`CPF: ${formatarCPF(pessoa.cpf)}`, 20, y); y += 5 }
@@ -146,7 +191,6 @@ export async function gerarPdfNotificacao(args: {
     105, H - 12, { align: 'center' },
   )
 
-  const nome = `notificacao-${unidadeLabel}-${notificacao.id.slice(0, 8)}.pdf`
   if (args.output === 'base64') {
     const base64 = doc.output('datauristring').split(',')[1] ?? ''
     return { base64, filename: nome }

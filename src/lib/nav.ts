@@ -293,6 +293,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
   // ============================================================
   portaria: [
     ...COMMON_TOP,
+    { to: '/plantao', label: 'Plantão' },
     {
       label: 'Atendimento',
       children: [

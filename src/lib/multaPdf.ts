@@ -1,9 +1,10 @@
 // Gera PDF de notificação de multa em layout padrão A4.
-// Lazy-load do jspdf pra não inflar o bundle inicial.
+// Se o condomínio tiver modelo_notificacao_url, usa pdf-lib para overlay sobre o template.
 import type { Multa } from '../types/multa'
 import type { Unidade } from '../types/unidade'
 import type { Pessoa } from '../types/pessoa'
 import type { Condominio } from '../types/condominio'
+import { gerarPdfComTemplate, downloadPdfBytes } from './pdfTemplateOverlay'
 
 export async function gerarPdfNotificacao(args: {
   multa: Multa
@@ -13,9 +14,46 @@ export async function gerarPdfNotificacao(args: {
   assinaturaUrl?: string | null
   emissorNome?: string | null
 }): Promise<void> {
-  const { jsPDF } = await import('jspdf')
   const { multa, unidade, pessoa, condominio, assinaturaUrl, emissorNome } = args
+  const unidadeLabel = unidade ? (unidade.bloco ? `${unidade.bloco}-${unidade.numero}` : unidade.numero) : '—'
+  const nome = `notificacao-${unidadeLabel}-${multa.id.slice(0, 8)}.pdf`
 
+  if (condominio.modelo_notificacao_url) {
+    const bytes = await gerarPdfComTemplate(condominio.modelo_notificacao_url, {
+      titulo: 'NOTIFICAÇÃO DE INFRAÇÃO',
+      numero: multa.id,
+      data: fmtData(multa.created_at),
+      destinatario: {
+        nome: pessoa?.nome ?? '(à unidade)',
+        unidade: unidadeLabel,
+        cpf: pessoa?.cpf ? formatarCPF(pessoa.cpf) : undefined,
+      },
+      campos: [
+        { label: 'Descrição da infração', value: multa.descricao || '—' },
+        ...(multa.artigo_regimento
+          ? [{ label: 'Base no regimento interno', value: multa.artigo_regimento }]
+          : []),
+      ],
+      caixa: {
+        label: 'Valor da multa',
+        value: `R$ ${Number(multa.valor).toFixed(2).replace('.', ',')}`,
+        bg: [253, 242, 243],
+        fg: [139, 20, 36],
+      },
+      corpo: [
+        'Comunicamos que foi registrada a infração descrita acima, conforme apuração da administração condominial.',
+        'A multa deverá ser quitada no próximo boleto condominial. Em caso de discordância, o(a) condômino(a) pode apresentar contestação no prazo de 30 (trinta) dias contados da ciência desta notificação.',
+      ],
+      assinaturaUrl,
+      emissorNome: emissorNome ?? undefined,
+      condominioNome: condominio.nome,
+      idDocumento: multa.id,
+    })
+    downloadPdfBytes(bytes, nome)
+    return
+  }
+
+  const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const W = 210, H = 297
   let y = 20
@@ -70,7 +108,6 @@ export async function gerarPdfNotificacao(args: {
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(10)
   y += 6
-  const unidadeLabel = unidade ? (unidade.bloco ? `${unidade.bloco}-${unidade.numero}` : unidade.numero) : '—'
   doc.text(`Nome: ${pessoa?.nome ?? '(à unidade)'}`, 20, y); y += 5
   doc.text(`Unidade: ${unidadeLabel}`, 20, y); y += 5
   if (pessoa?.cpf) { doc.text(`CPF: ${formatarCPF(pessoa.cpf)}`, 20, y); y += 5 }
@@ -151,7 +188,6 @@ export async function gerarPdfNotificacao(args: {
     105, H - 12, { align: 'center' },
   )
 
-  const nome = `notificacao-${unidadeLabel}-${multa.id.slice(0, 8)}.pdf`
   doc.save(nome)
 }
 

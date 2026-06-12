@@ -84,6 +84,7 @@ const Comunicados = lazy(() => import('./pages/Comunicados'))
 const ComunicadoNovo = lazy(() => import('./pages/ComunicadoNovo'))
 const ComunicadoDetalhe = lazy(() => import('./pages/ComunicadoDetalhe'))
 const Help = lazy(() => import('./pages/Help'))
+const Plantao = lazy(() => import('./pages/Plantao'))
 
 export default function App() {
   return (
@@ -358,6 +359,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <Encomendas />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/plantao"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico', 'portaria', 'ronda']}>
+                  <Plantao />
                 </ProtectedRoute>
               }
             />
