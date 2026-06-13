@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { listOcorrencias } from '../lib/ocorrencias'
 import { listMultas, MULTA_STATUS_LABEL } from '../lib/multas'
 import { listEncomendas } from '../lib/encomendas'
@@ -184,7 +184,7 @@ export default function Relatorios() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Relatórios"
         subtitle="Gere relatórios em PDF do período escolhido."
@@ -250,3 +250,4 @@ export default function Relatorios() {
     </div>
   )
 }
+

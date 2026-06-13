@@ -1,4 +1,4 @@
-import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
+﻿import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import { listCondominios } from '../lib/condominios'
@@ -120,7 +120,7 @@ export default function MuralNova() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Nova publicação"
         subtitle="Comunique algo ao condomínio. Aparece no mural pra todos os moradores."
@@ -299,3 +299,4 @@ export default function MuralNova() {
     </div>
   )
 }
+

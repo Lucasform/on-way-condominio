@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listEventos } from '../lib/eventos'
 import { listMultas } from '../lib/multas'
@@ -181,7 +181,7 @@ export default function Calendario() {
   const selectedItems = selectedDay ? itemsByDate.get(selectedDay) ?? [] : []
 
   return (
-    <div className="px-4 py-6 sm:px-6 sm:py-8 max-w-6xl mx-auto">
+    <div className="px-4 py-6 sm:px-6 sm:py-8 max-w-[1400px] mx-auto">
       <PageHeader
         title="Calendário"
         subtitle="Eventos do condomínio e prazos importantes."
@@ -330,3 +330,4 @@ export default function Calendario() {
     </div>
   )
 }
+

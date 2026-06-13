@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   deleteOcorrencia,
@@ -216,7 +216,7 @@ export default function OcorrenciaDetalhe() {
 
   if (error || !ocorrencia) {
     return (
-      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
         <PageHeader
           title="Ocorrência"
           actions={
@@ -237,7 +237,7 @@ export default function OcorrenciaDetalhe() {
   const transitions = ALLOWED_TRANSITIONS[ocorrencia.status]
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Ocorrência"
         actions={
@@ -489,3 +489,4 @@ export default function OcorrenciaDetalhe() {
     </div>
   )
 }
+

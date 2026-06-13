@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+﻿import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   createRegimentoArtigo,
@@ -110,7 +110,7 @@ export default function RegimentoForm() {
   if (loading) return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando...</div>
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={isNew ? 'Novo artigo do regimento' : 'Editar artigo'}
         actions={
@@ -190,3 +190,4 @@ export default function RegimentoForm() {
     </div>
   )
 }
+

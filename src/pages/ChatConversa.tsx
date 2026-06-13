@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+﻿import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   getConversa,
@@ -294,11 +294,11 @@ export default function ChatConversa() {
     }
   }
 
-  if (loading) return <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto"><DetailSkeleton /></div>
+  if (loading) return <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto"><DetailSkeleton /></div>
 
   if (error || !conversa) {
     return (
-      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
         <PageHeader
           title="Conversa"
           actions={<Link to="/chat"><Button variant="ghost">← Voltar</Button></Link>}
@@ -313,7 +313,7 @@ export default function ChatConversa() {
   const podeEnviar = conversa.status !== 'encerrada' && (isMorador || isStaff)
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-8 max-w-3xl mx-auto flex flex-col h-[calc(100vh-3rem)]">
+    <div className="px-4 py-6 sm:px-8 sm:py-8 max-w-[1400px] mx-auto flex flex-col h-[calc(100vh-3rem)]">
       <PageHeader
         title={ASSUNTO_LABEL[conversa.assunto]}
         subtitle={(() => {
@@ -511,3 +511,4 @@ function MensagemBubble({
     </div>
   )
 }
+

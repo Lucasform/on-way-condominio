@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import { listAcessos } from '../lib/acessos'
@@ -97,7 +97,7 @@ export default function Acessos() {
   }, [rows, filtro])
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-4xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={`Acessos autorizados (${filtered.length})`}
         actions={
@@ -176,3 +176,4 @@ export default function Acessos() {
     </div>
   )
 }
+

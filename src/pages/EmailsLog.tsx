@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+﻿import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import {
   listEmailLogs,
   deleteEmailLog,
@@ -314,7 +314,7 @@ export default function EmailsLog() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-6xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Controle de e-mails"
         subtitle="Histórico e envio manual de e-mails."
@@ -579,3 +579,4 @@ function escapeHtml(s: string): string {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] ?? c,
   )
 }
+

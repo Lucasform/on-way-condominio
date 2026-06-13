@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listAssembleias } from '../lib/assembleias'
 import { listCondominios } from '../lib/condominios'
@@ -63,7 +63,7 @@ export default function Assembleias() {
   }, [scopeId, isAdmin])
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Assembleias"
         subtitle="Histórico de assembleias, atas e votações deliberadas."
@@ -148,3 +148,4 @@ export default function Assembleias() {
     </div>
   )
 }
+

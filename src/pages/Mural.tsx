@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   listPublicacoes,
@@ -283,7 +283,7 @@ export default function Mural() {
   const isAdminGeral = perfil?.role === 'admin_onway'
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Mural"
         subtitle="Publicações da administração e comunicados do condomínio."
@@ -601,3 +601,4 @@ function formatExpira(iso: string): string {
   if (horas >= 1) return `em ${horas}h${minutos ? ` ${minutos}min` : ''}`
   return `em ${minutos}min`
 }
+

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import {
@@ -153,7 +153,7 @@ export default function AcessoDetalhe() {
 
   if (error || !acesso) {
     return (
-      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
         <PageHeader
           title="Acesso"
           actions={
@@ -174,7 +174,7 @@ export default function AcessoDetalhe() {
   const podeRevogar = efetivo === 'ativo' && (staff || acesso.criado_por === user?.id)
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Acesso autorizado"
         actions={
@@ -300,3 +300,4 @@ export default function AcessoDetalhe() {
     </div>
   )
 }
+

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import { roleLabel } from '../lib/nav'
@@ -32,7 +32,7 @@ export default function Home() {
 
   // Demais perfis: home simples (eles têm Dashboard/Painel próprios)
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-4xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <OnboardingChecklist />
 
       <h1 className="text-3xl font-bold tracking-tight text-brand-400">
@@ -126,7 +126,7 @@ function MoradorHome() {
   const totalAbertas = multasAbertas.reduce((s, m) => s + Number(m.valor), 0)
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-4xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <h1 className="text-2xl font-bold text-slate-100">
         Olá, {perfil?.nome_exibicao ?? 'morador'} 👋
       </h1>
@@ -295,3 +295,4 @@ function QuickAction({ to, label }: { to: string; label: string }) {
     </Link>
   )
 }
+

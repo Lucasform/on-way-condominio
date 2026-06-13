@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+﻿import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../components/AuthProvider'
 import { isGestor } from '../lib/permissions'
 import { listCondominios } from '../lib/condominios'
@@ -115,7 +115,7 @@ export default function Servicos() {
   }, [statusFiltro, servicosEmCurso, servicosHistorico])
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Prestação de Serviços"
         subtitle="Prestadores cadastrados e serviços executados no condomínio."
@@ -686,3 +686,4 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
     </div>
   )
 }
+

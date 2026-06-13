@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listEncomendas, darBaixaEncomenda, devolverEncomenda } from '../lib/encomendas'
 import { listCondominios } from '../lib/condominios'
@@ -168,7 +168,7 @@ export default function Encomendas() {
   const aguardando = rows.filter((r) => r.status === 'aguardando').length
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={isMorador ? 'Minhas encomendas' : `Encomendas${aguardando > 0 ? ` (${aguardando} aguardando)` : ''}`}
         subtitle={
@@ -457,4 +457,5 @@ function ListaComidas({ rows, unidadeLabel, onCard, onEntregar, selected, onTogg
     </div>
   )
 }
+
 

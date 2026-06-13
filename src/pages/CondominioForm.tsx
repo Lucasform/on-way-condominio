@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+﻿import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
 import {
   createCondominio,
@@ -235,7 +235,7 @@ export default function CondominioForm() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={isNew ? 'Novo condomínio' : 'Editar condomínio'}
         subtitle={isNew ? 'Cadastre um novo condomínio na plataforma.' : 'Atualize os dados.'}
@@ -619,3 +619,4 @@ export default function CondominioForm() {
     </div>
   )
 }
+

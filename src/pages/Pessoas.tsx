@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listPessoas, setPessoaAtivo, convidarPessoa, resetSenhaUsuario, excluirUsuarioAuth } from '../lib/pessoas'
 import { listCondominios } from '../lib/condominios'
@@ -226,7 +226,7 @@ export default function Pessoas() {
   ]
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-6xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={`Pessoas (${rowsFiltrados.length})`}
         subtitle="Moradores, funcionários e diretoria. Filtre pelas abas."
@@ -368,3 +368,4 @@ function formatPhone(digits: string): string {
   }
   return digits
 }
+

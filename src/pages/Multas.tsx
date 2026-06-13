@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listMultas, MULTA_STATUS_LABEL, changeMultaStatus } from '../lib/multas'
 import { listCondominios } from '../lib/condominios'
@@ -160,7 +160,7 @@ export default function Multas() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={isMorador ? 'Minhas multas' : `Multas${rows.length > 0 ? ` (${rows.length})` : ''}`}
         subtitle={
@@ -321,3 +321,4 @@ export default function Multas() {
     </div>
   )
 }
+

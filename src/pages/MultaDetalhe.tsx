@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   getMulta,
@@ -163,7 +163,7 @@ export default function MultaDetalhe() {
 
   if (error || !multa) {
     return (
-      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
         <PageHeader
           title="Multa"
           actions={<Link to="/multas"><Button variant="ghost">← Voltar</Button></Link>}
@@ -210,7 +210,7 @@ export default function MultaDetalhe() {
   const transitions = MULTA_STATUS_TRANSITIONS[multa.status]
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Multa"
         actions={
@@ -461,3 +461,4 @@ function vencimentoClass(venc: string | null, status: StatusMulta): string {
   if (diff <= 3) return 'text-amber-300 font-medium'
   return 'text-slate-200'
 }
+

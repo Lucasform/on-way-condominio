@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
@@ -107,7 +107,7 @@ export default function Help() {
   })
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Ajuda"
         subtitle="Perguntas frequentes sobre o OnWay Condomínio."
@@ -173,3 +173,4 @@ export default function Help() {
     </div>
   )
 }
+

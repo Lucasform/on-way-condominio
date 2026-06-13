@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Plantão — tela unificada para o papel de portaria.
  * Agrega encomendas pendentes, acessos de hoje e ações rápidas em uma única tela.
  */
@@ -103,7 +103,7 @@ export default function Plantao() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-[1400px] mx-auto px-4 py-6 space-y-6">
       {/* Cabeçalho */}
       <div className="flex items-start justify-between gap-3">
         <div>
@@ -346,3 +346,4 @@ function QuickAction({
     </button>
   )
 }
+

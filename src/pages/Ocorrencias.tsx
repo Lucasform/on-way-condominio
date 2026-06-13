@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listOcorrencias, getOcorrenciaFotoSignedUrl } from '../lib/ocorrencias'
 import { listUnidades } from '../lib/unidades'
@@ -111,7 +111,7 @@ export default function Ocorrencias() {
   const podeRegistrar = perfil?.role !== 'morador'
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={`Ocorrências${rows.length > 0 ? ` (${rows.length})` : ''}`}
         subtitle="Registros de incidentes e relatos no condomínio."
@@ -207,3 +207,4 @@ export default function Ocorrencias() {
     </div>
   )
 }
+

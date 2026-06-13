@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+﻿import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import { listCondominios } from '../lib/condominios'
@@ -127,7 +127,7 @@ export default function EncomendaNova() {
   // Tela inicial: cards de seleção do tipo
   if (!tipoUrl) {
     return (
-      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
         <PageHeader
           title="Registrar"
           subtitle="O que chegou na portaria?"
@@ -163,7 +163,7 @@ export default function EncomendaNova() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={`Registrar ${infoAtual.titulo.toLowerCase()}`}
         subtitle={infoAtual.descricao}
@@ -305,3 +305,4 @@ export default function EncomendaNova() {
     </div>
   )
 }
+

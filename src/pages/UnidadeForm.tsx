@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+﻿import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { createUnidade, deleteUnidade, getUnidade, updateUnidade } from '../lib/unidades'
 import { listCondominios } from '../lib/condominios'
@@ -125,7 +125,7 @@ export default function UnidadeForm() {
   if (loading) return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando...</div>
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={isNew ? 'Nova unidade' : 'Editar unidade'}
         actions={
@@ -219,3 +219,4 @@ export default function UnidadeForm() {
     </div>
   )
 }
+

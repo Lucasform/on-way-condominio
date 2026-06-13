@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listVeiculos, setVeiculoAtivo } from '../lib/veiculos'
 import { listCondominios } from '../lib/condominios'
@@ -110,7 +110,7 @@ export default function Veiculos() {
   ]
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-6xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={`Veículos (${rows.length})`}
         subtitle="Carros, motos e demais veículos das unidades."
@@ -174,3 +174,4 @@ export default function Veiculos() {
     </div>
   )
 }
+

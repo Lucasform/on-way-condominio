@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listNotificacoes, NOTIFICACAO_STATUS_LABEL, changeNotificacaoStatus } from '../lib/notificacoes'
 import { listUnidades } from '../lib/unidades'
@@ -169,7 +169,7 @@ export default function Notificacoes() {
   )
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-6xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Notificações"
         subtitle="Advertências formais emitidas a partir de uma ocorrência. Sem valor financeiro."
@@ -250,3 +250,4 @@ export default function Notificacoes() {
     </div>
   )
 }
+

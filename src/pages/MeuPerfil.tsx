@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+﻿import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../components/AuthProvider'
@@ -320,7 +320,7 @@ export default function MeuPerfil() {
   const emailMudou = (novoEmail.trim().toLowerCase() !== (user.email ?? '').toLowerCase()) && novoEmail.trim().length > 0
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader title="Meu perfil" subtitle="Seus dados, contato e segurança." />
 
       {feedback && (
@@ -799,3 +799,4 @@ async function solicitarExclusao() {
   await supabase.auth.signOut()
   window.location.href = '/entrar'
 }
+

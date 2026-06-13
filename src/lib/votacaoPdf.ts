@@ -1,6 +1,7 @@
 // Gera PDF da ata de votacao com totais e resultado.
 import type { Votacao, VotacaoOpcao, Voto } from '../types/votacao'
 import type { Condominio } from '../types/condominio'
+import type { MesaMembro } from '../types/assembleia'
 
 export async function gerarPdfAtaVotacao(args: {
   votacao: Votacao
@@ -10,9 +11,10 @@ export async function gerarPdfAtaVotacao(args: {
   quorumMinimo: number | null
   assinaturaUrl?: string | null
   emissorNome?: string | null
+  mesaDiretora?: MesaMembro[]
 }): Promise<void> {
   const { jsPDF } = await import('jspdf')
-  const { votacao, opcoes, votos, condominio, quorumMinimo, assinaturaUrl, emissorNome } = args
+  const { votacao, opcoes, votos, condominio, quorumMinimo, assinaturaUrl, emissorNome, mesaDiretora } = args
 
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const W = 210, H = 297
@@ -84,7 +86,7 @@ export async function gerarPdfAtaVotacao(args: {
   }
   if (quorumMinimo != null) {
     const atingiu = totalVotos >= quorumMinimo
-    doc.text(`Quórum mínimo: ${quorumMinimo} — ${atingiu ? 'ATINGIDO' : 'NÃO ATINGIDO'}`, 20, y)
+    doc.text(`Quórum mínimo: ${quorumMinimo} - ${atingiu ? 'ATINGIDO' : 'NAO ATINGIDO'}`, 20, y)
     y += 5
   }
   y += 3
@@ -118,23 +120,16 @@ export async function gerarPdfAtaVotacao(args: {
     y += 8
   }
 
-  // Assinatura
-  y = Math.max(y + 14, H - 55)
-  if (assinaturaUrl) {
-    try {
-      const ass = await carregarImagem(assinaturaUrl)
-      const maxW = 50, maxH = 18
-      const ratio = ass.width / ass.height
-      let w = maxW, h = maxW / ratio
-      if (h > maxH) { h = maxH; w = maxH * ratio }
-      doc.addImage(ass.dataUrl, ass.format, 105 - w / 2, y - h, w, h)
-    } catch { /* noop */ }
-  }
-  doc.setDrawColor(150)
-  doc.line(60, y, W - 60, y)
-  doc.setFontSize(10)
-  doc.text(emissorNome ?? 'Síndico', 105, y + 5, { align: 'center' })
-  doc.text(condominio?.nome ?? '', 105, y + 10, { align: 'center' })
+  // Assinaturas — mesa diretora + síndico
+  await renderizarAssinaturas(doc, {
+    y,
+    W,
+    H,
+    mesaDiretora: mesaDiretora ?? [],
+    assinaturaUrl: assinaturaUrl ?? null,
+    emissorNome: emissorNome ?? null,
+    condominioNome: condominio?.nome ?? '',
+  })
 
   doc.setFontSize(8)
   doc.setTextColor(140)
@@ -145,6 +140,134 @@ export async function gerarPdfAtaVotacao(args: {
 
   doc.save(`ata-votacao-${votacao.id.slice(0, 8)}.pdf`)
 }
+
+// ============================================================
+// Renderiza colunas de assinatura (mesa + síndico)
+// ============================================================
+
+const CARGO_LABEL: Record<string, string> = {
+  presidente_mesa: 'Presidente da Mesa',
+  secretario: 'Secretário(a)',
+  coordenador: 'Coordenador(a) da Assembleia',
+  outro: 'Participante',
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function renderizarAssinaturas(
+  doc: any,
+  opts: {
+    y: number
+    W: number
+    H: number
+    mesaDiretora: MesaMembro[]
+    assinaturaUrl: string | null
+    emissorNome: string | null
+    condominioNome: string
+  },
+): Promise<void> {
+  const { W, H, mesaDiretora, assinaturaUrl, emissorNome, condominioNome } = opts
+
+  // Síndico sempre aparece como último bloco
+  const sindico: MesaMembro = {
+    nome: emissorNome ?? 'Síndico',
+    cpf: '',
+    cargo: 'outro',
+    assinatura_url: assinaturaUrl ?? null,
+  }
+  sindico.cargo = 'outro'
+
+  const membros: MesaMembro[] = mesaDiretora.length > 0
+    ? [...mesaDiretora, { ...sindico, cargo: 'outro' }]
+    : [sindico]
+
+  // Ao máximo 3 colunas por linha
+  const MAX_COL = 3
+  const linhas: MesaMembro[][] = []
+  for (let i = 0; i < membros.length; i += MAX_COL) {
+    linhas.push(membros.slice(i, i + MAX_COL))
+  }
+
+  // Área de assinaturas: última linha começa a ~60mm do rodapé
+  const ALTURA_BLOCO = 28 // mm por bloco de assinatura
+  const totalAltura = linhas.length * ALTURA_BLOCO
+  let startY = Math.max(opts.y + 14, H - 20 - totalAltura)
+
+  const MARGIN = 20
+
+  // Separador
+  doc.setDrawColor(200)
+  doc.setLineWidth(0.3)
+  doc.line(MARGIN, startY - 4, W - MARGIN, startY - 4)
+  doc.setFontSize(8)
+  doc.setTextColor(120)
+  doc.text('Assinaturas', MARGIN, startY - 1)
+  doc.setTextColor(20)
+
+  for (const linha of linhas) {
+    const n = linha.length
+    const colW = (W - MARGIN * 2) / n
+
+    for (let c = 0; c < n; c++) {
+      const membro = linha[c]
+      const cx = MARGIN + c * colW + colW / 2
+      let by = startY + 6
+
+      if (membro.assinatura_url) {
+        try {
+          const ass = await carregarImagem(membro.assinatura_url)
+          const maxW = 42, maxH = 14
+          const ratio = ass.width / ass.height
+          let iw = maxW, ih = maxW / ratio
+          if (ih > maxH) { ih = maxH; iw = maxH * ratio }
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ;(doc as any).addImage(ass.dataUrl, ass.format, cx - iw / 2, by - ih, iw, ih)
+          by += 2
+        } catch { /* sem imagem — linha em branco */ }
+      } else {
+        by += 12 // espaço para assinatura manual
+      }
+
+      // Linha de assinatura
+      doc.setDrawColor(100)
+      doc.setLineWidth(0.3)
+      doc.line(cx - colW * 0.4, by, cx + colW * 0.4, by)
+      by += 4
+
+      doc.setFontSize(8)
+      doc.setFont('helvetica', 'bold')
+      doc.text(membro.nome, cx, by, { align: 'center', maxWidth: colW - 4 })
+      by += 4
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(7)
+      doc.setTextColor(80)
+
+      if (c === n - 1 && mesaDiretora.length === 0) {
+        // coluna única = síndico
+        doc.text('Síndico', cx, by, { align: 'center' })
+        by += 3
+        doc.text(condominioNome, cx, by, { align: 'center', maxWidth: colW - 4 })
+      } else if (c === n - 1 && mesaDiretora.length > 0) {
+        doc.text('Síndico', cx, by, { align: 'center' })
+        by += 3
+        if (membro.cpf) doc.text(`CPF: ${membro.cpf}`, cx, by, { align: 'center' })
+      } else {
+        const cargoLabel = CARGO_LABEL[membro.cargo] ?? membro.cargo
+        doc.text(cargoLabel, cx, by, { align: 'center' })
+        by += 3
+        if (membro.cpf) doc.text(`CPF: ${membro.cpf}`, cx, by, { align: 'center' })
+      }
+
+      doc.setTextColor(20)
+    }
+
+    startY += ALTURA_BLOCO
+  }
+}
+
+// ============================================================
+// Helpers
+// ============================================================
 
 function bloco(
   doc: { splitTextToSize: (s: string, w: number) => string[]; text: (s: string | string[], x: number, y: number) => void },

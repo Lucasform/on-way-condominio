@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { listAudit, deleteAuditEntries, type AuditEntry } from '../lib/auditLog'
 import { listCondominios } from '../lib/condominios'
 import type { Condominio } from '../types/condominio'
@@ -141,7 +141,7 @@ export default function AuditLog() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-7xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Log de auditoria"
         subtitle={`${rowsFiltradas.length} de ${rows.length} ações sensíveis ${buscaAtor ? '(filtrado por ator)' : 'registradas'}.`}
@@ -325,3 +325,4 @@ function fmtDetalhes(d: Record<string, unknown>): string {
     .map(([k, v]) => `${k}=${typeof v === 'object' ? JSON.stringify(v) : v}`)
     .join(' · ')
 }
+

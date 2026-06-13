@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+﻿import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../components/AuthProvider'
 import { supabase } from '../lib/supabase'
 import {
@@ -298,7 +298,7 @@ export default function CondominioFornecedoresPage() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-4xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Fornecedores do condomínio"
         actions={
@@ -580,4 +580,5 @@ function FeiraCabecalho({ rows }: { rows: CondominioFornecedor[] }) {
     </div>
   )
 }
+
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import {
   listEnvioFila,
   reenviarEnvio,
@@ -115,7 +115,7 @@ export default function FilaEnvios() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Fila de envios"
         subtitle="Avisos que falharam e estão sendo reprocessados. Reenvie manualmente se precisar."
@@ -213,3 +213,4 @@ export default function FilaEnvios() {
     </div>
   )
 }
+

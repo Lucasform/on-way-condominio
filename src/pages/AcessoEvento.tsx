@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+﻿import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import { createAcesso, getMyUnidadeIds } from '../lib/acessos'
@@ -125,7 +125,7 @@ export default function AcessoEvento() {
   const erroCount = resultado?.filter((r) => r.status === 'erro').length ?? 0
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Liberar acesso em lote"
         subtitle="Aniversário, reunião, mudança — autorize vários nomes de uma só vez."
@@ -269,3 +269,4 @@ export default function AcessoEvento() {
     </div>
   )
 }
+

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getPessoa } from '../lib/pessoas'
 import { getUnidade } from '../lib/unidades'
@@ -113,7 +113,7 @@ export default function PessoaHistorico() {
 
   if (error || !pessoa) {
     return (
-      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
         <PageHeader
           title="Histórico"
           actions={<Link to="/pessoas"><Button variant="ghost">← Voltar</Button></Link>}
@@ -146,7 +146,7 @@ export default function PessoaHistorico() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={`Histórico — ${pessoa.nome}`}
         subtitle={unidadeLabel ? `Un. ${unidadeLabel}` : 'Sem unidade vinculada'}
@@ -237,3 +237,4 @@ function describe(item: TimelineItem): string {
       return `${item.data.assunto} — ${item.data.descricao?.slice(0, 150) ?? ''}`
   }
 }
+

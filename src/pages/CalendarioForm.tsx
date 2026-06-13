@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+﻿import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { createEvento, deleteEvento, getEvento, updateEvento, enviarLembreteEvento } from '../lib/eventos'
 import { listCondominios } from '../lib/condominios'
@@ -151,7 +151,7 @@ export default function CalendarioForm() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={isNew ? 'Novo evento' : 'Editar evento'}
         actions={
@@ -312,3 +312,4 @@ function toLocalInput(iso: string): string {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
+

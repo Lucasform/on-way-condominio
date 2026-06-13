@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+﻿import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   deleteEncomenda,
@@ -191,7 +191,7 @@ export default function EncomendaDetalhe() {
 
   if (error || !encomenda) {
     return (
-      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
         <PageHeader
           title="Encomenda"
           actions={<Link to="/encomendas"><Button variant="ghost">← Voltar</Button></Link>}
@@ -207,7 +207,7 @@ export default function EncomendaDetalhe() {
   const unidadeLabel = unidade ? (unidade.bloco ? `${unidade.bloco}-${unidade.numero}` : unidade.numero) : '—'
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Encomenda"
         actions={
@@ -344,3 +344,4 @@ export default function EncomendaDetalhe() {
     </div>
   )
 }
+

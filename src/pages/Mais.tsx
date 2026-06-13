@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+﻿import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import { roleLabel } from '../lib/nav'
 import { signOut } from '../lib/auth'
@@ -22,7 +22,7 @@ export default function Mais() {
   }
 
   return (
-    <div className="px-4 py-6 pb-24 max-w-3xl mx-auto">
+    <div className="px-4 py-6 pb-24 max-w-[1400px] mx-auto">
       {/* Cartão de conta */}
       <Link
         to="/meu-perfil"
@@ -63,3 +63,4 @@ export default function Mais() {
     </div>
   )
 }
+

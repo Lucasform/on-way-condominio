@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   listRegimentoArtigos,
@@ -141,7 +141,7 @@ export default function Regimento() {
   const temInativos = rows.some((r) => !r.ativo)
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={`Regimento interno${rows.length > 0 ? ` (${rows.length} artigos)` : ''}`}
         subtitle="Artigos do regimento usados como base para análise de ocorrências pela IA."
@@ -274,3 +274,4 @@ export default function Regimento() {
     </div>
   )
 }
+

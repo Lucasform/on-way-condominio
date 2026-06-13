@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+﻿import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { createChamado } from '../lib/chamados'
 import { listCondominios } from '../lib/condominios'
@@ -67,7 +67,7 @@ export default function ChamadoNovo() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Abrir chamado"
         subtitle="Solicite manutenção. A equipe será notificada."
@@ -177,3 +177,4 @@ export default function ChamadoNovo() {
     </div>
   )
 }
+

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import { listCondominios } from '../lib/condominios'
@@ -110,7 +110,7 @@ export default function EncomendasEstatisticas() {
   ]
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-5xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Estatísticas de retirada"
         subtitle="Tempo médio entre a chegada da encomenda na portaria e a retirada pelo morador, agrupado por unidade."
@@ -199,3 +199,4 @@ function ResumoCard({
     </div>
   )
 }
+

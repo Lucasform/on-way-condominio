@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listPets, setPetAtivo } from '../lib/pets'
 import { listCondominios } from '../lib/condominios'
@@ -117,7 +117,7 @@ export default function Pets() {
   ]
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-6xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={`Pets (${rows.length})`}
         subtitle="Animais de estimação cadastrados no condomínio."
@@ -171,3 +171,4 @@ export default function Pets() {
     </div>
   )
 }
+

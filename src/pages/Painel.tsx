@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listOcorrencias, updateOcorrenciaStatus } from '../lib/ocorrencias'
 import { listMultas, changeMultaStatus } from '../lib/multas'
@@ -336,7 +336,7 @@ export default function Painel() {
   const [hoverCol, setHoverCol] = useState<ColumnKey | null>(null)
 
   return (
-    <div className="px-4 py-6 sm:px-6 sm:py-8 max-w-[1600px] mx-auto">
+    <div className="px-4 py-6 sm:px-6 sm:py-8 max-w-[1400px] mx-auto">
       <PageHeader
         title="Painel de trabalho"
         subtitle="Pipeline de ocorrências, multas e chamados. Use as colunas pra ver onde está o trabalho."
@@ -544,3 +544,4 @@ function getAdvanceLabel(card: Card): string | null {
   if (card.status === 'resolvido') return '✓ Finalizar'
   return null
 }
+

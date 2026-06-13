@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import { listCondominios } from '../lib/condominios'
@@ -170,7 +170,7 @@ export default function Whatsapp() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-6xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="WhatsApp"
         subtitle="Converse com moradores pelo WhatsApp do condomínio. Histórico salvo aqui."
@@ -379,3 +379,4 @@ function NovaConversaModal({
     </div>
   )
 }
+

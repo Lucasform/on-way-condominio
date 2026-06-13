@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+﻿import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { createNotificacao } from '../lib/notificacoes'
 import { listUnidades } from '../lib/unidades'
@@ -42,7 +42,7 @@ export default function NotificacaoNova() {
   // Notificacao so pode ser emitida a partir de uma ocorrencia (mesmo padrao da multa).
   if (!ocorrenciaId) {
     return (
-      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
         <PageHeader
           title="Nova notificação"
           actions={<Link to="/notificacoes"><Button variant="ghost">← Voltar</Button></Link>}
@@ -130,7 +130,7 @@ export default function NotificacaoNova() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Nova notificação"
         actions={<Link to="/notificacoes"><Button variant="ghost">← Voltar</Button></Link>}
@@ -211,3 +211,4 @@ export default function NotificacaoNova() {
     </div>
   )
 }
+

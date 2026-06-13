@@ -1,5 +1,13 @@
 export type TipoAssembleia = 'ordinaria' | 'extraordinaria'
 export type StatusAssembleia = 'planejada' | 'realizada' | 'cancelada'
+export type CargoMesa = 'presidente_mesa' | 'secretario' | 'coordenador' | 'outro'
+
+export interface MesaMembro {
+  nome: string
+  cpf: string
+  cargo: CargoMesa
+  assinatura_url?: string | null
+}
 
 export interface Assembleia {
   id: string
@@ -13,6 +21,7 @@ export interface Assembleia {
   ata_url: string | null
   ata_texto: string | null
   observacoes: string | null
+  mesa_diretora: MesaMembro[]
   criado_por: string | null
   created_at: string
   updated_at: string

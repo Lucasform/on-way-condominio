@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+﻿import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { createPessoa, deletePessoa, getPessoa, updatePessoa } from '../lib/pessoas'
 import { supabase } from '../lib/supabase'
@@ -241,7 +241,7 @@ export default function PessoaForm() {
   if (loading) return <div className="px-4 py-6 sm:px-8 sm:py-10 text-slate-400">Carregando...</div>
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={isNew ? 'Nova pessoa' : 'Editar pessoa'}
         actions={
@@ -479,3 +479,4 @@ function CameraIcon() {
     </svg>
   )
 }
+

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+﻿import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import { createComunicado, gerarComunicadoIA } from '../lib/comunicados'
@@ -73,7 +73,7 @@ export default function ComunicadoNovo() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Novo comunicado"
         subtitle="Escreva o que precisa avisar. O agente IA segue o modelo do condomínio e devolve o texto pronto."
@@ -157,3 +157,4 @@ export default function ComunicadoNovo() {
     </div>
   )
 }
+

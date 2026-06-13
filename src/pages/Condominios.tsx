@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate, Navigate } from 'react-router-dom'
 import { listCondominios, setCondominioAtivo } from '../lib/condominios'
 import type { Condominio } from '../types/condominio'
@@ -75,7 +75,7 @@ export default function Condominios() {
   ]
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-6xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={`${ativosCount === 1 ? 'Condomínio' : 'Condomínios'} (${ativosCount}${showInactive && arquivadosCount > 0 ? ` + ${arquivadosCount} arquivados` : ''})`}
         subtitle="Gestão dos condomínios cadastrados na plataforma."
@@ -137,3 +137,4 @@ function StatusBadge({ ativo }: { ativo: boolean }) {
     ? <Pill tone="success" dot>Ativo</Pill>
     : <Pill tone="neutral">📦 Arquivado</Pill>
 }
+

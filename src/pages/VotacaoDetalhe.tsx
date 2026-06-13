@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { deleteVotacao, getVotacao, votar, encerrarVotacao, cancelarVotacao } from '../lib/votacoes'
 import { getCondominio } from '../lib/condominios'
+import { getAssembleia } from '../lib/assembleias'
 import { supabase } from '../lib/supabase'
 import type { Condominio } from '../types/condominio'
+import type { MesaMembro } from '../types/assembleia'
 import { gerarPdfAtaVotacao } from '../lib/votacaoPdf'
 import type { Votacao, VotacaoOpcao, Voto, StatusVotacao } from '../types/votacao'
 import { useAuth } from '../components/AuthProvider'
@@ -39,6 +41,7 @@ export default function VotacaoDetalhe() {
   const [opcoes, setOpcoes] = useState<VotacaoOpcao[]>([])
   const [votos, setVotos] = useState<Voto[]>([])
   const [condominio, setCondominio] = useState<Condominio | null>(null)
+  const [mesaDiretora, setMesaDiretora] = useState<MesaMembro[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -72,6 +75,12 @@ export default function VotacaoDetalhe() {
           const co = await getCondominio(result.votacao.condominio_id)
           setCondominio(co)
         } catch { /* noop */ }
+        if (result.votacao.assembleia_id) {
+          try {
+            const a = await getAssembleia(result.votacao.assembleia_id)
+            setMesaDiretora(a?.mesa_diretora ?? [])
+          } catch { /* noop */ }
+        }
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao carregar.')
@@ -199,6 +208,7 @@ export default function VotacaoDetalhe() {
         quorumMinimo: votacao.quorum_minimo,
         assinaturaUrl: perfil?.assinatura_url ?? null,
         emissorNome: perfil?.nome_exibicao ?? null,
+        mesaDiretora,
       })
     } catch (e) {
       toast.error('Erro ao gerar PDF', e instanceof Error ? e.message : '')
@@ -222,7 +232,7 @@ export default function VotacaoDetalhe() {
 
   if (error || !votacao) {
     return (
-      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
         <PageHeader
           title="Votação"
           actions={<Link to="/votacoes"><Button variant="ghost">← Voltar</Button></Link>}
@@ -246,7 +256,7 @@ export default function VotacaoDetalhe() {
   }))
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Votação"
         actions={
@@ -423,3 +433,4 @@ export default function VotacaoDetalhe() {
     </div>
   )
 }
+

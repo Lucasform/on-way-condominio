@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+﻿import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   listConversas,
@@ -299,7 +299,7 @@ export default function Chat() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-4xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={isMorador ? 'Minhas conversas' : 'Conversas do condomínio'}
         subtitle={
@@ -651,3 +651,4 @@ export default function Chat() {
     </div>
   )
 }
+

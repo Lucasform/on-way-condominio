@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { assignChamado, deleteChamado, getChamado, updateChamadoStatus } from '../lib/chamados'
 import { listStaffCondominio } from '../lib/chat'
@@ -162,7 +162,7 @@ export default function ChamadoDetalhe() {
 
   if (error || !chamado) {
     return (
-      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
         <PageHeader
           title="Chamado"
           actions={<Link to="/chamados"><Button variant="ghost">← Voltar</Button></Link>}
@@ -175,7 +175,7 @@ export default function ChamadoDetalhe() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Chamado"
         actions={
@@ -282,3 +282,4 @@ export default function ChamadoDetalhe() {
     </div>
   )
 }
+

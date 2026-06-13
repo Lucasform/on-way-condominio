@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import {
@@ -186,7 +186,7 @@ export default function ComunicadoDetalhe() {
 
   if (error || !comunicado) {
     return (
-      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
         <PageHeader
           title="Comunicado"
           actions={
@@ -203,7 +203,7 @@ export default function ComunicadoDetalhe() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Comunicado"
         actions={
@@ -287,3 +287,4 @@ export default function ComunicadoDetalhe() {
     </div>
   )
 }
+

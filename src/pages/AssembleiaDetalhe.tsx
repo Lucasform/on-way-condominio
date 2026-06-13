@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   getAssembleia,
@@ -10,8 +10,10 @@ import {
   confirmarPresenca,
   cancelarPresenca,
   marcarPresente,
+  updateMesaDiretora,
+  uploadAssinaturaMesa,
 } from '../lib/assembleias'
-import type { AssembleiaPresenca } from '../types/assembleia'
+import type { AssembleiaPresenca, MesaMembro, CargoMesa } from '../types/assembleia'
 import { listVotacoes } from '../lib/votacoes'
 import { supabase } from '../lib/supabase'
 import { resolveNomesUsuarios } from '../lib/nomes'
@@ -195,7 +197,7 @@ export default function AssembleiaDetalhe() {
 
   if (error || !assembleia) {
     return (
-      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
         <PageHeader
           title="Assembleia"
           actions={<Link to="/assembleias"><Button variant="ghost">← Voltar</Button></Link>}
@@ -208,7 +210,7 @@ export default function AssembleiaDetalhe() {
   }
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={assembleia.titulo}
         subtitle={TIPO_LABEL[assembleia.tipo]}
@@ -314,6 +316,16 @@ export default function AssembleiaDetalhe() {
         )}
       </div>
 
+      {/* Mesa diretora */}
+      {(canEdit || (assembleia.mesa_diretora ?? []).length > 0) && (
+        <MesaDiretoraCard
+          assembleia={assembleia}
+          canEdit={canEdit}
+          onUpdate={load}
+          toast={toast}
+        />
+      )}
+
       {/* Votacoes relacionadas */}
       <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-6">
         <div className="flex items-center justify-between mb-3">
@@ -355,6 +367,195 @@ export default function AssembleiaDetalhe() {
           </ul>
         )}
       </div>
+    </div>
+  )
+}
+
+const CARGO_OPTS: { value: CargoMesa; label: string }[] = [
+  { value: 'presidente_mesa', label: 'Presidente da Mesa' },
+  { value: 'secretario', label: 'Secretário(a)' },
+  { value: 'coordenador', label: 'Coordenador(a) da Assembleia' },
+  { value: 'outro', label: 'Outro' },
+]
+
+const CARGO_LABEL: Record<CargoMesa, string> = {
+  presidente_mesa: 'Presidente da Mesa',
+  secretario: 'Secretário(a)',
+  coordenador: 'Coordenador(a) da Assembleia',
+  outro: 'Outro',
+}
+
+function MesaDiretoraCard({
+  assembleia, canEdit, onUpdate, toast,
+}: {
+  assembleia: import('../types/assembleia').Assembleia
+  canEdit: boolean
+  onUpdate: () => void
+  toast: ReturnType<typeof import('../components/ui/Toast').useToast>
+}) {
+  const [mesa, setMesa] = useState<MesaMembro[]>(assembleia.mesa_diretora ?? [])
+  const [saving, setSaving] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [novoNome, setNovoNome] = useState('')
+  const [novoCpf, setNovoCpf] = useState('')
+  const [novoCargo, setNovoCargo] = useState<CargoMesa>('presidente_mesa')
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null)
+
+  async function handleAdd() {
+    if (!novoNome.trim()) return
+    const novo: MesaMembro = { nome: novoNome.trim(), cpf: novoCpf.trim(), cargo: novoCargo }
+    const nova = [...mesa, novo]
+    setSaving(true)
+    try {
+      await updateMesaDiretora(assembleia.id, nova)
+      setMesa(nova)
+      setNovoNome(''); setNovoCpf(''); setNovoCargo('presidente_mesa')
+      setShowForm(false)
+      onUpdate()
+    } catch (e) {
+      toast.error('Erro ao salvar', e instanceof Error ? e.message : '')
+    } finally { setSaving(false) }
+  }
+
+  async function handleRemove(idx: number) {
+    const nova = mesa.filter((_, i) => i !== idx)
+    setSaving(true)
+    try {
+      await updateMesaDiretora(assembleia.id, nova)
+      setMesa(nova)
+      onUpdate()
+    } catch (e) {
+      toast.error('Erro ao remover', e instanceof Error ? e.message : '')
+    } finally { setSaving(false) }
+  }
+
+  async function handleUploadAssinatura(idx: number, file: File) {
+    setUploadingIdx(idx)
+    try {
+      const url = await uploadAssinaturaMesa(file, assembleia.condominio_id, assembleia.id)
+      const nova = mesa.map((m, i) => i === idx ? { ...m, assinatura_url: url } : m)
+      await updateMesaDiretora(assembleia.id, nova)
+      setMesa(nova)
+      onUpdate()
+    } catch (e) {
+      toast.error('Erro ao subir assinatura', e instanceof Error ? e.message : '')
+    } finally { setUploadingIdx(null) }
+  }
+
+  return (
+    <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-6 mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-100">Mesa Diretora</h3>
+          <p className="text-xs text-slate-500 mt-0.5">Membros que assinarão a ata de votação para validade em cartório.</p>
+        </div>
+        {canEdit && (
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className="text-xs text-brand-400 hover:underline"
+          >
+            + Adicionar membro
+          </button>
+        )}
+      </div>
+
+      {showForm && canEdit && (
+        <div className="mb-4 p-3 rounded-md border border-slate-700 bg-slate-800/40 space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">Nome completo</label>
+              <input
+                value={novoNome}
+                onChange={(e) => setNovoNome(e.target.value)}
+                placeholder="Nome"
+                className="w-full px-3 py-1.5 rounded bg-slate-950 border border-slate-700 text-sm text-slate-100 focus:border-brand-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1">CPF</label>
+              <input
+                value={novoCpf}
+                onChange={(e) => setNovoCpf(e.target.value)}
+                placeholder="000.000.000-00"
+                className="w-full px-3 py-1.5 rounded bg-slate-950 border border-slate-700 text-sm text-slate-100 focus:border-brand-500 outline-none"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">Cargo na mesa</label>
+            <select
+              value={novoCargo}
+              onChange={(e) => setNovoCargo(e.target.value as CargoMesa)}
+              className="w-full px-3 py-1.5 rounded bg-slate-950 border border-slate-700 text-sm text-slate-100 focus:border-brand-500 outline-none"
+            >
+              {CARGO_OPTS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setShowForm(false)} className="text-xs text-slate-500 hover:text-slate-300">Cancelar</button>
+            <button
+              onClick={handleAdd}
+              disabled={saving || !novoNome.trim()}
+              className="px-3 py-1.5 rounded bg-brand-700 hover:bg-brand-800 text-white text-xs font-medium disabled:opacity-50"
+            >
+              {saving ? 'Salvando...' : 'Adicionar'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {mesa.length === 0 ? (
+        <div className="text-sm text-slate-500">Nenhum membro configurado ainda.</div>
+      ) : (
+        <ul className="space-y-2">
+          {mesa.map((m, idx) => (
+            <li key={idx} className="flex items-center justify-between gap-3 py-2 border-b border-slate-800 last:border-0">
+              <div className="flex items-center gap-3 min-w-0">
+                {m.assinatura_url ? (
+                  <img src={m.assinatura_url} alt="assinatura" className="h-8 w-20 object-contain rounded bg-white/10 shrink-0" />
+                ) : (
+                  <div className="h-8 w-20 rounded border border-dashed border-slate-700 flex items-center justify-center shrink-0">
+                    <span className="text-[10px] text-slate-600">sem assin.</span>
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-slate-100 truncate">{m.nome}</div>
+                  <div className="text-xs text-slate-500">
+                    {CARGO_LABEL[m.cargo]}
+                    {m.cpf && <span className="ml-2 font-mono">{m.cpf}</span>}
+                  </div>
+                </div>
+              </div>
+              {canEdit && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <label className="text-xs text-brand-400 hover:underline cursor-pointer">
+                    {uploadingIdx === idx ? 'Enviando...' : m.assinatura_url ? 'Trocar assin.' : 'Subir assin.'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploadingIdx !== null}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0]
+                        if (f) handleUploadAssinatura(idx, f)
+                      }}
+                    />
+                  </label>
+                  <button
+                    onClick={() => handleRemove(idx)}
+                    disabled={saving}
+                    className="text-xs text-slate-500 hover:text-red-400 transition"
+                  >
+                    Remover
+                  </button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
@@ -428,3 +629,4 @@ function PresencasCard({
     </div>
   )
 }
+

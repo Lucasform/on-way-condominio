@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getUnidade } from '../lib/unidades'
 import { getCondominio } from '../lib/condominios'
@@ -112,7 +112,7 @@ export default function UnidadeHistorico() {
 
   if (error || !unidade) {
     return (
-      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
+      <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
         <PageHeader
           title="Histórico"
           actions={<Link to="/unidades"><Button variant="ghost">← Voltar</Button></Link>}
@@ -131,7 +131,7 @@ export default function UnidadeHistorico() {
     .reduce((sum, i) => sum + Number(i.data.valor), 0)
 
   return (
-    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-3xl mx-auto">
+    <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title={`Histórico — ${unidadeLabel}`}
         subtitle={`${condominio?.nome ?? '—'} · ${unidade.tipo}`}
@@ -269,3 +269,4 @@ function GenericLine({ item }: { item: TimelineItem }) {
     </Link>
   )
 }
+

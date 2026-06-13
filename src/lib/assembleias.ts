@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import type { Assembleia, AssembleiaInput, AssembleiaPresenca } from '../types/assembleia'
 
-const SELECT = 'id,condominio_id,titulo,tipo,data_assembleia,local,status,pauta,ata_url,ata_texto,observacoes,criado_por,created_at,updated_at'
+const SELECT = 'id,condominio_id,titulo,tipo,data_assembleia,local,status,pauta,ata_url,ata_texto,observacoes,mesa_diretora,criado_por,created_at,updated_at'
 
 export async function listAssembleias(opts: { condominio_id?: string } = {}): Promise<Assembleia[]> {
   let q = supabase
@@ -117,4 +117,35 @@ export async function marcarPresente(presenca_id: string): Promise<void> {
     .update({ presente_em: new Date().toISOString() })
     .eq('id', presenca_id)
   if (error) throw error
+}
+
+// ============================================================
+// Mesa diretora
+// ============================================================
+
+import type { MesaMembro } from '../types/assembleia'
+
+export async function updateMesaDiretora(id: string, mesa: MesaMembro[]): Promise<void> {
+  const { error } = await supabase
+    .from('assembleias')
+    .update({ mesa_diretora: mesa })
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function uploadAssinaturaMesa(
+  file: File,
+  condominio_id: string,
+  assembleia_id: string,
+): Promise<string> {
+  const ext = (file.name.split('.').pop() ?? 'png').toLowerCase()
+  const path = `${condominio_id}/${assembleia_id}/mesa-${Date.now()}.${ext}`
+  const { error } = await supabase.storage.from('assinaturas').upload(path, file, {
+    upsert: true,
+    cacheControl: '86400',
+    contentType: file.type || 'image/png',
+  })
+  if (error) throw error
+  const { data } = supabase.storage.from('assinaturas').getPublicUrl(path)
+  return data.publicUrl
 }
