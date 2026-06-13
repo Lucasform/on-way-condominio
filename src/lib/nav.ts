@@ -373,6 +373,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/comunicados', label: 'Comunicados' },
         { to: '/calendario', label: 'Calendário' },
         { to: '/chat', label: 'Chat interno' },
+        { to: '/assembleias', label: 'Assembleias' },
         { to: '/votacoes', label: 'Votações' },
       ],
     },
