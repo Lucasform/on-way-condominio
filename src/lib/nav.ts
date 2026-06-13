@@ -364,7 +364,6 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
       label: 'Registros',
       children: [
         { to: '/ocorrencias', label: 'Ocorrências' },
-        { to: '/chamados', label: 'Chamados' },
       ],
     },
     {

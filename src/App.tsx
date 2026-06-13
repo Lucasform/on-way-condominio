@@ -492,7 +492,11 @@ export default function App() {
             />
             <Route
               path="/chamados"
-              element={<ProtectedRoute><Chamados /></ProtectedRoute>}
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico', 'portaria', 'ronda', 'conselheiro']}>
+                  <Chamados />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/chamados/novo"
