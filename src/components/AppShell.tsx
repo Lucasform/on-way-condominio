@@ -217,7 +217,7 @@ export default function AppShell() {
       </aside>
 
       <div className="flex-1 flex flex-col overflow-x-hidden min-w-0">
-        <header className="h-12 shrink-0 border-b border-slate-800 bg-slate-900/60 md:bg-slate-900/30 backdrop-blur flex items-center px-3 md:px-4 gap-2">
+        <header className="relative z-20 h-12 shrink-0 border-b border-slate-800 bg-slate-900/60 md:bg-slate-900/30 backdrop-blur flex items-center px-3 md:px-4 gap-2">
           <Link to="/" className="md:hidden flex items-center gap-2 min-w-0 flex-1">
             {condoLogo ? (
               <img src={condoLogo} alt="" className="w-7 h-7 object-contain rounded shrink-0" />
