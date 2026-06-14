@@ -69,7 +69,9 @@ export default function AccountMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-64 rounded-xl border border-slate-800 bg-slate-900 shadow-xl z-50 overflow-hidden">
+        <>
+        <div className="fixed inset-0 z-40 bg-black/50 sm:hidden" aria-hidden onClick={() => setOpen(false)} />
+        <div className="absolute right-0 mt-2 w-64 rounded-xl border border-slate-800 bg-slate-950 shadow-2xl z-50 overflow-hidden">
           <Link
             to="/meu-perfil"
             onClick={() => setOpen(false)}
@@ -114,6 +116,7 @@ export default function AccountMenu() {
             Sair
           </button>
         </div>
+        </>
       )}
     </div>
   )
