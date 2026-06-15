@@ -79,7 +79,9 @@ const Acessos = lazy(() => import('./pages/Acessos'))
 const AcessoNovo = lazy(() => import('./pages/AcessoNovo'))
 const AcessoDetalhe = lazy(() => import('./pages/AcessoDetalhe'))
 const AcessoEvento = lazy(() => import('./pages/AcessoEvento'))
-const CondominioFornecedoresPage = lazy(() => import('./pages/CondominioFornecedoresPage'))
+const Classificados = lazy(() => import('./pages/Classificados'))
+const ClassificadoNovo = lazy(() => import('./pages/ClassificadoNovo'))
+const ClassificadoDetalhe = lazy(() => import('./pages/ClassificadoDetalhe'))
 const Comunicados = lazy(() => import('./pages/Comunicados'))
 const ComunicadoNovo = lazy(() => import('./pages/ComunicadoNovo'))
 const ComunicadoDetalhe = lazy(() => import('./pages/ComunicadoDetalhe'))
@@ -596,7 +598,23 @@ export default function App() {
               path="/classificados"
               element={
                 <ProtectedRoute>
-                  <CondominioFornecedoresPage />
+                  <Classificados />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/classificados/novo"
+              element={
+                <ProtectedRoute roles={['admin_onway', 'administradora', 'sindico', 'subsindico']}>
+                  <ClassificadoNovo />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/classificados/:id"
+              element={
+                <ProtectedRoute>
+                  <ClassificadoDetalhe />
                 </ProtectedRoute>
               }
             />
