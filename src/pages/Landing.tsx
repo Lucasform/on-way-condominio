@@ -206,7 +206,7 @@ export default function Landing() {
 
           <p className="text-lg sm:text-xl text-slate-400 leading-relaxed mb-10 max-w-2xl mx-auto">
             Portaria digital, assembleias online, comunicação centralizada e votações com ata em PDF.
-            Tudo no mesmo app — acessível de qualquer dispositivo, sem instalação.
+            Tudo no mesmo app, acessível de qualquer dispositivo, sem instalação.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">

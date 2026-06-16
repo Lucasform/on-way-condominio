@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   getAssembleia,
@@ -27,6 +27,7 @@ import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { DetailSkeleton } from '../components/ui/Skeleton'
 import DeleteButton from '../components/ui/DeleteButton'
+import { removeWhiteBackground } from '../lib/removeBackground'
 
 const STATUS_LABEL: Record<StatusAssembleia, string> = {
   planejada: 'Planejada',
@@ -400,6 +401,39 @@ function MesaDiretoraCard({
   const [novoCpf, setNovoCpf] = useState('')
   const [novoCargo, setNovoCargo] = useState<CargoMesa>('presidente_mesa')
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null)
+  const [preview, setPreview] = useState<{ idx: number; original: string; processed: string; file: File } | null>(null)
+  const [processing, setProcessing] = useState(false)
+  const fileInputRefs = useRef<(HTMLInputElement | null)[]>([])
+
+  async function openPreview(idx: number, rawFile: File) {
+    setProcessing(true)
+    try {
+      const originalUrl = URL.createObjectURL(rawFile)
+      const { file: processedFile, previewUrl } = await removeWhiteBackground(rawFile)
+      setPreview({ idx, original: originalUrl, processed: previewUrl, file: processedFile })
+    } catch {
+      // Fallback: upload without background removal
+      handleUploadAssinatura(idx, rawFile)
+    } finally {
+      setProcessing(false)
+    }
+  }
+
+  async function confirmPreview() {
+    if (!preview) return
+    const { idx, file } = preview
+    setPreview(null)
+    await handleUploadAssinatura(idx, file)
+  }
+
+  function cancelPreview() {
+    if (preview) {
+      URL.revokeObjectURL(preview.original)
+      setPreview(null)
+    }
+    // Reset file input so the same file can be picked again
+    fileInputRefs.current.forEach((el) => { if (el) el.value = '' })
+  }
 
   async function handleAdd() {
     if (!novoNome.trim()) return
@@ -531,15 +565,16 @@ function MesaDiretoraCard({
               {canEdit && (
                 <div className="flex items-center gap-2 shrink-0">
                   <label className="text-xs text-brand-400 hover:underline cursor-pointer">
-                    {uploadingIdx === idx ? 'Enviando...' : m.assinatura_url ? 'Trocar assin.' : 'Subir assin.'}
+                    {uploadingIdx === idx ? 'Enviando...' : processing ? 'Processando...' : m.assinatura_url ? 'Trocar assin.' : 'Subir assin.'}
                     <input
+                      ref={(el) => { fileInputRefs.current[idx] = el }}
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      disabled={uploadingIdx !== null}
+                      disabled={uploadingIdx !== null || processing}
                       onChange={(e) => {
                         const f = e.target.files?.[0]
-                        if (f) handleUploadAssinatura(idx, f)
+                        if (f) openPreview(idx, f)
                       }}
                     />
                   </label>
@@ -555,6 +590,49 @@ function MesaDiretoraCard({
             </li>
           ))}
         </ul>
+      )}
+
+      {/* Background removal preview modal */}
+      {preview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h4 className="text-sm font-semibold text-slate-100 mb-1">Confirmar assinatura</h4>
+            <p className="text-xs text-slate-400 mb-4">
+              O fundo branco foi removido automaticamente. Confira o resultado antes de salvar.
+            </p>
+            <div className="grid grid-cols-2 gap-3 mb-5">
+              <div className="text-center">
+                <p className="text-[10px] text-slate-500 mb-1.5 uppercase tracking-wide">Original</p>
+                <div className="rounded-lg border border-slate-700 bg-white p-2 h-24 flex items-center justify-center">
+                  <img src={preview.original} alt="original" className="max-h-full max-w-full object-contain" />
+                </div>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] text-slate-500 mb-1.5 uppercase tracking-wide">Sem fundo</p>
+                <div
+                  className="rounded-lg border border-slate-700 h-24 flex items-center justify-center"
+                  style={{ background: 'repeating-conic-gradient(#334155 0% 25%, #1e293b 0% 50%) 0 0 / 12px 12px' }}
+                >
+                  <img src={preview.processed} alt="processada" className="max-h-full max-w-full object-contain" />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={cancelPreview}
+                className="flex-1 py-2 rounded-lg border border-slate-700 text-xs text-slate-400 hover:text-slate-200 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmPreview}
+                className="flex-1 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold transition"
+              >
+                Usar sem fundo
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
