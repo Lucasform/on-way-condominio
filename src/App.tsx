@@ -5,6 +5,7 @@ import { TenantProvider } from './components/TenantProvider'
 import { ToastProvider } from './components/ui/Toast'
 import { ConfirmProvider } from './components/ui/ConfirmProvider'
 import ProtectedRoute from './components/ProtectedRoute'
+import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext'
 import AppShell from './components/AppShell'
 import Logo from './components/Logo'
 
@@ -82,6 +83,7 @@ const AcessoEvento = lazy(() => import('./pages/AcessoEvento'))
 const Classificados = lazy(() => import('./pages/Classificados'))
 const ClassificadoNovo = lazy(() => import('./pages/ClassificadoNovo'))
 const ClassificadoDetalhe = lazy(() => import('./pages/ClassificadoDetalhe'))
+const FeatureFlags = lazy(() => import('./pages/FeatureFlags'))
 const Comunicados = lazy(() => import('./pages/Comunicados'))
 const ComunicadoNovo = lazy(() => import('./pages/ComunicadoNovo'))
 const ComunicadoDetalhe = lazy(() => import('./pages/ComunicadoDetalhe'))
@@ -109,7 +111,9 @@ export default function App() {
           <Route
             element={
               <ProtectedRoute>
-                <AppShell />
+                <FeatureFlagsProvider>
+                  <AppShell />
+                </FeatureFlagsProvider>
               </ProtectedRoute>
             }
           >
@@ -615,6 +619,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <ClassificadoDetalhe />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/funcionalidades"
+              element={
+                <ProtectedRoute roles={['admin_onway']}>
+                  <FeatureFlags />
                 </ProtectedRoute>
               }
             />

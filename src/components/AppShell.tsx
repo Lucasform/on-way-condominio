@@ -12,6 +12,8 @@ import CondominioSwitcher from './CondominioSwitcher'
 import AccountMenu from './AccountMenu'
 import ThemeToggle from './ThemeToggle'
 import { prefetchRoutes } from '../lib/prefetchRoutes'
+import { useFeatureFlags } from '../contexts/FeatureFlagsContext'
+import FeatureGuard from './FeatureGuard'
 
 /**
  * Layout: sidebar no desktop (padrão web), top bar + launcher no mobile.
@@ -19,6 +21,7 @@ import { prefetchRoutes } from '../lib/prefetchRoutes'
  */
 export default function AppShell() {
   const { perfil, user, effectiveRole, viewAsMorador, setViewAsMorador } = useAuth()
+  const { routeVisible } = useFeatureFlags()
   const navigate = useNavigate()
   const location = useLocation()
   const mainRef = useRef<HTMLElement>(null)
@@ -174,7 +177,7 @@ export default function AppShell() {
                     {item.label}
                   </div>
                   <div className="space-y-1">
-                    {item.children.map((child) => {
+                    {item.children.filter((c) => routeVisible(c.to)).map((child) => {
                       const Icon = navIcon(child.to)
                       return (
                         <NavLink key={child.to} to={child.to} className={navLinkCls}>
@@ -256,6 +259,7 @@ export default function AppShell() {
         )}
 
         <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-950">
+          <FeatureGuard />
           <Outlet />
         </main>
       </div>

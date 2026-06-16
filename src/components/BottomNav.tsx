@@ -2,6 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
 import { bottomNavFor, iconFor } from '../lib/nav'
 import { useNavBadges } from '../hooks/useNavBadges'
+import { useFeatureFlags } from '../contexts/FeatureFlagsContext'
 
 /**
  * Barra de abas inferior (só mobile). Cara de app nativo.
@@ -9,9 +10,10 @@ import { useNavBadges } from '../hooks/useNavBadges'
  */
 export default function BottomNav() {
   const { effectiveRole } = useAuth()
+  const { routeVisible } = useFeatureFlags()
   const badges = useNavBadges()
   if (!effectiveRole) return null
-  const items = bottomNavFor(effectiveRole)
+  const items = bottomNavFor(effectiveRole).filter((i) => routeVisible(i.to))
 
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-slate-800 bg-slate-900/95 backdrop-blur flex">

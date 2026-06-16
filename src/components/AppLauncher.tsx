@@ -3,6 +3,7 @@ import { useAuth } from './AuthProvider'
 import { menuFor, isGroup, navLabel, type MenuLeaf } from '../lib/nav'
 import { navIcon } from '../lib/navIcons'
 import { useNavBadges } from '../hooks/useNavBadges'
+import { useFeatureFlags } from '../contexts/FeatureFlagsContext'
 
 interface AppLauncherProps {
   /** Classe extra no container (ex.: `md:hidden` pra só mobile). */
@@ -19,6 +20,7 @@ interface AppLauncherProps {
  */
 export default function AppLauncher({ className = '', flat = false, max }: AppLauncherProps) {
   const { effectiveRole, perfil } = useAuth()
+  const { routeVisible } = useFeatureFlags()
   if (!effectiveRole) return null
   const items = menuFor(effectiveRole)
   const emCondo = !!perfil?.condominio_id
@@ -28,9 +30,9 @@ export default function AppLauncher({ className = '', flat = false, max }: AppLa
   const topo: MenuLeaf[] = []
   for (const item of items) {
     if (isGroup(item)) {
-      const leafs = item.children.filter((c) => c.to !== '/')
+      const leafs = item.children.filter((c) => c.to !== '/' && routeVisible(c.to))
       if (leafs.length) secoes.push({ titulo: item.label, leafs })
-    } else if (item.to !== '/') {
+    } else if (item.to !== '/' && routeVisible(item.to)) {
       topo.push(item)
     }
   }
