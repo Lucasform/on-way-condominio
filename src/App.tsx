@@ -90,6 +90,7 @@ const ComunicadoNovo = lazy(() => import('./pages/ComunicadoNovo'))
 const ComunicadoDetalhe = lazy(() => import('./pages/ComunicadoDetalhe'))
 const Help = lazy(() => import('./pages/Help'))
 const Plantao = lazy(() => import('./pages/Plantao'))
+const Landing = lazy(() => import('./pages/Landing'))
 
 export default function App() {
   return (
@@ -100,6 +101,7 @@ export default function App() {
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
         <Routes>
+          <Route path="/landing" element={<Landing />} />
           <Route path="/entrar" element={<EscolhaPerfil />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
