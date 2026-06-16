@@ -3,7 +3,7 @@ import {
   Car, PawPrint, ScrollText, AlertTriangle, ClipboardList, Receipt, Wrench, Package,
   KeyRound, Briefcase, Megaphone, Calendar, MessageCircle, Newspaper, Tags, MessageSquare,
   Mail, Landmark, Vote, TrendingUp, FileText, ShieldCheck, LayoutGrid, Send, Circle,
-  ConciergeBell, ToggleLeft,
+  ConciergeBell, ToggleLeft, CreditCard,
 } from 'lucide-react'
 import type { ComponentType } from 'react'
 
@@ -42,6 +42,7 @@ export const NAV_LUCIDE: Record<string, IconCmp> = {
   '/templates': FileText,
   '/auditoria': ShieldCheck,
   '/funcionalidades': ToggleLeft,
+  '/planos': CreditCard,
   '/mais': LayoutGrid,
   '/fila-envios': Send,
   '/plantao': ConciergeBell,
