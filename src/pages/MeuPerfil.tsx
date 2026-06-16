@@ -12,6 +12,7 @@ import { CANAIS_NOTIFICACAO_PADRAO, type CanaisNotificacao } from '../types/pess
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import { removeWhiteBackground } from '../lib/removeBackground'
 
 interface Pessoa {
   id: string
@@ -62,6 +63,8 @@ export default function MeuPerfil() {
 
   const assinaturaInputRef = useRef<HTMLInputElement>(null)
   const [uploadingAssinatura, setUploadingAssinatura] = useState(false)
+  const [assinaturaPreview, setAssinaturaPreview] = useState<{ original: string; processed: string; file: File } | null>(null)
+  const [processandoAssinatura, setProcessandoAssinatura] = useState(false)
   const podeAssinar = !!perfil && ROLES_QUE_ASSINAM.includes(perfil.role)
 
   useEffect(() => {
@@ -240,6 +243,21 @@ export default function MeuPerfil() {
       flash('err', `Imagem muito grande. Máximo ${Math.round(MAX_ASSINATURA_BYTES / 1024 / 1024)} MB.`)
       return
     }
+    // Show background removal preview before uploading
+    setProcessandoAssinatura(true)
+    try {
+      const originalUrl = URL.createObjectURL(file)
+      const { file: processedFile, previewUrl } = await removeWhiteBackground(file)
+      setAssinaturaPreview({ original: originalUrl, processed: previewUrl, file: processedFile })
+    } catch {
+      await uploadAssinatura(file)
+    } finally {
+      setProcessandoAssinatura(false)
+    }
+  }
+
+  async function uploadAssinatura(file: File) {
+    if (!user || !perfil) return
     setUploadingAssinatura(true)
     setFeedback(null)
     try {
@@ -273,6 +291,20 @@ export default function MeuPerfil() {
       setUploadingAssinatura(false)
       if (assinaturaInputRef.current) assinaturaInputRef.current.value = ''
     }
+  }
+
+  async function confirmAssinaturaPreview() {
+    if (!assinaturaPreview) return
+    const { file } = assinaturaPreview
+    URL.revokeObjectURL(assinaturaPreview.original)
+    setAssinaturaPreview(null)
+    await uploadAssinatura(file)
+  }
+
+  function cancelAssinaturaPreview() {
+    if (assinaturaPreview) URL.revokeObjectURL(assinaturaPreview.original)
+    setAssinaturaPreview(null)
+    if (assinaturaInputRef.current) assinaturaInputRef.current.value = ''
   }
 
   async function handleRemoveAssinatura() {
@@ -476,12 +508,12 @@ export default function MeuPerfil() {
                   remover
                 </button>
               )}
+              {processandoAssinatura && <div className="text-[11px] text-slate-500">processando...</div>}
               {uploadingAssinatura && <div className="text-[11px] text-slate-500">enviando...</div>}
             </div>
             <div className="flex-1 text-xs text-slate-400 space-y-2">
               <p>
-                <strong className="text-slate-200">Dica:</strong> assine numa folha branca, fotografe ou
-                escaneie. Use ferramenta como remove.bg pra deixar fundo transparente (PNG) — fica mais elegante no PDF.
+                <strong className="text-slate-200">Dica:</strong> assine numa folha branca e fotografe ou escaneie. O app remove o fundo automaticamente ao subir a imagem.
               </p>
               <p className="text-[11px] text-slate-500">
                 Esta é uma <strong>assinatura visual</strong> (imagem). Não substitui assinatura digital
@@ -687,6 +719,49 @@ export default function MeuPerfil() {
         </div>
       </Section>
       </>
+      )}
+
+      {/* Background removal preview modal */}
+      {assinaturaPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h4 className="text-sm font-semibold text-slate-100 mb-1">Confirmar assinatura</h4>
+            <p className="text-xs text-slate-400 mb-4">
+              O fundo branco foi removido automaticamente. Confira antes de salvar.
+            </p>
+            <div className="grid grid-cols-2 gap-3 mb-5">
+              <div className="text-center">
+                <p className="text-[10px] text-slate-500 mb-1.5 uppercase tracking-wide">Original</p>
+                <div className="rounded-lg border border-slate-700 bg-white p-2 h-24 flex items-center justify-center">
+                  <img src={assinaturaPreview.original} alt="original" className="max-h-full max-w-full object-contain" />
+                </div>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] text-slate-500 mb-1.5 uppercase tracking-wide">Sem fundo</p>
+                <div
+                  className="rounded-lg border border-slate-700 h-24 flex items-center justify-center"
+                  style={{ background: 'repeating-conic-gradient(#334155 0% 25%, #1e293b 0% 50%) 0 0 / 12px 12px' }}
+                >
+                  <img src={assinaturaPreview.processed} alt="processada" className="max-h-full max-w-full object-contain" />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={cancelAssinaturaPreview}
+                className="flex-1 py-2 rounded-lg border border-slate-700 text-xs text-slate-400 hover:text-slate-200 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmAssinaturaPreview}
+                className="flex-1 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-xs font-semibold transition"
+              >
+                Usar sem fundo
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
