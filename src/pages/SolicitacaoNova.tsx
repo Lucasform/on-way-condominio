@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { createSolicitacao } from '../lib/solicitacoes'
 import type { TipoSolicitacao } from '../types/solicitacao'
 import { useAuth } from '../components/AuthProvider'
-import { useTenant } from '../components/TenantProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
@@ -18,7 +17,6 @@ const TIPOS: { value: TipoSolicitacao; label: string }[] = [
 
 export default function SolicitacaoNova() {
   const { user, perfil } = useAuth()
-  const { condominio } = useTenant()
   const navigate = useNavigate()
   const toast = useToast()
 
@@ -59,7 +57,7 @@ export default function SolicitacaoNova() {
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-2xl mx-auto">
       <PageHeader
         title="Nova solicitação"
-        subtitle={condominio?.nome ?? 'Envie sua dúvida, reclamação ou sugestão.'}
+        subtitle="Envie sua dúvida, reclamação ou sugestão."
       />
 
       <form onSubmit={handleSubmit} className="space-y-5">

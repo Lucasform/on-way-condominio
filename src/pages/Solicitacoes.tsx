@@ -64,7 +64,7 @@ export default function Solicitacoes() {
     return (
       <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
         <PageHeader title="Solicitações" subtitle="Canal de comunicação com a gestão." />
-        <CardListSkeleton n={3} />
+        <CardListSkeleton rows={3} />
       </div>
     )
   }
@@ -83,8 +83,8 @@ export default function Solicitacoes() {
         {items.length === 0 ? (
           <EmptyState
             icon="📩"
-            title="Nenhuma solicitação ainda"
-            description="Envie uma dúvida, reclamação ou sugestão para a gestão do condomínio."
+            message="Nenhuma solicitação ainda."
+            hint="Envie uma dúvida, reclamação ou sugestão para a gestão do condomínio."
             action={<Link to="/solicitacoes/nova" className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold transition">Nova solicitação</Link>}
           />
         ) : (
