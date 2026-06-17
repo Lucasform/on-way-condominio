@@ -17,6 +17,9 @@ import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
 import { DetailSkeleton } from '../components/ui/Skeleton'
+import { sendWhatsApp } from '../lib/whatsapp'
+import { sendEmail } from '../lib/email'
+import { supabase } from '../lib/supabase'
 
 const STATUS_LABEL: Record<StatusAcesso, string> = {
   ativo: 'Ativo',
@@ -66,6 +69,9 @@ export default function AcessoDetalhe() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [working, setWorking] = useState(false)
+  const [liberarModal, setLiberarModal] = useState(false)
+  const [notifWa, setNotifWa] = useState(true)
+  const [notifEmail, setNotifEmail] = useState(true)
 
   async function load() {
     if (!id) return
@@ -95,6 +101,57 @@ export default function AcessoDetalhe() {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  async function confirmarEntrada() {
+    if (!acesso || !user) return
+    setLiberarModal(false)
+    setWorking(true)
+    try {
+      await registrarEvento({
+        acesso_id: acesso.id,
+        condominio_id: acesso.condominio_id,
+        tipo: 'entrada',
+        registrado_por: user.id,
+        motivo: null,
+      })
+
+      // Busca moradores da unidade para notificar
+      if (notifWa || notifEmail) {
+        const { data: pessoas } = await supabase
+          .from('pessoas')
+          .select('telefone, email, nome')
+          .eq('unidade_id', acesso.unidade_id)
+          .eq('ativo', true)
+
+        const texto = `✅ *${acesso.nome}* acaba de entrar no condomínio.\nAutorizado pela portaria.`
+
+        for (const p of (pessoas ?? []) as Array<{ telefone: string | null; email: string | null; nome: string }>) {
+          if (notifWa && p.telefone) {
+            sendWhatsApp({ condominio_id: acesso.condominio_id, telefone: p.telefone, texto })
+              .catch((e) => console.warn('[acesso] whatsapp falhou:', e?.message))
+          }
+          if (notifEmail && p.email) {
+            sendEmail({
+              to: p.email,
+              template: 'custom',
+              condominio_id: acesso.condominio_id,
+              custom: {
+                subject: `${acesso.nome} entrou no condomínio`,
+                html: `<p>Olá${p.nome ? `, ${p.nome}` : ''}.</p><p><strong>${acesso.nome}</strong> acaba de ser liberado(a) pela portaria e entrou no condomínio.</p>`,
+              },
+            }).catch((e) => console.warn('[acesso] email falhou:', e?.message))
+          }
+        }
+      }
+
+      toast.success('✓ Entrada registrada')
+      await load()
+    } catch (e) {
+      toast.error('Erro ao registrar', e instanceof Error ? e.message : '')
+    } finally {
+      setWorking(false)
+    }
+  }
 
   async function handleEvento(tipo: TipoEventoAcesso, askMotivo = false) {
     if (!acesso || !user) return
@@ -247,7 +304,7 @@ export default function AcessoDetalhe() {
           {podeRegistrarEvento && (
             <div className="grid grid-cols-2 gap-3 mb-3">
               <button
-                onClick={() => handleEvento('entrada')}
+                onClick={() => setLiberarModal(true)}
                 disabled={working}
                 className="rounded-xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white font-semibold py-5 text-base transition disabled:opacity-50"
               >
@@ -297,6 +354,55 @@ export default function AcessoDetalhe() {
           </ul>
         )}
       </div>
+      {/* Modal de liberação com opções de notificação */}
+      {liberarModal && acesso && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h4 className="text-base font-semibold text-slate-100 mb-1">Liberar entrada</h4>
+            <p className="text-sm text-slate-400 mb-5">
+              <span className="font-medium text-slate-200">{acesso.nome}</span> · notificar a unidade?
+            </p>
+
+            <div className="space-y-2 mb-6">
+              {[
+                { key: 'wa', label: 'WhatsApp', icon: '💬', val: notifWa, set: setNotifWa },
+                { key: 'email', label: 'E-mail', icon: '✉️', val: notifEmail, set: setNotifEmail },
+              ].map(({ key, label, icon, val, set }) => (
+                <button
+                  key={key}
+                  onClick={() => set(!val)}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition ${
+                    val
+                      ? 'border-brand-500 bg-brand-500/10 text-slate-100'
+                      : 'border-slate-700 bg-slate-800/40 text-slate-400'
+                  }`}
+                >
+                  <span className="text-base">{icon}</span>
+                  <span className="flex-1 text-left">{label}</span>
+                  <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${val ? 'border-brand-400 bg-brand-400' : 'border-slate-600'}`}>
+                    {val && <span className="w-2 h-2 rounded-full bg-white block" />}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setLiberarModal(false)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-700 text-xs text-slate-400 hover:text-slate-200 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarEntrada}
+                className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition"
+              >
+                {notifWa || notifEmail ? 'Liberar e notificar' : 'Liberar sem notificar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
