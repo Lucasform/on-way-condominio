@@ -126,8 +126,6 @@ export default function Planos() {
               className={`relative rounded-xl border p-6 flex flex-col transition cursor-pointer ${
                 selecionado === plano.id
                   ? 'border-brand-400 bg-brand-500/10 shadow-lg shadow-brand-500/10 scale-[1.02]'
-                  : plano.destaque
-                  ? 'border-brand-500 bg-brand-500/5 hover:border-brand-400 hover:bg-brand-500/10'
                   : 'border-slate-700 bg-slate-900/40 hover:border-slate-500 hover:bg-slate-800/40'
               }`}
             >
