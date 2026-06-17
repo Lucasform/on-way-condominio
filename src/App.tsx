@@ -91,6 +91,7 @@ const ComunicadoDetalhe = lazy(() => import('./pages/ComunicadoDetalhe'))
 const Help = lazy(() => import('./pages/Help'))
 const Plantao = lazy(() => import('./pages/Plantao'))
 const Landing = lazy(() => import('./pages/Landing'))
+const CheckoutSucesso = lazy(() => import('./pages/CheckoutSucesso'))
 
 export default function App() {
   return (
@@ -102,6 +103,7 @@ export default function App() {
         <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/landing" element={<Landing />} />
+          <Route path="/checkout/sucesso" element={<CheckoutSucesso />} />
           <Route path="/entrar" element={<EscolhaPerfil />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />

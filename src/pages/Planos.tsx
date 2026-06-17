@@ -3,6 +3,7 @@ import { PLANO_CATALOG, FEATURE_PRICE, FEATURE_PRICE_MIN_QTD } from '../types/bi
 import { useFeatureFlags } from '../contexts/FeatureFlagsContext'
 import type { FeatureKey } from '../types/featureFlag'
 import PageHeader from '../components/ui/PageHeader'
+import { supabase } from '../lib/supabase'
 
 const FEATURE_LABEL: Record<FeatureKey, string> = {
   portaria:     'Serviços de Portaria',
@@ -31,6 +32,35 @@ export default function Planos() {
   const [tab, setTab] = useState<'planos' | 'custom'>('planos')
   const [selecionadas, setSelecionadas] = useState<Set<FeatureKey>>(new Set())
   const [showModal, setShowModal] = useState(false)
+  const [loadingPlano, setLoadingPlano] = useState<string | null>(null)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
+
+  async function handleContratar(planoId: string) {
+    setLoadingPlano(planoId)
+    setCheckoutError(null)
+    try {
+      const origin = window.location.origin
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: {
+          plano_id: planoId,
+          success_url: `${origin}/checkout/sucesso`,
+          cancel_url: `${origin}/planos`,
+        },
+      })
+      if (error) throw new Error(error.message)
+      if (data?.error) throw new Error(data.error)
+      if (data?.url) {
+        window.location.href = data.url
+      } else {
+        throw new Error('URL de checkout não retornada.')
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Erro ao iniciar checkout.'
+      setCheckoutError(msg)
+    } finally {
+      setLoadingPlano(null)
+    }
+  }
 
   function toggleFeature(key: FeatureKey) {
     setSelecionadas((prev) => {
@@ -52,6 +82,13 @@ export default function Planos() {
         title="Planos"
         subtitle="Escolha o plano ideal ou monte o seu."
       />
+
+      {checkoutError && (
+        <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300 flex items-start gap-2">
+          <span className="shrink-0">⚠️</span>
+          <span>{checkoutError}</span>
+        </div>
+      )}
 
       {emTrial && assinatura?.trial_ends_at && (
         <div className="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
@@ -129,8 +166,9 @@ export default function Planos() {
               </div>
 
               <button
-                onClick={() => setShowModal(true)}
-                className={`w-full py-2.5 rounded-lg text-sm font-semibold transition ${
+                onClick={() => planoAtual !== plano.id && handleContratar(plano.id)}
+                disabled={planoAtual === plano.id || loadingPlano !== null}
+                className={`w-full py-2.5 rounded-lg text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed ${
                   planoAtual === plano.id
                     ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/30 cursor-default'
                     : plano.destaque
@@ -138,7 +176,11 @@ export default function Planos() {
                     : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
                 }`}
               >
-                {planoAtual === plano.id ? 'Plano atual' : 'Contratar'}
+                {planoAtual === plano.id
+                  ? 'Plano atual'
+                  : loadingPlano === plano.id
+                  ? 'Redirecionando...'
+                  : 'Contratar'}
               </button>
             </div>
           ))}
