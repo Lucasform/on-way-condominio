@@ -16,6 +16,7 @@ export type FeatureKey =
   | 'relatorios'
   | 'whatsapp'
   | 'reservas'
+  | 'solicitacoes'
 
 export interface FeatureFlag {
   key: FeatureKey
@@ -48,5 +49,6 @@ export const ROUTE_FEATURE: Partial<Record<string, FeatureKey>> = {
   '/regimento':    'regimento',
   '/relatorios':   'relatorios',
   '/whatsapp':     'whatsapp',
-  '/reservas':     'reservas',
+  '/reservas':       'reservas',
+  '/solicitacoes':   'solicitacoes',
 }

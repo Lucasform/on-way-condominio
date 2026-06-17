@@ -85,6 +85,9 @@ const ClassificadoNovo = lazy(() => import('./pages/ClassificadoNovo'))
 const ClassificadoDetalhe = lazy(() => import('./pages/ClassificadoDetalhe'))
 const FeatureFlags = lazy(() => import('./pages/FeatureFlags'))
 const Planos = lazy(() => import('./pages/Planos'))
+const Solicitacoes = lazy(() => import('./pages/Solicitacoes'))
+const SolicitacaoNova = lazy(() => import('./pages/SolicitacaoNova'))
+const SolicitacaoDetalhe = lazy(() => import('./pages/SolicitacaoDetalhe'))
 const Comunicados = lazy(() => import('./pages/Comunicados'))
 const ComunicadoNovo = lazy(() => import('./pages/ComunicadoNovo'))
 const ComunicadoDetalhe = lazy(() => import('./pages/ComunicadoDetalhe'))
@@ -642,6 +645,22 @@ export default function App() {
                   <Planos />
                 </ProtectedRoute>
               }
+            />
+            <Route
+              path="/solicitacoes"
+              element={<ProtectedRoute><Solicitacoes /></ProtectedRoute>}
+            />
+            <Route
+              path="/solicitacoes/nova"
+              element={
+                <ProtectedRoute roles={['morador', 'conselheiro']}>
+                  <SolicitacaoNova />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/solicitacoes/:id"
+              element={<ProtectedRoute><SolicitacaoDetalhe /></ProtectedRoute>}
             />
             <Route
               path="/ajuda"
