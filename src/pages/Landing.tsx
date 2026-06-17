@@ -309,6 +309,78 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ANTES vs DEPOIS */}
+      <section className="py-24 px-4 bg-slate-900/30 border-y border-slate-800/60">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <span className="text-xs font-semibold uppercase tracking-widest text-brand-400 mb-3 block">Transformação</span>
+            <h2 className="text-3xl sm:text-4xl font-bold text-slate-100 mb-4">
+              Antes e depois do OnWay
+            </h2>
+            <p className="text-slate-400 max-w-lg mx-auto">
+              Veja como cada tarefa muda quando o condomínio sai do improviso e passa a ter um sistema.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* SEM ONWAY */}
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <span className="text-lg">😩</span>
+                <h3 className="text-base font-bold text-red-400">Sem OnWay</h3>
+              </div>
+              <ul className="space-y-3">
+                {[
+                  { icon: '📦', text: 'Porteiro anota encomendas num caderno. Morador liga pra saber se chegou.' },
+                  { icon: '📱', text: 'Comunicados vão pro grupo de WhatsApp. Acabam sumidos entre memes.' },
+                  { icon: '📋', text: 'Assembleia requer impressão, folha de presença e ata manuscrita.' },
+                  { icon: '🚪', text: 'Morador liga pra portaria liberar cada visita. Porteiro esquece.' },
+                  { icon: '⚠️', text: 'Ocorrências são mandadas por mensagem. Ninguém acompanha o status.' },
+                  { icon: '📄', text: 'Multas são cobradas por e-mail. Morador diz que não recebeu.' },
+                ].map((item) => (
+                  <li key={item.text} className="flex items-start gap-3">
+                    <span className="text-base shrink-0 mt-0.5">{item.icon}</span>
+                    <span className="text-sm text-slate-400 leading-relaxed">{item.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* COM ONWAY */}
+            <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-6">
+              <div className="flex items-center gap-2 mb-6">
+                <span className="text-lg">✅</span>
+                <h3 className="text-base font-bold text-emerald-400">Com OnWay</h3>
+              </div>
+              <ul className="space-y-3">
+                {[
+                  { icon: '📦', text: 'App registra a encomenda e notifica o morador na hora. Zero ligação.' },
+                  { icon: '📣', text: 'Comunicado publicado no mural. Todos veem, confirmam leitura.' },
+                  { icon: '🗳', text: 'Votação online com quórum automático e ata em PDF com assinaturas.' },
+                  { icon: '🔑', text: 'Morador autoriza a visita pelo app. Portaria libera com um clique.' },
+                  { icon: '✅', text: 'Ocorrência aberta, acompanhada e encerrada com histórico completo.' },
+                  { icon: '📲', text: 'Multa emitida com notificação, prazo e recibo. Rastreável.' },
+                ].map((item) => (
+                  <li key={item.text} className="flex items-start gap-3">
+                    <span className="text-base shrink-0 mt-0.5">{item.icon}</span>
+                    <span className="text-sm text-slate-300 leading-relaxed">{item.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          <div className="mt-10 text-center">
+            <Link
+              to="/cadastro"
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-sm transition shadow-lg shadow-brand-600/25"
+            >
+              Quero o depois →
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* COMO FUNCIONA */}
       <section id="como-funciona" className="py-24 px-4 bg-slate-900/30 border-y border-slate-800/60">
         <div className="max-w-4xl mx-auto">
