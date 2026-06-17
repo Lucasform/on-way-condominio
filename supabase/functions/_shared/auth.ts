@@ -4,6 +4,7 @@ import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2'
 
 export type Role =
   | 'admin_onway'
+  | 'admin'
   | 'administradora'
   | 'sindico'
   | 'subsindico'
@@ -56,7 +57,7 @@ export async function getCaller(req: Request): Promise<Caller> {
 }
 
 // Matriz: quem pode criar/gerenciar quem.
-const STAFF_ROLES: Role[] = ['admin_onway', 'administradora', 'sindico', 'subsindico']
+const STAFF_ROLES: Role[] = ['admin_onway', 'admin', 'administradora', 'sindico', 'subsindico']
 
 export function canManagePessoas(role: Role): boolean {
   return STAFF_ROLES.includes(role)
@@ -66,6 +67,7 @@ export function canManagePessoas(role: Role): boolean {
 // Subsindico tem os mesmos poderes do sindico.
 const CAN_CREATE: Record<Role, Role[]> = {
   admin_onway:    ['sindico', 'subsindico', 'conselheiro', 'administradora', 'portaria', 'ronda', 'morador'],
+  admin:          ['sindico', 'subsindico', 'conselheiro', 'administradora', 'portaria', 'ronda', 'morador'],
   sindico:        ['subsindico', 'conselheiro', 'administradora', 'portaria', 'ronda', 'morador'],
   subsindico:     ['conselheiro', 'administradora', 'portaria', 'ronda', 'morador'],
   administradora: ['portaria', 'ronda', 'morador'],
@@ -81,7 +83,7 @@ export function canCreateRole(callerRole: Role, targetRole: Role): boolean {
 
 // Garante que o caller tem escopo no condomínio alvo.
 export function assertSameScope(caller: Caller, condominio_id: string) {
-  if (caller.perfil.role === 'admin_onway') return
+  if (caller.perfil.role === 'admin_onway' || caller.perfil.role === 'admin') return
   if (caller.perfil.condominio_id !== condominio_id) {
     throw new HttpError('Sem acesso a esse condomínio.', 403)
   }

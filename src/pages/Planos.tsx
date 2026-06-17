@@ -4,6 +4,8 @@ import { useFeatureFlags } from '../contexts/FeatureFlagsContext'
 import type { FeatureKey } from '../types/featureFlag'
 import PageHeader from '../components/ui/PageHeader'
 import { supabase } from '../lib/supabase'
+import { Navigate } from 'react-router-dom'
+import { useAuth } from '../components/AuthProvider'
 
 const FEATURE_LABEL: Record<FeatureKey, string> = {
   portaria:     'Serviços de Portaria',
@@ -28,6 +30,9 @@ const FEATURE_LABEL: Record<FeatureKey, string> = {
 const ALL_FEATURES = Object.keys(FEATURE_PRICE) as FeatureKey[]
 
 export default function Planos() {
+  const { perfil } = useAuth()
+  if (perfil && perfil.role !== 'admin_onway') return <Navigate to="/" replace />
+
   const { assinatura } = useFeatureFlags()
   const [tab, setTab] = useState<'planos' | 'custom'>('planos')
   const [selecionadas, setSelecionadas] = useState<Set<FeatureKey>>(new Set())

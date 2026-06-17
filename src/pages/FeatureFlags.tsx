@@ -3,6 +3,8 @@ import type { FeatureKey } from '../types/featureFlag'
 import { useToast } from '../components/ui/Toast'
 import PageHeader from '../components/ui/PageHeader'
 import { useState } from 'react'
+import { Navigate } from 'react-router-dom'
+import { useAuth } from '../components/AuthProvider'
 
 const GRUPOS: { label: string; keys: FeatureKey[] }[] = [
   {
@@ -20,6 +22,9 @@ const GRUPOS: { label: string; keys: FeatureKey[] }[] = [
 ]
 
 export default function FeatureFlags() {
+  const { perfil } = useAuth()
+  if (perfil && perfil.role !== 'admin_onway') return <Navigate to="/" replace />
+
   const { flags, toggle, loading } = useFeatureFlags()
   const toast = useToast()
   const [busy, setBusy] = useState<FeatureKey | null>(null)

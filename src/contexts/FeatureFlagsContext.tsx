@@ -34,7 +34,7 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
     if (!user) { setLoading(false); return }
     setLoading(true)
     const condoId = perfil?.condominio_id ?? null
-    const isAdminOnway = perfil?.role === 'admin_onway'
+    const isAdminOnway = perfil?.role === 'admin_onway' || perfil?.role === 'admin'
 
     Promise.all([
       listFeatureFlags(),
@@ -50,7 +50,7 @@ export function FeatureFlagsProvider({ children }: { children: ReactNode }) {
 
   function isActive(key: FeatureKey): boolean {
     if (loading) return true
-    const isAdminOnway = perfil?.role === 'admin_onway'
+    const isAdminOnway = perfil?.role === 'admin_onway' || perfil?.role === 'admin'
 
     // 1. Feature precisa estar globalmente habilitada no produto
     const flagGlobal = flags.find((f) => f.key === key)

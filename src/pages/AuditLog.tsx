@@ -3,6 +3,7 @@ import { listAudit, deleteAuditEntries, type AuditEntry } from '../lib/auditLog'
 import { listCondominios } from '../lib/condominios'
 import type { Condominio } from '../types/condominio'
 import { useAuth } from '../components/AuthProvider'
+import { Navigate } from 'react-router-dom'
 import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
@@ -21,6 +22,7 @@ const ACOES = [
 
 export default function AuditLog() {
   const { perfil } = useAuth()
+  if (perfil && perfil.role !== 'admin_onway') return <Navigate to="/" replace />
   const toast = useToast()
   const confirm = useConfirm()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id

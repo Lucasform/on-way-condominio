@@ -4,7 +4,7 @@ import type { Role } from '../types/database'
 // E o grupo que pode apagar registros (multas, ocorrencias, chamados, etc).
 export function isGestor(role?: Role | null): boolean {
   if (!role) return false
-  return role === 'admin_onway' || role === 'sindico' || role === 'subsindico'
+  return role === 'admin_onway' || role === 'admin' || role === 'sindico' || role === 'subsindico'
 }
 
 // Staff operacional: gestores + administradora. Quem pode editar cadastros,

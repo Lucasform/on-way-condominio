@@ -83,6 +83,66 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
   ],
 
   // ============================================================
+  // Admin — mesmo acesso que admin_onway, sem funcionalidades/planos/auditoria
+  // ============================================================
+  admin: [
+    ...COMMON_TOP,
+    {
+      label: 'Visão geral',
+      children: [
+        { to: '/dashboard', label: 'Acompanhamento Geral' },
+        { to: '/painel', label: 'Painel de trabalho' },
+      ],
+    },
+    {
+      label: 'Gestão',
+      children: [
+        { to: '/condominios', label: 'Condomínios' },
+        { to: '/unidades', label: 'Unidades' },
+        { to: '/pessoas', label: 'Pessoas' },
+        { to: '/veiculos', label: 'Veículos' },
+        { to: '/pets', label: 'Pets' },
+        { to: '/regimento', label: 'Regimento' },
+      ],
+    },
+    {
+      label: 'Operação',
+      children: [
+        { to: '/ocorrencias', label: 'Ocorrências' },
+        { to: '/notificacoes', label: 'Notificações' },
+        { to: '/multas', label: 'Multas' },
+        { to: '/chamados', label: 'Chamados' },
+        { to: '/encomendas', label: 'Serviços de Portaria' },
+        { to: '/acessos', label: 'Acessos autorizados' },
+        { to: '/servicos', label: 'Prestação de Serviços' },
+      ],
+    },
+    {
+      label: 'Comunicação',
+      children: [
+        { to: '/mural', label: 'Mural informativo' },
+        { to: '/calendario', label: 'Calendário' },
+        { to: '/chat', label: 'Chat interno' },
+        { to: '/comunicados', label: 'Comunicados' },
+        { to: '/classificados', label: 'Classificados' },
+        { to: '/emails-log', label: 'E-mail' },
+        { to: '/whatsapp', label: 'WhatsApp' },
+        { to: '/fila-envios', label: 'Fila de envios' },
+      ],
+    },
+    {
+      label: 'Administração',
+      children: [
+        { to: '/assembleias', label: 'Assembleias' },
+        { to: '/votacoes', label: 'Votações' },
+        { to: '/relatorios', label: 'Relatórios' },
+        { to: '/templates', label: 'Templates' },
+        { to: '/ajuda', label: 'Ajuda' },
+      ],
+    },
+  ],
+
+  // ============================================================
   // Administradora — empresa que administra o condomínio
   // ============================================================
   administradora: [
@@ -484,6 +544,7 @@ export function iconColorFor(to: string): string {
 // ============================================================
 const BOTTOM_BY_ROLE: Record<Role, MenuLeaf[]> = {
   admin_onway:    [{ to: '/', label: 'Início' }, { to: '/painel', label: 'Painel' }, { to: '/ocorrencias', label: 'Ocorr.' }, { to: '/chat', label: 'Chat' }],
+  admin:          [{ to: '/', label: 'Início' }, { to: '/painel', label: 'Painel' }, { to: '/ocorrencias', label: 'Ocorr.' }, { to: '/chat', label: 'Chat' }],
   administradora: [{ to: '/', label: 'Início' }, { to: '/painel', label: 'Painel' }, { to: '/ocorrencias', label: 'Ocorr.' }, { to: '/chat', label: 'Chat' }],
   sindico:        [{ to: '/', label: 'Início' }, { to: '/painel', label: 'Painel' }, { to: '/ocorrencias', label: 'Ocorr.' }, { to: '/chat', label: 'Chat' }],
   subsindico:     [{ to: '/', label: 'Início' }, { to: '/painel', label: 'Painel' }, { to: '/ocorrencias', label: 'Ocorr.' }, { to: '/chat', label: 'Chat' }],
@@ -502,6 +563,7 @@ export function bottomNavFor(role: Role): MenuLeaf[] {
 export function roleLabel(role: Role): string {
   return {
     admin_onway: 'Administrador OnWay',
+    admin: 'Administrador',
     administradora: 'Administradora',
     sindico: 'Síndico',
     subsindico: 'Subsíndico',
