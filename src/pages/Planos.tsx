@@ -34,6 +34,7 @@ export default function Planos() {
   const [showModal, setShowModal] = useState(false)
   const [loadingPlano, setLoadingPlano] = useState<string | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [selecionado, setSelecionado] = useState<string | null>(null)
 
   async function handleContratar(planoId: string) {
     setLoadingPlano(planoId)
@@ -121,10 +122,13 @@ export default function Planos() {
           {PLANO_CATALOG.filter((p) => p.id !== 'custom').map((plano) => (
             <div
               key={plano.id}
-              className={`relative rounded-xl border p-6 flex flex-col transition ${
-                plano.destaque
-                  ? 'border-brand-500 bg-brand-500/5'
-                  : 'border-slate-700 bg-slate-900/40'
+              onClick={() => setSelecionado(plano.id)}
+              className={`relative rounded-xl border p-6 flex flex-col transition cursor-pointer ${
+                selecionado === plano.id
+                  ? 'border-brand-400 bg-brand-500/10 shadow-lg shadow-brand-500/10 scale-[1.02]'
+                  : plano.destaque
+                  ? 'border-brand-500 bg-brand-500/5 hover:border-brand-400 hover:bg-brand-500/10'
+                  : 'border-slate-700 bg-slate-900/40 hover:border-slate-500 hover:bg-slate-800/40'
               }`}
             >
               {plano.destaque && (
