@@ -151,7 +151,7 @@ export default function Landing() {
               Entrar
             </Link>
             <Link
-              to="/cadastro"
+              to="/signup"
               className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold transition"
             >
               Começar grátis
@@ -178,7 +178,7 @@ export default function Landing() {
             <a href="#faq" onClick={() => setMenuOpen(false)} className="text-slate-300 py-1">FAQ</a>
             <hr className="border-slate-800" />
             <Link to="/entrar" className="text-slate-300 py-1">Entrar</Link>
-            <Link to="/cadastro" className="block text-center py-2.5 rounded-lg bg-brand-600 text-white font-semibold">
+            <Link to="/signup" className="block text-center py-2.5 rounded-lg bg-brand-600 text-white font-semibold">
               Começar grátis
             </Link>
           </div>
@@ -211,7 +211,7 @@ export default function Landing() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
             <Link
-              to="/cadastro"
+              to="/signup"
               className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-base transition shadow-lg shadow-brand-600/25"
             >
               Começar 30 dias grátis →
@@ -372,7 +372,7 @@ export default function Landing() {
 
           <div className="mt-10 text-center">
             <Link
-              to="/cadastro"
+              to="/signup"
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-sm transition shadow-lg shadow-brand-600/25"
             >
               Quero o depois →
@@ -457,7 +457,7 @@ export default function Landing() {
                   ))}
                 </ul>
                 <Link
-                  to="/cadastro"
+                  to="/signup"
                   className={`block text-center py-3 rounded-xl font-semibold text-sm transition ${
                     plano.destaque
                       ? 'bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-600/25'
@@ -529,7 +529,7 @@ export default function Landing() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
-              to="/cadastro"
+              to="/signup"
               className="w-full sm:w-auto px-10 py-4 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-base transition shadow-xl shadow-brand-600/30"
             >
               Criar conta grátis →
