@@ -25,6 +25,7 @@ const FEATURE_LABEL: Record<FeatureKey, string> = {
   relatorios:   'Relatórios',
   whatsapp:     'WhatsApp',
   reservas:     'Reserva de Espaços',
+  solicitacoes: 'Solicitações',
 }
 
 const ALL_FEATURES = Object.keys(FEATURE_PRICE) as FeatureKey[]

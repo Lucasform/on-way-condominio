@@ -27,11 +27,14 @@ export async function listSolicitacoes(opts: {
   const { data, error } = await q
   if (error) throw error
 
-  return (data ?? []).map((row: Record<string, unknown>) => ({
-    ...(row as Solicitacao),
-    autor_nome: (row.autor as { nome_exibicao?: string } | null)?.nome_exibicao ?? null,
-    unidade_nome: (row.unidade as { nome?: string } | null)?.nome ?? null,
-  }))
+  return (data ?? []).map((row) => {
+    const r = row as unknown as Record<string, unknown>
+    return {
+      ...(r as unknown as Solicitacao),
+      autor_nome: (r.autor as { nome_exibicao?: string } | null)?.nome_exibicao ?? null,
+      unidade_nome: (r.unidade as { nome?: string } | null)?.nome ?? null,
+    }
+  })
 }
 
 export async function getSolicitacao(id: string): Promise<Solicitacao | null> {
@@ -46,9 +49,9 @@ export async function getSolicitacao(id: string): Promise<Solicitacao | null> {
     .maybeSingle()
   if (error) throw error
   if (!data) return null
-  const row = data as Record<string, unknown>
+  const row = data as unknown as Record<string, unknown>
   return {
-    ...(row as Solicitacao),
+    ...(row as unknown as Solicitacao),
     autor_nome: (row.autor as { nome_exibicao?: string } | null)?.nome_exibicao ?? null,
     unidade_nome: (row.unidade as { nome?: string } | null)?.nome ?? null,
   }
@@ -100,11 +103,14 @@ export async function listMensagens(solicitacao_id: string): Promise<Solicitacao
     .order('criado_at', { ascending: true })
   if (error) throw error
 
-  return (data ?? []).map((row: Record<string, unknown>) => ({
-    ...(row as SolicitacaoMensagem),
-    autor_nome: (row.autor as { nome_exibicao?: string } | null)?.nome_exibicao ?? null,
-    autor_role: (row.autor as { role?: string } | null)?.role ?? null,
-  }))
+  return (data ?? []).map((row) => {
+    const r = row as unknown as Record<string, unknown>
+    return {
+      ...(r as unknown as SolicitacaoMensagem),
+      autor_nome: (r.autor as { nome_exibicao?: string } | null)?.nome_exibicao ?? null,
+      autor_role: (r.autor as { role?: string } | null)?.role ?? null,
+    }
+  })
 }
 
 export async function addMensagem(

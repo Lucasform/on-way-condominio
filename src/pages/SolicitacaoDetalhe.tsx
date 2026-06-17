@@ -11,7 +11,7 @@ import { useAuth } from '../components/AuthProvider'
 import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
-import { Textarea } from '../components/ui/Input'
+import { TextArea } from '../components/ui/Input'
 import { useToast } from '../components/ui/Toast'
 
 const TIPO_LABEL: Record<string, string> = {
@@ -195,9 +195,9 @@ export default function SolicitacaoDetalhe() {
       {/* Responder */}
       {(gestor || solicitacao.autor_id === user?.id) && solicitacao.status !== 'respondido' || gestor ? (
         <form onSubmit={handleEnviar} className="space-y-3">
-          <Textarea
+          <TextArea
             value={texto}
-            onChange={(e) => setTexto(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setTexto(e.target.value)}
             placeholder={gestor ? 'Resposta da gestão...' : 'Adicionar informação...'}
             rows={4}
           />

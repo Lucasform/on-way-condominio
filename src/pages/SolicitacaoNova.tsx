@@ -6,7 +6,7 @@ import { useAuth } from '../components/AuthProvider'
 import { useTenant } from '../components/TenantProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
-import { Field, TextInput, Textarea, Select } from '../components/ui/Input'
+import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
 import { useToast } from '../components/ui/Toast'
 
 const TIPOS: { value: TipoSolicitacao; label: string }[] = [
@@ -82,7 +82,7 @@ export default function SolicitacaoNova() {
         </Field>
 
         <Field label="Descrição" hint="Descreva com detalhes para que a gestão possa ajudar">
-          <Textarea
+          <TextArea
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
             placeholder="Detalhe sua solicitação aqui..."
