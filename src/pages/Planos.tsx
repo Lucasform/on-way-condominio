@@ -173,7 +173,7 @@ export default function Planos() {
                 className={`w-full py-2.5 rounded-lg text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed ${
                   planoAtual === plano.id
                     ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/30 cursor-default'
-                    : plano.destaque
+                    : selecionado === plano.id
                     ? 'bg-brand-600 hover:bg-brand-500 text-white'
                     : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
                 }`}
