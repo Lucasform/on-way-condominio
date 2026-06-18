@@ -121,6 +121,7 @@ const FAQS = [
 export default function Landing() {
   const [faqAberto, setFaqAberto] = useState<number | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [planoSelecionado, setPlanoSelecionado] = useState<string | null>(null)
 
   useEffect(() => {
     document.title = 'OnWay Condomínio — Gestão inteligente do seu condomínio'
@@ -425,49 +426,54 @@ export default function Landing() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {PLANOS.map((plano) => (
-              <div
-                key={plano.id}
-                className={`relative rounded-2xl border p-7 flex flex-col transition ${
-                  plano.destaque
-                    ? 'border-brand-500 bg-gradient-to-b from-brand-500/10 to-slate-900/60 shadow-xl shadow-brand-500/10'
-                    : 'border-slate-700 bg-slate-900/40'
-                }`}
-              >
-                {plano.destaque && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-brand-600 text-white text-xs font-bold whitespace-nowrap">
-                    Mais popular
-                  </div>
-                )}
-                <div className="mb-5">
-                  <h3 className="text-lg font-bold text-slate-100">{plano.nome}</h3>
-                  <p className="text-sm text-slate-400 mt-1">{plano.desc}</p>
-                </div>
-                <div className="mb-6">
-                  <span className="text-4xl font-black text-slate-100">R$ {plano.preco.toLocaleString('pt-BR')}</span>
-                  <span className="text-slate-500 text-sm">/mês</span>
-                  <div className="text-xs text-slate-500 mt-1">{plano.limite}</div>
-                </div>
-                <ul className="space-y-2.5 mb-8 flex-1">
-                  {plano.features.map((f) => (
-                    <li key={f} className="flex items-center gap-2 text-sm text-slate-300">
-                      <span className="text-emerald-400 shrink-0">✓</span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  to="/signup"
-                  className={`block text-center py-3 rounded-xl font-semibold text-sm transition ${
-                    plano.destaque
-                      ? 'bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-600/25'
-                      : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+            {PLANOS.map((plano) => {
+              const selecionado = planoSelecionado === plano.id
+              return (
+                <div
+                  key={plano.id}
+                  onClick={() => setPlanoSelecionado(plano.id)}
+                  className={`relative rounded-2xl border p-7 flex flex-col cursor-pointer transition-all ${
+                    selecionado
+                      ? 'border-brand-500 bg-gradient-to-b from-brand-500/10 to-slate-900/60 shadow-xl shadow-brand-500/10 scale-[1.02]'
+                      : 'border-slate-700 bg-slate-900/40 hover:border-slate-500'
                   }`}
                 >
-                  Começar grátis
-                </Link>
-              </div>
-            ))}
+                  {plano.destaque && (
+                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-brand-600 text-white text-xs font-bold whitespace-nowrap">
+                      Mais popular
+                    </div>
+                  )}
+                  <div className="mb-5">
+                    <h3 className="text-lg font-bold text-slate-100">{plano.nome}</h3>
+                    <p className="text-sm text-slate-400 mt-1">{plano.desc}</p>
+                  </div>
+                  <div className="mb-6">
+                    <span className="text-4xl font-black text-slate-100">R$ {plano.preco.toLocaleString('pt-BR')}</span>
+                    <span className="text-slate-500 text-sm">/mês</span>
+                    <div className="text-xs text-slate-500 mt-1">{plano.limite}</div>
+                  </div>
+                  <ul className="space-y-2.5 mb-8 flex-1">
+                    {plano.features.map((f) => (
+                      <li key={f} className="flex items-center gap-2 text-sm text-slate-300">
+                        <span className="text-emerald-400 shrink-0">✓</span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    to="/signup"
+                    onClick={(e) => e.stopPropagation()}
+                    className={`block text-center py-3 rounded-xl font-semibold text-sm transition ${
+                      selecionado
+                        ? 'bg-brand-600 hover:bg-brand-500 text-white shadow-lg shadow-brand-600/25'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700'
+                    }`}
+                  >
+                    Começar grátis
+                  </Link>
+                </div>
+              )
+            })}
           </div>
 
           <div className="mt-8 text-center">
