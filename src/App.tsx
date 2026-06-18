@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
+import { useAuth } from './components/AuthProvider'
 import { AuthProvider } from './components/AuthProvider'
 import { TenantProvider } from './components/TenantProvider'
 import { ToastProvider } from './components/ui/Toast'
@@ -96,6 +97,13 @@ const Plantao = lazy(() => import('./pages/Plantao'))
 const Landing = lazy(() => import('./pages/Landing'))
 const CheckoutSucesso = lazy(() => import('./pages/CheckoutSucesso'))
 
+function RootRoute() {
+  const { user, loading } = useAuth()
+  if (loading) return <PageLoader />
+  if (!user) return <Navigate to="/landing" replace />
+  return <Home />
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -129,7 +137,7 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<RootRoute />} />
             <Route path="/mais" element={<Mais />} />
             <Route
               path="/fila-envios"
