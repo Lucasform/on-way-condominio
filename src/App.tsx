@@ -699,6 +699,8 @@ export default function App() {
               }
             />
           </Route>
+          {/* URL curta para moradores: onwaycondominio.com/:slug */}
+          <Route path="/:slug" element={<Login />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>

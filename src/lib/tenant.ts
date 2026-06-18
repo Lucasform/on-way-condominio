@@ -34,30 +34,49 @@ const NEUTRAL_HOSTS = new Set([
   'app.onwaytech.com.br',
 ])
 
+// Paths que pertencem ao app e nunca devem ser interpretados como tenant slug.
+const APP_PATHS = new Set([
+  'landing', 'checkout', 'entrar', 'login', 'signup', 'esqueci-senha',
+  'atualizar-senha', 'auth', 'termos', 'privacidade', 'votar',
+  'condominios', 'unidades', 'pessoas', 'veiculos', 'pets',
+  'ocorrencias', 'multas', 'notificacoes', 'regimento', 'painel',
+  'encomendas', 'plantao', 'mural', 'calendario', 'dashboard',
+  'votacoes', 'assembleias', 'templates', 'chamados', 'relatorios',
+  'emails-log', 'chat', 'whatsapp', 'whatsapp-config', 'auditoria',
+  'servicos', 'acessos', 'classificados', 'funcionalidades', 'planos',
+  'solicitacoes', 'ajuda', 'comunicados', 'mais', 'meu-perfil',
+  'fila-envios', 'c',
+])
+
 /**
  * Detecta slug do condominio pela URL atual:
- *   1. subdominio (jardim-paulista.onwaytech.com.br) → 'jardim-paulista'
- *   2. path prefix (/c/jardim-paulista/...) → 'jardim-paulista'
- *   3. retorna null se for host neutro ou nenhum match
+ *   1. path curto (/:slug) → 'slug'  (ex.: onwaycondominio.com/jardim-paulista)
+ *   2. path prefixado (/c/:slug/...) → 'slug'  (legado / alias)
+ *   3. subdominio (jardim-paulista.onwaytech.com.br) → 'slug'
+ *   4. retorna null se for host neutro ou nenhum match
  */
 export function detectTenantSlug(): string | null {
   if (typeof window === 'undefined') return null
   const host = window.location.hostname.toLowerCase()
   const path = window.location.pathname
 
-  // Path prefix /c/<slug>/...
-  const pathMatch = path.match(/^\/c\/([a-z0-9][a-z0-9-]{0,62})(\/|$)/i)
-  if (pathMatch) return pathMatch[1].toLowerCase()
+  // Path curto /<slug> — segmento único, excluindo paths do próprio app
+  const shortMatch = path.match(/^\/([a-z0-9][a-z0-9-]{0,62})(\/|$)/i)
+  if (shortMatch) {
+    const candidate = shortMatch[1].toLowerCase()
+    if (!APP_PATHS.has(candidate)) return candidate
+  }
+
+  // Path prefixado /c/<slug>/... (legado / alias)
+  const prefixMatch = path.match(/^\/c\/([a-z0-9][a-z0-9-]{0,62})(\/|$)/i)
+  if (prefixMatch) return prefixMatch[1].toLowerCase()
 
   // Subdominio: separa antes do dominio raiz
   if (NEUTRAL_HOSTS.has(host)) return null
-  // Suporta dominio.com.br (3 partes) ou dominio.com (2 partes)
   const parts = host.split('.')
-  // Precisa de >= 3 partes pra ser subdominio (sub.dominio.com)
   if (parts.length < 3) return null
   const sub = parts[0]
   if (sub === 'www' || sub === 'app') return null
-  // Slug valido: kebab-case, letras/numeros/hifen
   if (!/^[a-z0-9][a-z0-9-]{0,62}$/.test(sub)) return null
   return sub
 }
