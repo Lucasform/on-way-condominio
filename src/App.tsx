@@ -109,6 +109,10 @@ export default function App() {
           <Route path="/checkout/sucesso" element={<CheckoutSucesso />} />
           <Route path="/entrar" element={<EscolhaPerfil />} />
           <Route path="/login" element={<Login />} />
+          {/* Tenant entry: /c/:slug → carrega brand e mostra login */}
+          <Route path="/c/:slug" element={<Login />} />
+          <Route path="/c/:slug/login" element={<Login />} />
+          <Route path="/c/:slug/signup" element={<Signup />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/esqueci-senha" element={<EsqueciSenha />} />
           <Route path="/atualizar-senha" element={<AtualizarSenha />} />
