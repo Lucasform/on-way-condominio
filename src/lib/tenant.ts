@@ -27,6 +27,8 @@ const NEUTRAL_HOSTS = new Set([
   'localhost',
   '127.0.0.1',
   'on-way-condominio.vercel.app',
+  'onwaycondominio.com',
+  'www.onwaycondominio.com',
   'onwaytech.com.br',
   'www.onwaytech.com.br',
   'app.onwaytech.com.br',
