@@ -206,8 +206,8 @@ export default function Landing() {
           </h1>
 
           <p className="text-lg sm:text-xl text-slate-400 leading-relaxed mb-10 max-w-2xl mx-auto">
-            Portaria digital, assembleias online, comunicação centralizada e votações com ata em PDF.
-            Tudo no mesmo app, acessível de qualquer dispositivo, sem instalação.
+            Chega de caderno na portaria e grupo de WhatsApp lotado de reclamação.
+            Gerencie encomendas, acessos, assembleias e comunicados em um único lugar — direto do navegador, sem instalar nada.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
@@ -232,7 +232,7 @@ export default function Landing() {
               <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
               <div className="w-3 h-3 rounded-full bg-emerald-500/70" />
               <div className="flex-1 mx-3 h-5 rounded-md bg-slate-800 text-[10px] text-slate-500 flex items-center px-2">
-                onway-condominio.vercel.app
+                onwaycondominio.com
               </div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -266,9 +266,9 @@ export default function Landing() {
       <section className="py-12 border-y border-slate-800/60 bg-slate-900/30">
         <div className="max-w-4xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
-            { valor: '30 dias', label: 'Trial gratuito' },
-            { valor: '100%', label: 'Web, sem instalação' },
-            { valor: '99.9%', label: 'Uptime garantido' },
+            { valor: 'Sem contrato', label: 'Cancele quando quiser' },
+            { valor: '100%', label: 'Online, sem instalação' },
+            { valor: 'Dados seguros', label: 'Backups automáticos' },
             { valor: '5 min', label: 'Para começar' },
           ].map((s) => (
             <div key={s.label}>
