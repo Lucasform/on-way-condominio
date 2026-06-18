@@ -22,7 +22,7 @@ export default function StarRating({ value, total, size = 'sm', onChange, classN
             type="button"
             disabled={!interactive}
             onClick={() => onChange?.(n)}
-            className={`leading-none ${interactive ? 'cursor-pointer hover:scale-110 transition' : 'cursor-default'} ${
+            className={`rounded leading-none outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 ${interactive ? 'cursor-pointer hover:scale-110 transition-transform' : 'cursor-default'} ${
               fill ? 'text-amber-400' : half ? 'text-amber-400/60' : 'text-slate-600'
             }`}
             title={interactive ? `Dar ${n} estrelas` : undefined}
@@ -33,7 +33,7 @@ export default function StarRating({ value, total, size = 'sm', onChange, classN
       })}
       {typeof total === 'number' && (
         <span className="ml-1 text-xs text-slate-400">
-          {value > 0 ? value.toFixed(1) : '—'} {total > 0 && <>({total})</>}
+          {value > 0 ? value.toFixed(1) : 'sem nota'} {total > 0 && <>({total})</>}
         </span>
       )}
     </span>

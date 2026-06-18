@@ -228,18 +228,22 @@ function StatCard({
   accent?: 'default' | 'amber' | 'red' | 'sky' | 'emerald'
 }) {
   const accentMap = {
-    default: 'border-slate-800',
+    default: 'border-slate-800 bg-slate-900/40',
     amber: 'border-amber-500/40 bg-amber-500/5',
     red: 'border-red-500/40 bg-red-500/5',
     sky: 'border-sky-500/40 bg-sky-500/5',
     emerald: 'border-emerald-500/40 bg-emerald-500/5',
   }
   const Content = (
-    <div className={`rounded-lg border ${accentMap[accent]} bg-slate-900/40 p-4 transition ${link ? 'hover:border-slate-600' : ''}`}>
+    <div className={`rounded-lg border ${accentMap[accent]} p-4 transition-colors ${link ? 'hover:border-slate-600' : ''}`}>
       <div className="text-xs text-slate-500 uppercase tracking-wide">{label}</div>
       <div className="mt-1 text-2xl font-bold text-slate-100">{value}</div>
     </div>
   )
-  return link ? <Link to={link}>{Content}</Link> : Content
+  return link ? (
+    <Link to={link} className="block rounded-lg outline-none transition focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950">
+      {Content}
+    </Link>
+  ) : Content
 }
 

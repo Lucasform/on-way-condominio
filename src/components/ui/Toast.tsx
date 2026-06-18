@@ -110,7 +110,7 @@ function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {
         <button
           type="button"
           onClick={onClose}
-          className="opacity-60 hover:opacity-100 text-sm leading-none"
+          className="rounded text-sm leading-none opacity-60 transition-opacity hover:opacity-100 outline-none focus-visible:ring-2 focus-visible:ring-current"
           aria-label="Fechar"
         >
           ×

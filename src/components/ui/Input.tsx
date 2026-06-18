@@ -5,7 +5,7 @@ const inputCls =
   'text-sm text-slate-100 placeholder:text-slate-500 ' +
   'transition-colors ' +
   'hover:border-slate-600 ' +
-  'focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 ' +
+  'focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 ' +
   'disabled:opacity-50 disabled:cursor-not-allowed'
 
 const textareaCls = inputCls.replace('h-9 px-3', 'px-3 py-2')

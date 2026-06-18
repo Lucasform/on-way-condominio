@@ -29,10 +29,10 @@ export default function Tabs({
             key={t.key}
             type="button"
             onClick={() => onChange(t.key)}
-            className={`relative shrink-0 px-3 py-2 text-sm whitespace-nowrap transition border-b-2 -mb-px ${
+            className={`relative shrink-0 rounded-t-md px-3 py-2 text-sm whitespace-nowrap transition-colors border-b-2 -mb-px outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 ${
               ativo
                 ? 'border-brand-500 text-slate-100 font-medium'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700'
             }`}
           >
             {t.icon && <span className="mr-1.5">{t.icon}</span>}

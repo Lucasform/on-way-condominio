@@ -68,7 +68,7 @@ export default function Modal({
               <button
                 type="button"
                 onClick={onClose}
-                className="text-slate-500 hover:text-slate-100 transition shrink-0"
+                className="shrink-0 rounded-md text-slate-500 hover:text-slate-100 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50"
                 aria-label="Fechar"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">

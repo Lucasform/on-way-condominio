@@ -148,7 +148,7 @@ export default function AcessoEvento() {
               disabled={unidades.length === 0}
               className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:border-brand-500 focus:outline-none"
             >
-              <option value="">— Selecione —</option>
+              <option value="">Selecione...</option>
               {unidades.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.bloco ? `${u.bloco}-${u.numero}` : u.numero}

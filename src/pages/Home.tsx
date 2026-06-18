@@ -62,13 +62,13 @@ export default function Home() {
           <div className="mt-6 flex gap-3 flex-wrap">
             <Link
               to="/dashboard"
-              className="px-4 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-medium transition shadow-sm"
+              className="px-4 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-medium transition-colors shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
             >
               📊 Ir pro Dashboard
             </Link>
             <Link
               to="/painel"
-              className="px-4 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium hover:bg-slate-700 transition"
+              className="px-4 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium hover:bg-slate-700 hover:border-slate-600 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
             >
               🗂 Abrir Painel Kanban
             </Link>
@@ -168,7 +168,7 @@ function MoradorHome() {
               icon="🗳"
               label="Votações abertas"
               value={votacoes.length}
-              detail={votacoes.length > 0 ? 'sua opinião conta!' : '—'}
+              detail={votacoes.length > 0 ? 'sua opinião conta!' : 'nenhuma agora'}
               link="/votacoes"
               accent={votacoes.length > 0 ? 'amber' : 'default'}
             />
@@ -196,7 +196,7 @@ function MoradorHome() {
                   <li key={e.id} className="text-sm">
                     <Link
                       to="/calendario"
-                      className="flex justify-between items-baseline hover:bg-slate-800/40 px-2 py-1.5 rounded -mx-2 transition"
+                      className="flex justify-between items-baseline hover:bg-slate-800/40 px-2 py-1.5 rounded -mx-2 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50"
                     >
                       <span className="text-slate-200">{e.titulo}</span>
                       <span className="text-xs text-slate-500">
@@ -226,7 +226,7 @@ function MoradorHome() {
                     <li key={c.id} className="text-sm">
                       <Link
                         to={`/chamados/${c.id}`}
-                        className="flex justify-between items-baseline hover:bg-slate-800/40 px-2 py-1.5 rounded -mx-2 transition"
+                        className="flex justify-between items-baseline hover:bg-slate-800/40 px-2 py-1.5 rounded -mx-2 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50"
                       >
                         <span className="text-slate-200">{c.titulo}</span>
                         <span className="text-xs text-slate-400">{c.status.replace('_', ' ')}</span>
@@ -260,7 +260,7 @@ function PersonalCard({
   accent?: 'default' | 'red' | 'sky' | 'amber' | 'emerald'
 }) {
   const accentMap = {
-    default: 'border-slate-800',
+    default: 'border-slate-800 bg-slate-900/40',
     red: 'border-red-500/40 bg-red-500/5',
     sky: 'border-sky-500/40 bg-sky-500/5',
     amber: 'border-amber-500/40 bg-amber-500/5',
@@ -269,7 +269,7 @@ function PersonalCard({
   return (
     <Link
       to={link}
-      className={`block rounded-lg border ${accentMap[accent]} bg-slate-900/40 p-4 hover:border-slate-600 transition`}
+      className={`block rounded-lg border ${accentMap[accent]} p-4 hover:border-slate-600 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950`}
     >
       <div className="flex items-baseline gap-2">
         <span className="text-2xl leading-none">{icon}</span>
@@ -289,7 +289,7 @@ function QuickAction({ to, label }: { to: string; label: string }) {
   return (
     <Link
       to={to}
-      className="px-3 py-2 rounded-md bg-slate-800/60 border border-slate-700 text-sm text-slate-200 hover:border-slate-500 transition"
+      className="px-3 py-2 rounded-md bg-slate-800/60 border border-slate-700 text-sm text-slate-200 hover:bg-slate-700/70 hover:border-slate-500 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
     >
       {label}
     </Link>

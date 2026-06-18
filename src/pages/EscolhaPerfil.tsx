@@ -67,7 +67,7 @@ export default function EscolhaPerfil() {
             key={o.to}
             to={o.to}
             state={passState}
-            className="group flex flex-col items-center text-center px-4 py-6 rounded-lg border border-slate-800 bg-slate-900/40 transition outline-none hover:border-brand-600 hover:border-brand-400 hover:bg-brand-700/10 hover:shadow-md focus-visible:border-brand-600 focus-visible:bg-brand-50 dark:focus-visible:border-brand-400 dark:focus-visible:bg-brand-700/10 focus-visible:ring-2 focus-visible:ring-brand-500/40"
+            className="group flex flex-col items-center text-center px-4 py-6 rounded-lg border border-slate-800 bg-slate-900/40 transition outline-none hover:border-brand-500 hover:bg-brand-700/10 hover:shadow-md focus-visible:border-brand-500 focus-visible:bg-brand-700/10 focus-visible:ring-2 focus-visible:ring-brand-500/40"
           >
             <div className="w-14 h-14 rounded-full bg-slate-900 border border-slate-700 group-hover:border-brand-500 group-focus-visible:border-brand-500 flex items-center justify-center text-3xl mb-3 transition">
               {o.emoji}

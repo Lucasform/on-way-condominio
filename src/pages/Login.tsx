@@ -40,10 +40,10 @@ const TIPOS_COM_CONVITE: Tipo[] = ['admin', 'morador']
 
 const inputCls =
   'w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 ' +
-  'text-slate-100 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700 text-sm'
+  'text-slate-100 placeholder:text-slate-500 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 text-sm transition-colors'
 
 const primaryBtn =
-  'w-full py-2 rounded-md bg-brand-700 hover:bg-brand-800 active:bg-brand-900 text-white font-semibold text-sm transition disabled:opacity-50'
+  'w-full py-2 rounded-md bg-brand-700 hover:bg-brand-800 active:bg-brand-900 text-white font-semibold text-sm transition disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -191,7 +191,7 @@ export default function Login() {
           className={`flex-1 text-sm py-1.5 rounded transition font-medium ${
             modo === 'senha'
               ? 'bg-slate-700 text-white shadow-sm'
-              : 'text-slate-400'
+              : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           🔒 Senha
@@ -202,7 +202,7 @@ export default function Login() {
           className={`flex-1 text-sm py-1.5 rounded transition font-medium ${
             modo === 'email'
               ? 'bg-slate-700 text-white shadow-sm'
-              : 'text-slate-400'
+              : 'text-slate-400 hover:text-slate-200'
           }`}
         >
           ✉ Entrar por e-mail

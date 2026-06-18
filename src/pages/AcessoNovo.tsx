@@ -303,7 +303,7 @@ export default function AcessoNovo() {
             onChange={(e) => update('unidade_id', e.target.value)}
             disabled={unidades.length === 0}
           >
-            <option value="">— Selecione —</option>
+            <option value="">Selecione...</option>
             {unidades.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.bloco ? `${u.bloco}-${u.numero}` : u.numero}
@@ -326,7 +326,7 @@ export default function AcessoNovo() {
               value={form.documento_tipo ?? ''}
               onChange={(e) => update('documento_tipo', (e.target.value || null) as DocumentoTipo | null)}
             >
-              <option value="">—</option>
+              <option value="">Selecione...</option>
               <option value="cpf">CPF</option>
               <option value="rg">RG</option>
               <option value="cnh">CNH</option>
