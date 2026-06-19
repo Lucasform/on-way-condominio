@@ -68,28 +68,28 @@ const STEPS = [
 const PLANOS = [
   {
     id: 'basico',
-    nome: 'Básico',
-    preco: 149,
-    desc: 'Para condomínios pequenos que querem portaria digital.',
-    features: ['Portaria digital', 'Acessos autorizados', 'Cadastro de moradores', 'Mural informativo', 'Ocorrências'],
+    nome: 'Starter',
+    preco: 89,
+    desc: 'Para condomínios pequenos que querem sair do caderno.',
+    features: ['Portaria digital', 'Acessos autorizados', 'Cadastro de moradores', 'Mural informativo', 'Ocorrências e chamados'],
     limite: 'Até 30 unidades',
     destaque: false,
   },
   {
     id: 'profissional',
     nome: 'Profissional',
-    preco: 349,
+    preco: 159,
     desc: 'Comunicação completa + gestão operacional.',
-    features: ['Tudo do Básico', 'Chat interno', 'Comunicados oficiais', 'Classificados', 'Multas e chamados', 'Calendário de eventos'],
+    features: ['Tudo do Starter', 'Chat interno', 'Comunicados oficiais', 'Classificados', 'Multas', 'Calendário de eventos'],
     limite: 'Até 150 unidades',
     destaque: true,
   },
   {
     id: 'enterprise',
-    nome: 'Enterprise',
-    preco: 799,
-    desc: 'Tudo incluído para administradoras profissionais.',
-    features: ['Tudo do Profissional', 'Assembleias digitais', 'Votações com ata em PDF', 'Relatórios gerenciais', 'Auditoria completa', 'Storage 50 GB'],
+    nome: 'Completo',
+    preco: 299,
+    desc: 'Tudo incluído. IA integrada para administradoras.',
+    features: ['Tudo do Profissional', 'Assembleias digitais', 'Votações com ata em PDF', 'IA assistente', 'Relatórios', 'Auditoria completa'],
     limite: 'Unidades ilimitadas',
     destaque: false,
   },
@@ -152,7 +152,7 @@ export default function Landing() {
               Entrar
             </Link>
             <Link
-              to="/signup"
+              to="/comecar"
               className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-semibold transition"
             >
               Começar grátis
@@ -179,7 +179,7 @@ export default function Landing() {
             <a href="#faq" onClick={() => setMenuOpen(false)} className="text-slate-300 py-1">FAQ</a>
             <hr className="border-slate-800" />
             <Link to="/entrar" className="text-slate-300 py-1">Entrar</Link>
-            <Link to="/signup" className="block text-center py-2.5 rounded-lg bg-brand-600 text-white font-semibold">
+            <Link to="/comecar" className="block text-center py-2.5 rounded-lg bg-brand-600 text-white font-semibold">
               Começar grátis
             </Link>
           </div>
@@ -195,7 +195,7 @@ export default function Landing() {
         <div className="relative max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-brand-500/30 bg-brand-500/10 text-brand-300 text-xs font-medium mb-6">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            30 dias grátis · Sem cartão de crédito
+            10 dias grátis · Sem cartão de crédito
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
@@ -212,10 +212,10 @@ export default function Landing() {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
             <Link
-              to="/signup"
+              to="/comecar"
               className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-base transition shadow-lg shadow-brand-600/25"
             >
-              Começar 30 dias grátis →
+              Começar 10 dias grátis →
             </Link>
             <Link
               to="/entrar"
@@ -373,7 +373,7 @@ export default function Landing() {
 
           <div className="mt-10 text-center">
             <Link
-              to="/signup"
+              to="/comecar"
               className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-sm transition shadow-lg shadow-brand-600/25"
             >
               Quero o depois →
@@ -421,7 +421,7 @@ export default function Landing() {
               Preço justo, sem surpresas
             </h2>
             <p className="text-slate-400 max-w-lg mx-auto">
-              Todos os planos incluem 30 dias grátis. Cancele quando quiser, sem multa.
+              Todos os planos incluem 10 dias grátis. Cancele quando quiser, sem multa.
             </p>
           </div>
 
@@ -461,7 +461,7 @@ export default function Landing() {
                     ))}
                   </ul>
                   <Link
-                    to="/signup"
+                    to="/comecar"
                     onClick={(e) => e.stopPropagation()}
                     className={`block text-center py-3 rounded-xl font-semibold text-sm transition ${
                       selecionado
@@ -531,11 +531,11 @@ export default function Landing() {
             Seu condomínio merece uma gestão moderna.
           </h2>
           <p className="text-slate-400 text-lg mb-10">
-            Comece hoje com 30 dias grátis. Sem cartão de crédito, sem compromisso.
+            Comece hoje com 10 dias grátis. Sem cartão de crédito, sem compromisso.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
-              to="/signup"
+              to="/comecar"
               className="w-full sm:w-auto px-10 py-4 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-base transition shadow-xl shadow-brand-600/30"
             >
               Criar conta grátis →
@@ -548,7 +548,7 @@ export default function Landing() {
             </a>
           </div>
           <p className="text-xs text-slate-600 mt-6">
-            30 dias grátis · Cancele quando quiser · Dados seguros com Supabase
+            10 dias grátis · Cancele quando quiser · Dados seguros
           </p>
         </div>
       </section>

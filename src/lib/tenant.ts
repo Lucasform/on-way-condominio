@@ -45,7 +45,7 @@ const APP_PATHS = new Set([
   'emails-log', 'chat', 'whatsapp', 'whatsapp-config', 'auditoria',
   'servicos', 'acessos', 'classificados', 'funcionalidades', 'planos',
   'solicitacoes', 'ajuda', 'comunicados', 'mais', 'meu-perfil',
-  'fila-envios', 'c',
+  'fila-envios', 'c', 'comecar',
 ])
 
 /**

@@ -96,6 +96,7 @@ const Help = lazy(() => import('./pages/Help'))
 const Plantao = lazy(() => import('./pages/Plantao'))
 const Landing = lazy(() => import('./pages/Landing'))
 const CheckoutSucesso = lazy(() => import('./pages/CheckoutSucesso'))
+const Comecar = lazy(() => import('./pages/Comecar'))
 
 function RootRoute() {
   const { user, loading } = useAuth()
@@ -114,6 +115,7 @@ export default function App() {
         <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/landing" element={<Landing />} />
+          <Route path="/comecar" element={<Comecar />} />
           <Route path="/checkout/sucesso" element={<CheckoutSucesso />} />
           <Route path="/entrar" element={<EscolhaPerfil />} />
           <Route path="/login" element={<Login />} />
