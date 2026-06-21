@@ -1,14 +1,6 @@
 // supabase/functions/onboarding-setup/index.ts
-// Cadastro público de síndico + criação do condomínio em um único request.
-// Não exige sessão prévia.
-// Fluxo:
-//  1. Recebe { nome, email, password, nome_condominio, num_unidades, cep?, cidade?, estado? }
-//  2. Rate-limit por IP
-//  3. Cria user no Auth (email_confirm = true)
-//  4. Cria condominio
-//  5. Cria perfil com role = 'sindico'
-//  6. Cria assinatura trial de 10 dias (plano profissional)
-//  7. Devolve sessão pronta pro front fazer setSession()
+// Cadastro público de síndico + criação do condomínio.
+// Usa inserts diretos via service-role (mesmo padrão do redeem-invite-code).
 
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 import { handleCors, jsonResponse } from '../_shared/cors.ts'
@@ -18,7 +10,7 @@ interface Body {
   email: string
   password: string
   nome_condominio: string
-  num_unidades: string
+  num_unidades?: string
   cep?: string | null
   cidade?: string | null
   estado?: string | null
@@ -28,16 +20,19 @@ Deno.serve(async (req: Request) => {
   const cors = handleCors(req)
   if (cors) return cors
 
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
+  const SERVICE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const ANON_KEY     = Deno.env.get('SUPABASE_ANON_KEY')!
+
   try {
     const body = (await req.json()) as Body
-    const nome = body.nome?.trim()
-    const email = body.email?.trim().toLowerCase()
-    const password = body.password
+    const nome            = body.nome?.trim()
+    const email           = body.email?.trim().toLowerCase()
+    const password        = body.password
     const nome_condominio = body.nome_condominio?.trim()
-    const num_unidades = body.num_unidades?.trim() || 'ate_30'
-    const cep = body.cep?.trim() || null
-    const cidade = body.cidade?.trim() || null
-    const estado = body.estado?.trim() || null
+    const cep             = body.cep?.trim() || null
+    const cidade          = body.cidade?.trim() || null
+    const estado          = body.estado?.trim() || null
 
     if (!nome || !email || !password || !nome_condominio) {
       return jsonResponse({ error: 'nome, email, password e nome_condominio são obrigatórios.' }, 400)
@@ -46,15 +41,12 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'Senha precisa ter no mínimo 8 caracteres.' }, 400)
     }
 
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
-    const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
-    const admin = createClient(SUPABASE_URL, SERVICE_KEY)
+    const admin = createClient(SUPABASE_URL, SERVICE_KEY, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
 
-    // Rate limit: máx 5 cadastros/IP em 10 min
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-            ?? req.headers.get('cf-connecting-ip')
-            ?? 'unknown'
+    // Rate limit
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
     const { data: allowed } = await admin.rpc('check_rate_limit', {
       p_bucket: 'onboarding_setup',
       p_identifier: ip,
@@ -65,14 +57,20 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'Muitas tentativas. Aguarde 10 minutos.' }, 429)
     }
 
-    // 1) Cria user no Auth
+    // 1) Verifica se e-mail já existe (getUserByEmail é O(1), listUsers seria O(n))
+    const { data: existingUser } = await admin.auth.admin.getUserByEmail(email)
+    if (existingUser?.user) {
+      return jsonResponse({ error: 'Este e-mail já está cadastrado.' }, 400)
+    }
+
+    // 2) Cria user no Auth
     const { data: authData, error: authErr } = await admin.auth.admin.createUser({
       email,
       password,
       email_confirm: true,
       user_metadata: { nome_exibicao: nome },
     })
-    if (authErr || !authData.user) {
+    if (authErr || !authData?.user) {
       const msg = authErr?.message ?? 'Erro ao criar usuário.'
       if (msg.toLowerCase().includes('already registered') || msg.toLowerCase().includes('already exists')) {
         return jsonResponse({ error: 'Este e-mail já está cadastrado.' }, 400)
@@ -81,64 +79,70 @@ Deno.serve(async (req: Request) => {
     }
     const userId = authData.user.id
 
-    // 2) Cria condomínio
-    const { data: condo, error: condoErr } = await admin
-      .from('condominios')
-      .insert({
-        nome: nome_condominio,
-        cep,
-        cidade,
-        estado,
-        ativo: true,
-        permite_signup: true,
-      })
-      .select('id')
-      .single()
-    if (condoErr || !condo) {
-      await admin.auth.admin.deleteUser(userId)
-      return jsonResponse({ error: 'Erro ao criar condomínio.' }, 500)
-    }
-    const condoId = condo.id
+    // 3) Cria condomínio via REST direto (bypassa schema cache do PostgREST)
+    const trialEnd = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString()
+    const restUrl = `${SUPABASE_URL}/rest/v1`
 
-    // 3) Cria perfil síndico
-    const { error: perfilErr } = await admin
-      .from('perfis')
-      .insert({
-        id: userId,
-        condominio_id: condoId,
-        role: 'sindico',
-        nome_exibicao: nome,
-        ativo: true,
-      })
-    if (perfilErr) {
-      await admin.from('condominios').delete().eq('id', condoId)
+    const condoRes = await fetch(`${restUrl}/condominios?select=id`, {
+      method: 'POST',
+      headers: {
+        'apikey': SERVICE_KEY,
+        'Authorization': `Bearer ${SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify({ nome: nome_condominio, cep, cidade, estado, ativo: true, permite_signup: true }),
+    })
+    if (!condoRes.ok) {
+      const condoErr = await condoRes.text()
       await admin.auth.admin.deleteUser(userId)
-      return jsonResponse({ error: 'Erro ao criar perfil.' }, 500)
+      return jsonResponse({ error: `Erro ao criar condomínio: ${condoErr}` }, 500)
+    }
+    const condoRows = await condoRes.json() as { id: string }[]
+    const condoId = condoRows[0]?.id
+    if (!condoId) {
+      await admin.auth.admin.deleteUser(userId)
+      return jsonResponse({ error: 'Condomínio não retornou ID.' }, 500)
     }
 
-    // 4) Cria assinatura trial 10 dias
-    const trialEnd = new Date()
-    trialEnd.setDate(trialEnd.getDate() + 10)
-    await admin.from('assinaturas').insert({
-      condominio_id: condoId,
-      plano_id: 'profissional',
-      status: 'trial',
-      trial_ends_at: trialEnd.toISOString(),
-      features_plano: {},
-      features_extras: {},
+    // 4) Cria perfil síndico
+    const perfilRes = await fetch(`${restUrl}/perfis`, {
+      method: 'POST',
+      headers: {
+        'apikey': SERVICE_KEY,
+        'Authorization': `Bearer ${SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({ id: userId, condominio_id: condoId, role: 'sindico', nome_exibicao: nome, ativo: true }),
+    })
+    if (!perfilRes.ok) {
+      const perfilErr = await perfilRes.text()
+      await fetch(`${restUrl}/condominios?id=eq.${condoId}`, { method: 'DELETE', headers: { 'apikey': SERVICE_KEY, 'Authorization': `Bearer ${SERVICE_KEY}` } })
+      await admin.auth.admin.deleteUser(userId)
+      return jsonResponse({ error: `Erro ao criar perfil: ${perfilErr}` }, 500)
+    }
+
+    // 5) Cria assinatura trial
+    await fetch(`${restUrl}/assinaturas`, {
+      method: 'POST',
+      headers: {
+        'apikey': SERVICE_KEY,
+        'Authorization': `Bearer ${SERVICE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal,resolution=ignore-duplicates',
+      },
+      body: JSON.stringify({ condominio_id: condoId, plano_id: 'profissional', status: 'trial', trial_ends_at: trialEnd, features_plano: {}, features_extras: {} }),
     })
 
-    // 5) Gera sessão para o cliente
+    // 6) Gera sessão
     const anonClient = createClient(SUPABASE_URL, ANON_KEY)
     const { data: session, error: sessErr } = await anonClient.auth.signInWithPassword({ email, password })
-    if (sessErr || !session.session) {
-      return jsonResponse({ error: 'Conta criada, mas não foi possível iniciar sessão. Faça login manualmente.' }, 500)
+    if (sessErr || !session?.session) {
+      return jsonResponse({ ok: true, condominio_id: condoId, session: null, message: 'Conta criada. Faça login.' })
     }
 
-    return jsonResponse({
-      session: session.session,
-      condominio_id: condoId,
-    })
+    return jsonResponse({ session: session.session, condominio_id: condoId })
   } catch (e) {
     return jsonResponse({ error: e instanceof Error ? e.message : 'Erro interno.' }, 500)
   }
