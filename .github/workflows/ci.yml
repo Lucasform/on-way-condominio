@@ -17,7 +17,8 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npx tsc -b
+      - run: npx tsc -p tsconfig.app.json --noEmit
+      - run: npx tsc -p tsconfig.node.json --noEmit
 
   e2e:
     name: E2E (Playwright)
