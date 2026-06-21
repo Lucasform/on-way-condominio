@@ -14,6 +14,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// Espelho de PLANO_CATALOG em src/types/billing.ts — manter em sync ao mudar planos
 const PLANO_CONFIG: Record<string, {
   features: string[]
   limite_unidades: number | null
@@ -29,7 +30,7 @@ const PLANO_CONFIG: Record<string, {
     limite_unidades: 150, limite_staff: 5, storage_gb: 10,
   },
   enterprise: {
-    features: ['portaria', 'acessos', 'moradores', 'mural', 'ocorrencias', 'chat', 'comunicados', 'classificados', 'multas', 'chamados', 'calendario', 'assembleias', 'servicos', 'regimento', 'relatorios'],
+    features: ['portaria', 'acessos', 'moradores', 'mural', 'ocorrencias', 'chat', 'comunicados', 'classificados', 'multas', 'chamados', 'calendario', 'assembleias', 'servicos', 'regimento', 'relatorios', 'whatsapp'],
     limite_unidades: null, limite_staff: null, storage_gb: 50,
   },
 }

@@ -15,6 +15,7 @@ import { prefetchRoutes } from '../lib/prefetchRoutes'
 import { useFeatureFlags } from '../contexts/FeatureFlagsContext'
 import FeatureGuard from './FeatureGuard'
 import TrialBanner from './TrialBanner'
+import MfaBanner from './MfaBanner'
 
 /**
  * Layout: sidebar no desktop (padrão web), top bar + launcher no mobile.
@@ -245,6 +246,7 @@ export default function AppShell() {
           </div>
         </header>
 
+        <MfaBanner />
         <TrialBanner />
 
         {emViewAs && (

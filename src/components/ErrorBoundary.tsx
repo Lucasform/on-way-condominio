@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import * as Sentry from '@sentry/react'
 
 interface Props {
   children: ReactNode
@@ -36,6 +37,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ errorInfo })
     console.error('[ErrorBoundary] Caught:', error, errorInfo)
+    Sentry.captureException(error, { extra: { componentStack: errorInfo.componentStack } })
 
     // Chunk antigo referenciado por HTML cacheado: o deploy novo invalidou esse arquivo.
     // Auto-recarrega uma vez (com guarda anti-loop) pra puxar HTML novo.
