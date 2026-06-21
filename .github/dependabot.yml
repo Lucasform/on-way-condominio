@@ -1,0 +1,26 @@
+version: 2
+updates:
+  # Dependências npm — verifica toda semana
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+    open-pull-requests-limit: 5
+    groups:
+      # Agrupa patches e minors para não criar um PR por pacote
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # Major versions exigem avaliação manual
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Actions do GitHub — mantém os runners atualizados
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
