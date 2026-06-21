@@ -1,27 +1,26 @@
-import { useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { useFeatureFlags } from '../contexts/FeatureFlagsContext'
 import { ROUTE_FEATURE } from '../types/featureFlag'
+import type { FeatureKey } from '../types/featureFlag'
+import UpgradeGate from './UpgradeGate'
 
 /**
- * Guardião global de features. Fica dentro do AppShell e redireciona
- * para / quando o usuário tenta acessar uma rota com feature desativada.
- * Não precisa envolver cada rota individualmente.
+ * Guardião global de features. Fica dentro do AppShell e substitui o
+ * conteúdo da rota por UpgradeGate quando a feature não está disponível.
+ * Retorna null (invisível) nas rotas que não exigem feature específica.
  */
-export default function FeatureGuard() {
+export default function FeatureGuard({ children }: { children?: React.ReactNode }) {
   const { isActive, loading } = useFeatureFlags()
   const { pathname } = useLocation()
-  const navigate = useNavigate()
 
-  useEffect(() => {
-    if (loading) return
-    // Verifica rota exata e prefixos (ex: /classificados/uuid → classificados)
-    const base = '/' + pathname.split('/')[1]
-    const feat = ROUTE_FEATURE[base]
-    if (feat && !isActive(feat)) {
-      navigate('/', { replace: true })
-    }
-  }, [pathname, loading, isActive, navigate])
+  if (loading) return <>{children}</>
 
-  return null
+  const base = '/' + pathname.split('/')[1]
+  const feat: FeatureKey | undefined = ROUTE_FEATURE[base] as FeatureKey | undefined
+
+  if (feat && !isActive(feat)) {
+    return <UpgradeGate feature={feat} />
+  }
+
+  return <>{children}</>
 }

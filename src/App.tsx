@@ -85,6 +85,7 @@ const Classificados = lazy(() => import('./pages/Classificados'))
 const ClassificadoNovo = lazy(() => import('./pages/ClassificadoNovo'))
 const ClassificadoDetalhe = lazy(() => import('./pages/ClassificadoDetalhe'))
 const FeatureFlags = lazy(() => import('./pages/FeatureFlags'))
+const AssinaturasAdmin = lazy(() => import('./pages/AssinaturasAdmin'))
 const Planos = lazy(() => import('./pages/Planos'))
 const Solicitacoes = lazy(() => import('./pages/Solicitacoes'))
 const SolicitacaoNova = lazy(() => import('./pages/SolicitacaoNova'))
@@ -649,6 +650,14 @@ export default function App() {
               element={
                 <ProtectedRoute roles={['admin_onway']}>
                   <FeatureFlags />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/assinaturas"
+              element={
+                <ProtectedRoute roles={['admin_onway']}>
+                  <AssinaturasAdmin />
                 </ProtectedRoute>
               }
             />

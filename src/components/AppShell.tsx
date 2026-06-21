@@ -14,6 +14,7 @@ import ThemeToggle from './ThemeToggle'
 import { prefetchRoutes } from '../lib/prefetchRoutes'
 import { useFeatureFlags } from '../contexts/FeatureFlagsContext'
 import FeatureGuard from './FeatureGuard'
+import TrialBanner from './TrialBanner'
 
 /**
  * Layout: sidebar no desktop (padrão web), top bar + launcher no mobile.
@@ -244,6 +245,8 @@ export default function AppShell() {
           </div>
         </header>
 
+        <TrialBanner />
+
         {emViewAs && (
           <div className="shrink-0 bg-amber-400 border-b border-amber-500 px-4 py-2 flex items-center justify-between gap-3 text-xs">
             <span className="text-zinc-900 font-medium">
@@ -259,8 +262,9 @@ export default function AppShell() {
         )}
 
         <main ref={mainRef} className="flex-1 overflow-y-auto bg-slate-950">
-          <FeatureGuard />
-          <Outlet />
+          <FeatureGuard>
+            <Outlet />
+          </FeatureGuard>
         </main>
       </div>
     </div>
