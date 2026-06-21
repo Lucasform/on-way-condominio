@@ -29,3 +29,7 @@ CREDENCIAIS-ACESSO.txt
 scripts/_tmp-*.mjs
 
 .vercel
+
+stats/
+test-results/
+playwright-report/

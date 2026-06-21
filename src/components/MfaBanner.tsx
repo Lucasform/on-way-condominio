@@ -1,61 +1,83 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthProvider'
 
-const DISMISS_KEY = 'onway:mfa_nudge_dismissed'
-const DISMISS_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 dias
+type MfaState = 'loading' | 'required' | 'ok'
 
 /**
- * Nudge não-bloqueante para admin_onway configurar autenticação em dois fatores.
- * Aparece no topo do app e pode ser dispensado por 7 dias.
- * Some automaticamente se o usuário já tiver MFA ativo.
+ * Gate obrigatório de MFA para admin_onway.
+ * Bloqueia o app inteiro até que o admin configure e verifique um fator TOTP.
+ * Para outros roles: transparente (não renderiza nada extra).
  */
 export default function MfaBanner() {
   const { perfil } = useAuth()
-  const [show, setShow] = useState(false)
+  const navigate = useNavigate()
+  const [state, setState] = useState<MfaState>('loading')
 
   useEffect(() => {
-    if (perfil?.role !== 'admin_onway') return
+    if (perfil?.role !== 'admin_onway') {
+      setState('ok')
+      return
+    }
 
-    // Verifica se foi dispensado recentemente
-    try {
-      const raw = localStorage.getItem(DISMISS_KEY)
-      if (raw) {
-        const dismissed = Number(raw)
-        if (Date.now() - dismissed < DISMISS_TTL_MS) return
-      }
-    } catch { /* ignora */ }
-
-    // Checa se já tem fator TOTP verificado
     supabase.auth.mfa.listFactors().then(({ data }) => {
       const hasVerified = data?.totp?.some((f: { status: string }) => f.status === 'verified')
-      if (!hasVerified) setShow(true)
-    }).catch(() => { /* ignora */ })
+      setState(hasVerified ? 'ok' : 'required')
+    }).catch(() => setState('ok')) // em caso de erro na API, não bloqueia
   }, [perfil?.role])
 
-  if (!show) return null
+  // Revalida quando a janela volta ao foco (usuário pode ter configurado em outra aba)
+  useEffect(() => {
+    if (perfil?.role !== 'admin_onway') return
+    const recheck = () => {
+      supabase.auth.mfa.listFactors().then(({ data }) => {
+        const hasVerified = data?.totp?.some((f: { status: string }) => f.status === 'verified')
+        if (hasVerified) setState('ok')
+      }).catch(() => {})
+    }
+    window.addEventListener('focus', recheck)
+    return () => window.removeEventListener('focus', recheck)
+  }, [perfil?.role])
 
-  function dismiss() {
-    try { localStorage.setItem(DISMISS_KEY, String(Date.now())) } catch { /* ignora */ }
-    setShow(false)
-  }
+  if (perfil?.role !== 'admin_onway') return null
+  if (state !== 'required') return null
 
   return (
-    <div className="w-full px-4 py-2 flex items-center justify-between gap-4 bg-violet-500/10 border-b border-violet-500/20 text-xs text-violet-300">
-      <span>
-        🔐 Reforce a segurança da sua conta de administrador ativando a verificação em dois fatores.
-      </span>
-      <div className="flex items-center gap-3 shrink-0">
-        <Link
-          to="/meu-perfil"
-          className="px-3 py-1 rounded-md bg-violet-500/20 hover:bg-violet-500/40 text-violet-200 font-semibold transition"
+    <div className="fixed inset-0 z-[9999] bg-slate-950 flex items-center justify-center p-6">
+      <div className="max-w-md w-full text-center space-y-6">
+        <div className="text-5xl">🔐</div>
+
+        <div>
+          <h1 className="text-xl font-bold text-slate-100 mb-2">
+            Autenticação em dois fatores obrigatória
+          </h1>
+          <p className="text-sm text-slate-400 leading-relaxed">
+            Para acessar o painel de Administrador OnWay é necessário configurar
+            a verificação em dois fatores. Isso protege todos os condomínios gerenciados
+            por esta conta.
+          </p>
+        </div>
+
+        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 text-left space-y-3">
+          <p className="text-xs text-slate-500 font-semibold uppercase tracking-wide">Como configurar</p>
+          <ol className="text-sm text-slate-300 space-y-2 list-decimal list-inside">
+            <li>Instale um app autenticador (Google Authenticator, Authy, 1Password)</li>
+            <li>Acesse <strong className="text-slate-100">Meu Perfil → Segurança</strong></li>
+            <li>Escaneie o QR code e confirme o código</li>
+          </ol>
+        </div>
+
+        <button
+          onClick={() => navigate('/meu-perfil')}
+          className="w-full py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-sm transition"
         >
-          Ativar agora
-        </Link>
-        <button onClick={dismiss} className="text-violet-500 hover:text-violet-300 transition" aria-label="Dispensar">
-          ✕
+          Ir para Meu Perfil →
         </button>
+
+        <p className="text-xs text-slate-600">
+          Após configurar o 2FA, volte a esta janela. O acesso será liberado automaticamente.
+        </p>
       </div>
     </div>
   )
