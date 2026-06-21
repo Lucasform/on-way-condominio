@@ -17,10 +17,10 @@ export default defineConfig({
     chunkSizeWarningLimit: 500,
     rollupOptions: {
       output: {
-        manualChunks: {
-          react:    ['react', 'react-dom', 'react-router-dom'],
-          supabase: ['@supabase/supabase-js'],
-          sentry:   ['@sentry/react'],
+        manualChunks: (id) => {
+          if (id.includes('react-dom') || id.includes('react-router')) return 'react'
+          if (id.includes('@supabase')) return 'supabase'
+          if (id.includes('@sentry')) return 'sentry'
         },
       },
     },
