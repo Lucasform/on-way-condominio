@@ -22,7 +22,7 @@ export default function MfaBanner() {
     }
 
     supabase.auth.mfa.listFactors().then(({ data }) => {
-      const hasVerified = data?.totp?.some((f: { status: string }) => f.status === 'verified')
+      const hasVerified = data?.totp?.some((f) => f.status === 'verified')
       setState(hasVerified ? 'ok' : 'required')
     }).catch(() => setState('ok')) // em caso de erro na API, não bloqueia
   }, [perfil?.role])
@@ -32,7 +32,7 @@ export default function MfaBanner() {
     if (perfil?.role !== 'admin_onway') return
     const recheck = () => {
       supabase.auth.mfa.listFactors().then(({ data }) => {
-        const hasVerified = data?.totp?.some((f: { status: string }) => f.status === 'verified')
+        const hasVerified = data?.totp?.some((f) => f.status === 'verified')
         if (hasVerified) setState('ok')
       }).catch(() => {})
     }
