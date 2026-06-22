@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthProvider'
+
+// Rota onde o usuário configura o 2FA. Precisa ficar acessível mesmo com o gate ativo,
+// senão vira deadlock (o bloqueio cobre a própria tela de configuração).
+const SETUP_PATH = '/meu-perfil'
 
 type MfaState = 'loading' | 'required' | 'ok'
 
@@ -13,6 +17,7 @@ type MfaState = 'loading' | 'required' | 'ok'
 export default function MfaBanner() {
   const { perfil } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [state, setState] = useState<MfaState>('loading')
 
   useEffect(() => {
@@ -40,8 +45,19 @@ export default function MfaBanner() {
     return () => window.removeEventListener('focus', recheck)
   }, [perfil?.role])
 
+  // Revalida ao trocar de rota (ex: configurou o 2FA em Meu Perfil e saiu de lá)
+  useEffect(() => {
+    if (perfil?.role !== 'admin_onway') return
+    supabase.auth.mfa.listFactors().then(({ data }) => {
+      const hasVerified = data?.totp?.some((f) => f.status === 'verified')
+      if (hasVerified) setState('ok')
+    }).catch(() => {})
+  }, [location.pathname, perfil?.role])
+
   if (perfil?.role !== 'admin_onway') return null
   if (state !== 'required') return null
+  // Libera a tela de configuração do 2FA, senão o usuário nunca consegue ativá-lo.
+  if (location.pathname === SETUP_PATH) return null
 
   return (
     <div className="fixed inset-0 z-[9999] bg-slate-950 flex items-center justify-center p-6">
