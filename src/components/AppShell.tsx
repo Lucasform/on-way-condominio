@@ -10,6 +10,7 @@ import NotificationBell from './NotificationBell'
 import Logo from './Logo'
 import CondominioSwitcher from './CondominioSwitcher'
 import AccountMenu from './AccountMenu'
+import FeedbackWidget from './FeedbackWidget'
 import ThemeToggle from './ThemeToggle'
 import { prefetchRoutes } from '../lib/prefetchRoutes'
 import { useFeatureFlags } from '../contexts/FeatureFlagsContext'
@@ -269,6 +270,7 @@ export default function AppShell() {
           </FeatureGuard>
         </main>
       </div>
+      <FeedbackWidget />
     </div>
   )
 }
