@@ -56,7 +56,7 @@ export default function FeatureFlags() {
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Funcionalidades"
-        subtitle="Ative ou desative módulos do produto em tempo real, sem deploy."
+        subtitle="Ative ou desative módulos do produto em tempo real."
       />
 
       <div className="space-y-8">
