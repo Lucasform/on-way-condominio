@@ -8,6 +8,7 @@ import TwoFactorPanel from '../components/TwoFactorPanel'
 import MeusCondominios from '../components/MeusCondominios'
 import Tabs from '../components/ui/Tabs'
 import { updateCanaisNotificacao } from '../lib/pessoas'
+import { sendPush } from '../lib/push'
 import { CANAIS_NOTIFICACAO_PADRAO, type CanaisNotificacao } from '../types/pessoa'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
@@ -45,6 +46,8 @@ export default function MeuPerfil() {
   const [pessoa, setPessoa] = useState<Pessoa | null>(null)
   const [canais, setCanais] = useState<CanaisNotificacao>(CANAIS_NOTIFICACAO_PADRAO)
   const [savingCanais, setSavingCanais] = useState(false)
+  const [testingPush, setTestingPush] = useState(false)
+  const [testPushMsg, setTestPushMsg] = useState<string | null>(null)
   const [condoNome, setCondoNome] = useState<string | null>(null)
   const [aba, setAba] = useState<'perfil' | 'acesso' | 'notificacoes' | 'conta'>('perfil')
 
@@ -120,6 +123,20 @@ export default function MeuPerfil() {
       flash('err', e instanceof Error ? e.message : 'Erro ao salvar preferência.')
     } finally {
       setSavingCanais(false)
+    }
+  }
+
+  async function handleTestPush() {
+    if (!user) return
+    setTestingPush(true)
+    setTestPushMsg(null)
+    try {
+      await sendPush({ user_ids: [user.id], titulo: '🔔 Teste OnWay', corpo: 'Push funcionando! Você receberá alertas assim.' })
+      setTestPushMsg('ok')
+    } catch {
+      setTestPushMsg('err')
+    } finally {
+      setTestingPush(false)
     }
   }
 
@@ -617,6 +634,27 @@ export default function MeuPerfil() {
                 />
               </label>
             ))}
+          </div>
+        </Section>
+      )}
+
+      {aba === 'notificacoes' && canais.push && (
+        <Section title="Testar notificação">
+          <div className="space-y-3">
+            <p className="text-sm text-slate-400">Envia uma notificação de teste para este dispositivo agora.</p>
+            <Button
+              variant="secondary"
+              onClick={handleTestPush}
+              disabled={testingPush}
+            >
+              {testingPush ? 'Enviando...' : '🔔 Enviar notificação de teste'}
+            </Button>
+            {testPushMsg === 'ok' && (
+              <p className="text-xs text-emerald-400">Notificação enviada. Verifique seu celular/navegador.</p>
+            )}
+            {testPushMsg === 'err' && (
+              <p className="text-xs text-red-400">Falha ao enviar. Verifique se o push está ativado neste dispositivo.</p>
+            )}
           </div>
         </Section>
       )}
