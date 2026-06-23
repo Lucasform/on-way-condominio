@@ -15,6 +15,7 @@ interface FeedbackItem {
   condominio_id: string | null
   autor_id: string | null
   condominios?: { nome: string } | null
+  autor_nome?: string | null
 }
 
 const COLUNAS: { id: Status; label: string; description: string; accent: string }[] = [
@@ -43,8 +44,20 @@ export default function Suporte() {
       .from('feedback')
       .select('*, condominios(nome)')
       .order('created_at', { ascending: false })
-    if (error) toast.error('Erro ao carregar', error.message)
-    else setItems((data ?? []) as FeedbackItem[])
+    if (error) { toast.error('Erro ao carregar', error.message); setLoading(false); return }
+
+    const rows = (data ?? []) as FeedbackItem[]
+    const autorIds = [...new Set(rows.map((r) => r.autor_id).filter(Boolean))] as string[]
+    if (autorIds.length > 0) {
+      const { data: perfis } = await supabase
+        .from('perfis')
+        .select('id, nome_exibicao, email')
+        .in('id', autorIds)
+      const map = Object.fromEntries((perfis ?? []).map((p) => [p.id, p.nome_exibicao ?? p.email ?? null]))
+      setItems(rows.map((r) => ({ ...r, autor_nome: r.autor_id ? (map[r.autor_id] ?? null) : null })))
+    } else {
+      setItems(rows)
+    }
     setLoading(false)
   }
 
@@ -101,8 +114,11 @@ export default function Suporte() {
 
                   <p className="text-xs text-slate-300 leading-relaxed line-clamp-4">{f.mensagem}</p>
 
-                  {f.condominios?.nome && (
-                    <p className="text-[10px] text-slate-500 truncate">{f.condominios.nome}</p>
+                  {(f.condominios?.nome || f.autor_nome) && (
+                    <p className="text-[10px] text-slate-500 truncate">
+                      {f.condominios?.nome && <span>{f.condominios.nome}</span>}
+                      {f.autor_nome && <span className="text-slate-600"> · {f.autor_nome}</span>}
+                    </p>
                   )}
 
                   <div className="flex flex-wrap gap-1 pt-1">
