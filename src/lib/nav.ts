@@ -79,6 +79,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/funcionalidades', label: 'Funcionalidades' },
         { to: '/assinaturas', label: 'Assinaturas' },
         { to: '/planos', label: 'Planos e billing' },
+        { to: '/suporte', label: 'Suporte' },
         { to: '/ajuda', label: 'Ajuda' },
       ],
     },
