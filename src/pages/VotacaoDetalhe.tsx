@@ -369,7 +369,7 @@ export default function VotacaoDetalhe() {
 
         {meuVoto && votacaoAtiva && (
           <div className="mt-4 text-xs italic text-emerald-400">
-            ✓ Seu voto foi registrado. Você pode trocar até o encerramento — o voto final é o que vale.
+            ✓ Seu voto foi registrado. Você pode trocar até o encerramento e o voto final é o que vale.
           </div>
         )}
         {!votacaoAtiva && (
