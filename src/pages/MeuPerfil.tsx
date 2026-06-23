@@ -8,7 +8,7 @@ import TwoFactorPanel from '../components/TwoFactorPanel'
 import MeusCondominios from '../components/MeusCondominios'
 import Tabs from '../components/ui/Tabs'
 import { updateCanaisNotificacao } from '../lib/pessoas'
-import { sendPush } from '../lib/push'
+import { sendPush, getPushStatus } from '../lib/push'
 import { CANAIS_NOTIFICACAO_PADRAO, type CanaisNotificacao } from '../types/pessoa'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
@@ -48,6 +48,7 @@ export default function MeuPerfil() {
   const [savingCanais, setSavingCanais] = useState(false)
   const [testingPush, setTestingPush] = useState(false)
   const [testPushMsg, setTestPushMsg] = useState<string | null>(null)
+  const [pushSubscribed, setPushSubscribed] = useState(false)
   const [condoNome, setCondoNome] = useState<string | null>(null)
   const [aba, setAba] = useState<'perfil' | 'acesso' | 'notificacoes' | 'conta'>('perfil')
 
@@ -126,13 +127,29 @@ export default function MeuPerfil() {
     }
   }
 
+  useEffect(() => {
+    if (aba !== 'notificacoes') return
+    getPushStatus().then((s) => setPushSubscribed(s.subscribed)).catch(() => {})
+  }, [aba])
+
   async function handleTestPush() {
     if (!user) return
+    const status = await getPushStatus()
+    if (!status.subscribed) {
+      setTestPushMsg('not-subscribed')
+      return
+    }
     setTestingPush(true)
     setTestPushMsg(null)
     try {
-      await sendPush({ user_ids: [user.id], titulo: '🔔 Teste OnWay', corpo: 'Push funcionando! Você receberá alertas assim.' })
-      setTestPushMsg('ok')
+      const { data, error } = await supabase.functions.invoke('send-push', {
+        body: { user_ids: [user.id], titulo: '🔔 Teste OnWay', corpo: 'Push funcionando! Você receberá alertas mesmo com o app fechado.' },
+      })
+      if (error) throw error
+      const result = data as { total: number; ok: number; fail: number }
+      if (result.total === 0) setTestPushMsg('no-sub')
+      else if (result.ok > 0) setTestPushMsg('ok')
+      else setTestPushMsg('err')
     } catch {
       setTestPushMsg('err')
     } finally {
@@ -638,22 +655,33 @@ export default function MeuPerfil() {
         </Section>
       )}
 
-      {aba === 'notificacoes' && canais.push && (
-        <Section title="Testar notificação">
+      {aba === 'notificacoes' && (
+        <Section title="Notificações push neste dispositivo">
           <div className="space-y-3">
-            <p className="text-sm text-slate-400">Envia uma notificação de teste para este dispositivo agora.</p>
-            <Button
-              variant="secondary"
-              onClick={handleTestPush}
-              disabled={testingPush}
-            >
-              {testingPush ? 'Enviando...' : '🔔 Enviar notificação de teste'}
-            </Button>
-            {testPushMsg === 'ok' && (
-              <p className="text-xs text-emerald-400">Notificação enviada. Verifique seu celular/navegador.</p>
+            {!pushSubscribed ? (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200 space-y-1">
+                <p className="font-medium">Push não ativado neste dispositivo</p>
+                <p className="text-xs text-amber-300/80">Acesse a aba <strong>Acesso &amp; segurança</strong> e clique em <strong>Ativar</strong> para receber notificações.</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-slate-400">Push ativo neste dispositivo. Envie uma notificação de teste agora.</p>
+                <Button variant="secondary" onClick={handleTestPush} disabled={testingPush}>
+                  {testingPush ? 'Enviando...' : '🔔 Enviar notificação de teste'}
+                </Button>
+                {testPushMsg === 'ok' && (
+                  <p className="text-xs text-emerald-400">Notificação enviada. Verifique seu celular/navegador.</p>
+                )}
+                {testPushMsg === 'no-sub' && (
+                  <p className="text-xs text-amber-400">Nenhuma subscription encontrada no banco. Tente desativar e reativar o push.</p>
+                )}
+                {testPushMsg === 'err' && (
+                  <p className="text-xs text-red-400">Falha ao enviar. Verifique as configurações VAPID no Supabase.</p>
+                )}
+              </>
             )}
-            {testPushMsg === 'err' && (
-              <p className="text-xs text-red-400">Falha ao enviar. Verifique se o push está ativado neste dispositivo.</p>
+            {testPushMsg === 'not-subscribed' && (
+              <p className="text-xs text-amber-400">Push não está ativo neste dispositivo. Ative primeiro na aba Acesso &amp; segurança.</p>
             )}
           </div>
         </Section>
