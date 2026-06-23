@@ -18,11 +18,11 @@ interface FeedbackItem {
   perfis?: { nome_exibicao: string | null; email: string | null } | null
 }
 
-const COLUNAS: { id: Status; label: string; cor: string }[] = [
-  { id: 'novo',       label: 'Enviado',    cor: 'border-slate-600' },
-  { id: 'em_analise', label: 'Em análise', cor: 'border-amber-500' },
-  { id: 'resolvido',  label: 'Resolvido',  cor: 'border-emerald-500' },
-  { id: 'arquivado',  label: 'Arquivado',  cor: 'border-slate-700' },
+const COLUNAS: { id: Status; label: string; description: string; accent: string }[] = [
+  { id: 'novo',       label: 'Enviado',    description: 'Mensagens recém recebidas',         accent: 'border-amber-500/40 bg-amber-500/5' },
+  { id: 'em_analise', label: 'Em análise', description: 'Em avaliação pela plataforma',      accent: 'border-sky-500/40 bg-sky-500/5' },
+  { id: 'resolvido',  label: 'Resolvido',  description: 'Atendidas ou respondidas',          accent: 'border-emerald-500/40 bg-emerald-500/5' },
+  { id: 'arquivado',  label: 'Arquivado',  description: 'Encerradas sem ação necessária',    accent: 'border-slate-600/40 bg-slate-600/5' },
 ]
 
 const TIPO_BADGE: Record<Tipo, { label: string; cls: string }> = {
@@ -76,14 +76,17 @@ export default function Suporte() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-6">
           {COLUNAS.map((col) => (
-            <div key={col.id} className={`rounded-xl border-t-2 ${col.cor} bg-slate-900/50 p-4 space-y-3 min-h-[200px]`}>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-slate-200">{col.label}</h3>
-                <span className="text-xs text-slate-500 font-mono">{porColuna(col.id).length}</span>
-              </div>
+            <div key={col.id} className={`rounded-lg border p-3 flex flex-col min-h-[300px] ${col.accent}`}>
+              <header className="mb-3 px-1">
+                <div className="flex items-baseline justify-between">
+                  <h3 className="text-sm font-semibold text-slate-100">{col.label}</h3>
+                  <span className="text-xs text-slate-500 font-mono">{porColuna(col.id).length}</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5 leading-tight">{col.description}</p>
+              </header>
 
               {porColuna(col.id).length === 0 && (
-                <p className="text-xs text-slate-600 italic">Nenhum item</p>
+                <div className="text-center text-xs text-slate-600 py-8">vazio</div>
               )}
 
               {porColuna(col.id).map((f) => (

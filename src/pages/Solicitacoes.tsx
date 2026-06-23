@@ -18,10 +18,10 @@ const TIPO_CLASS = {
   outros:     'bg-slate-500/15 text-slate-300 border-slate-500/40',
 }
 
-const COLUNAS: { status: StatusSolicitacao; label: string; color: string; dot: string }[] = [
-  { status: 'enviado',    label: 'Enviado',    color: 'border-amber-500/40 bg-amber-500/5',    dot: 'bg-amber-400' },
-  { status: 'analise',   label: 'Em análise', color: 'border-sky-500/40 bg-sky-500/5',        dot: 'bg-sky-400' },
-  { status: 'respondido',label: 'Respondido', color: 'border-emerald-500/40 bg-emerald-500/5', dot: 'bg-emerald-400' },
+const COLUNAS: { status: StatusSolicitacao; label: string; description: string; color: string }[] = [
+  { status: 'enviado',    label: 'Enviado',    description: 'Aguardando triagem da gestão',      color: 'border-amber-500/40 bg-amber-500/5' },
+  { status: 'analise',   label: 'Em análise', description: 'Em avaliação pela administração',    color: 'border-sky-500/40 bg-sky-500/5' },
+  { status: 'respondido',label: 'Respondido', description: 'Atendidas ou encerradas',            color: 'border-emerald-500/40 bg-emerald-500/5' },
 ]
 
 export default function Solicitacoes() {
@@ -134,15 +134,17 @@ export default function Solicitacoes() {
         {COLUNAS.map((col) => {
           const cards = byStatus(col.status)
           return (
-            <div key={col.status} className={`rounded-xl border p-4 ${col.color}`}>
-              <div className="flex items-center gap-2 mb-4">
-                <span className={`w-2 h-2 rounded-full shrink-0 ${col.dot}`} />
-                <h2 className="text-sm font-semibold text-slate-200">{col.label}</h2>
-                <span className="ml-auto text-xs text-slate-500 font-medium">{cards.length}</span>
-              </div>
+            <div key={col.status} className={`rounded-lg border p-3 flex flex-col min-h-[300px] ${col.color}`}>
+              <header className="mb-3 px-1">
+                <div className="flex items-baseline justify-between">
+                  <h2 className="text-sm font-semibold text-slate-100">{col.label}</h2>
+                  <span className="text-xs text-slate-500 font-mono">{cards.length}</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5 leading-tight">{col.description}</p>
+              </header>
 
               {cards.length === 0 && (
-                <p className="text-xs text-slate-600 text-center py-6">Nenhuma aqui.</p>
+                <div className="text-center text-xs text-slate-600 py-8">vazio</div>
               )}
 
               <div className="space-y-3">
