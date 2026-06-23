@@ -1,4 +1,12 @@
 {
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "destination": "https://onwaycondominio.com/$1",
+      "permanent": true,
+      "has": [{ "type": "host", "value": "on-way-condominio.vercel.app" }]
+    }
+  ],
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
   "headers": [
     {
