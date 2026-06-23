@@ -15,7 +15,6 @@ interface FeedbackItem {
   condominio_id: string | null
   autor_id: string | null
   condominios?: { nome: string } | null
-  perfis?: { nome_exibicao: string | null; email: string | null } | null
 }
 
 const COLUNAS: { id: Status; label: string; description: string; accent: string }[] = [
@@ -42,7 +41,7 @@ export default function Suporte() {
     setLoading(true)
     const { data, error } = await supabase
       .from('feedback')
-      .select('*, condominios(nome), perfis:autor_id(nome_exibicao, email)')
+      .select('*, condominios(nome)')
       .order('created_at', { ascending: false })
     if (error) toast.error('Erro ao carregar', error.message)
     else setItems((data ?? []) as FeedbackItem[])
@@ -102,13 +101,8 @@ export default function Suporte() {
 
                   <p className="text-xs text-slate-300 leading-relaxed line-clamp-4">{f.mensagem}</p>
 
-                  {(f.condominios?.nome || f.perfis?.nome_exibicao || f.perfis?.email) && (
-                    <p className="text-[10px] text-slate-500 truncate">
-                      {f.condominios?.nome && <span className="mr-1">{f.condominios.nome}</span>}
-                      {(f.perfis?.nome_exibicao || f.perfis?.email) && (
-                        <span className="text-slate-600">· {f.perfis?.nome_exibicao ?? f.perfis?.email}</span>
-                      )}
-                    </p>
+                  {f.condominios?.nome && (
+                    <p className="text-[10px] text-slate-500 truncate">{f.condominios.nome}</p>
                   )}
 
                   <div className="flex flex-wrap gap-1 pt-1">
