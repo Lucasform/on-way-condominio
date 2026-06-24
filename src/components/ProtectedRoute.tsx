@@ -50,16 +50,9 @@ export default function ProtectedRoute({ children, roles }: Props) {
   }
 
   if (!perfil) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100 p-6 transition-colors">
-        <div className="max-w-md text-center">
-          <h1 className="text-xl font-semibold mb-2">Conta sem perfil</h1>
-          <p className="text-slate-400 text-sm">
-            Seu usuário não tem perfil associado neste condomínio. Procure a administradora ou o síndico.
-          </p>
-        </div>
-      </div>
-    )
+    // Usuário autenticado mas sem perfil no banco: redireciona para login
+    // para limpar o estado e permitir novo acesso. Não travar na tela de erro.
+    return <Navigate to="/entrar" replace state={{ from: location }} />
   }
 
   if (roles && !roles.includes(effectiveRole ?? perfil.role)) {
