@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import Logo from '../components/Logo'
 
@@ -114,7 +114,7 @@ function useCounter(target: number, duration = 1300, active = false) {
 }
 
 // ─── AnimatedSection ──────────────────────────────────────────────────────────
-function Reveal({ children, delay = 0, className = '' }: { children: ReactNode; delay?: number; className?: string }) {
+function Reveal({ children, delay = 0, className = '', style }: { children: ReactNode; delay?: number; className?: string; style?: React.CSSProperties }) {
   const { ref, inView } = useInView()
   return (
     <div
@@ -124,6 +124,7 @@ function Reveal({ children, delay = 0, className = '' }: { children: ReactNode; 
         opacity: inView ? 1 : 0,
         transform: inView ? 'none' : 'translateY(26px)',
         transition: `opacity 0.72s cubic-bezier(0.16,1,0.3,1) ${delay}s, transform 0.72s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
+        ...style,
       }}
     >
       {children}
@@ -163,7 +164,7 @@ function BlueprintSVG() {
         <path d="M 220 140 A 25 25 0 0 1 245 165" strokeWidth="1" style={draw(2.3, 60)} />
       </g>
       {/* Dimension lines */}
-      <g strokeWidth="0.5" stroke="white" strokeDasharray="3 5" {...LINE}>
+      <g strokeWidth="0.5" strokeDasharray="3 5" {...LINE}>
         <line x1="5" y1="16" x2="5" y2="464" style={fadeLabel(2.5)} />
         <line x1="16" y1="5" x2="384" y2="5" style={fadeLabel(2.5)} />
       </g>
