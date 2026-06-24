@@ -185,8 +185,7 @@ export default function UnidadesImport({ condominio_id, onDone }: Props) {
       {modo === 'arquivo' ? (
         <>
           <p className="text-xs text-slate-400">
-            Aceita CSV ou XLSX. Duplicadas (mesmo bloco+número) são ignoradas. Tipos válidos:
-            apartamento, casa, sala, loja, kitnet, cobertura, outro.
+            Arquivo CSV ou XLSX com colunas: bloco, numero, tipo, area_m2. Duplicadas (mesmo bloco+número) são ignoradas automaticamente.
           </p>
           <div className="flex flex-wrap gap-2">
             <button
