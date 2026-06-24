@@ -21,8 +21,8 @@ export default function AuthShell({ children, title, subtitle, footer }: Props) 
             </Link>
             <div className="mt-3 text-center">
               <h1 className="text-xl font-bold tracking-tight">
-                <span className="text-brand-400">OnWay</span>
-                <span className="text-slate-300"> Condomínio</span>
+                <span className="text-slate-200">OnWay</span>
+                <span style={{ color: '#e8a838' }}> Condomínio</span>
               </h1>
               <p className="text-xs text-slate-500 mt-0.5">
                 Gestão moderna do seu condomínio
