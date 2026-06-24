@@ -9,6 +9,8 @@ import type { Unidade } from '../types/unidade'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
+import PdfAiImport from '../components/PdfAiImport'
+import type { PdfExtractResult, PdfOcorrencia } from '../lib/pdfAi'
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024 // 10 MB
 
@@ -38,6 +40,8 @@ export default function OcorrenciaNova() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showPdfImport, setShowPdfImport] = useState(false)
+  const [pdfPreenchido, setPdfPreenchido] = useState(false)
 
   useEffect(() => {
     if (isAdmin) {
@@ -70,6 +74,30 @@ export default function OcorrenciaNova() {
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }))
+  }
+
+  function handlePdfExtracted(result: PdfExtractResult) {
+    const data = result.extracted as PdfOcorrencia
+    if (data.descricao) {
+      setForm((f) => ({
+        ...f,
+        descricao: data.descricao,
+        local: data.local ?? f.local,
+      }))
+      // Tenta encontrar a unidade pelo número extraído
+      if (data.unidade_numero && unidades.length) {
+        const num = data.unidade_numero.trim()
+        const bloco = (data.bloco ?? '').trim().toUpperCase()
+        const found = unidades.find((u) => {
+          const matchNum = u.numero.trim() === num
+          const matchBloco = !bloco || (u.bloco ?? '').trim().toUpperCase() === bloco
+          return matchNum && matchBloco
+        })
+        if (found) setForm((f) => ({ ...f, unidade_id: found.id }))
+      }
+      setPdfPreenchido(true)
+      setShowPdfImport(false)
+    }
   }
 
   function handleFile(e: ChangeEvent<HTMLInputElement>) {
@@ -135,6 +163,42 @@ export default function OcorrenciaNova() {
           </Link>
         }
       />
+
+      {/* Opção de importar a partir de PDF */}
+      <div className="mb-5">
+        {!showPdfImport ? (
+          <button
+            type="button"
+            onClick={() => setShowPdfImport(true)}
+            className="text-sm text-amber-400 hover:text-amber-300 flex items-center gap-1.5"
+          >
+            📄 {pdfPreenchido ? 'Usar outro PDF' : 'Preencher a partir de PDF (BO, laudo, relato)'}
+          </button>
+        ) : (
+          <div className="border border-slate-700 rounded-lg p-4 space-y-3 bg-slate-900/30">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-slate-200">📄 Importar de documento</span>
+              <button
+                type="button"
+                onClick={() => setShowPdfImport(false)}
+                className="text-xs text-slate-500 hover:text-slate-300"
+              >
+                Fechar
+              </button>
+            </div>
+            <p className="text-xs text-slate-400">
+              A IA lê o documento e preenche descrição, local e unidade automaticamente. Você pode editar antes de registrar.
+            </p>
+            <PdfAiImport
+              context="ocorrencia"
+              onExtracted={handlePdfExtracted}
+            />
+          </div>
+        )}
+        {pdfPreenchido && !showPdfImport && (
+          <span className="text-xs text-amber-400/80">Formulário pré-preenchido pela IA — revise antes de registrar.</span>
+        )}
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {isAdmin && (

@@ -17,6 +17,7 @@ import Button from '../components/ui/Button'
 import { Select } from '../components/ui/Input'
 import DataTable, { type Column } from '../components/ui/DataTable'
 import PessoasImport from '../components/PessoasImport'
+import PessoasPdfImport from '../components/PessoasPdfImport'
 import FuncionariosImport from '../components/FuncionariosImport'
 
 export default function Pessoas() {
@@ -351,7 +352,10 @@ export default function Pessoas() {
           {tab === 'funcionarios' ? (
             <FuncionariosImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} />
           ) : (
-            <PessoasImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} />
+            <div className="space-y-4">
+              <PessoasImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} />
+              <PessoasPdfImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} onDone={reload} />
+            </div>
           )}
         </div>
       )}

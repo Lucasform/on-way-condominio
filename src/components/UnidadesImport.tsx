@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Button from './ui/Button'
+import PdfAiImport from './PdfAiImport'
+import type { PdfExtractResult, PdfUnidade } from '../lib/pdfAi'
 import {
   applyHeaderMap,
   gerarXlsxModelo,
@@ -39,11 +41,30 @@ const HEADER_MAP: Record<string, keyof Row> = {
 
 export default function UnidadesImport({ condominio_id, onDone }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const [modo, setModo] = useState<'arquivo' | 'pdf'>('arquivo')
   const [parsing, setParsing] = useState(false)
   const [rows, setRows] = useState<Row[]>([])
   const [results, setResults] = useState<RowResult[] | null>(null)
   const [importando, setImportando] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  function handlePdfExtracted(result: PdfExtractResult) {
+    const data = result.extracted as { unidades?: PdfUnidade[] }
+    const lista = data?.unidades ?? []
+    if (!lista.length) {
+      setError('A IA não encontrou unidades neste documento. Verifique o PDF e tente novamente.')
+      return
+    }
+    const parsed: Row[] = lista.map((u) => ({
+      bloco: u.bloco?.toString().trim() || null,
+      numero: u.numero?.toString().trim() ?? '',
+      tipo: TIPOS_VALIDOS.includes((u.tipo ?? '').toLowerCase()) ? u.tipo.toLowerCase() : 'apartamento',
+      area_m2: u.area_m2 != null ? Number(u.area_m2) : null,
+    })).filter((r) => r.numero)
+    setRows(parsed)
+    setResults(null)
+    setError(null)
+  }
 
   async function parseArquivo(file: File) {
     setError(null); setParsing(true); setResults(null)
@@ -142,35 +163,70 @@ export default function UnidadesImport({ condominio_id, onDone }: Props) {
       <legend className="px-2 text-sm font-semibold text-slate-200">
         🏠 Importar unidades em massa
       </legend>
-      <p className="text-xs text-slate-400 -mt-2">
-        Aceita CSV ou XLSX. Duplicadas (mesmo bloco+número) são ignoradas. Tipos válidos:
-        apartamento, casa, sala, loja, kitnet, cobertura, outro.
-      </p>
 
-      <div className="flex flex-wrap gap-2">
+      {/* Toggle CSV/XLSX vs PDF */}
+      <div className="flex gap-1 bg-slate-800/60 rounded-lg p-1 w-fit">
         <button
           type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={parsing || importando}
-          className="px-4 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-medium disabled:opacity-50"
+          onClick={() => { setModo('arquivo'); setRows([]); setResults(null); setError(null) }}
+          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${modo === 'arquivo' ? 'bg-slate-700 text-slate-100' : 'text-slate-400 hover:text-slate-200'}`}
         >
-          {parsing ? 'Lendo...' : '📂 Escolher arquivo'}
+          📂 CSV / XLSX
         </button>
         <button
           type="button"
-          onClick={baixarTemplate}
-          className="px-4 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium hover:bg-slate-700"
+          onClick={() => { setModo('pdf'); setRows([]); setResults(null); setError(null) }}
+          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${modo === 'pdf' ? 'bg-amber-500/20 text-amber-300' : 'text-slate-400 hover:text-slate-200'}`}
         >
-          ⬇ Baixar modelo
+          ✨ PDF com IA
         </button>
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".csv,.xlsx,.xls"
-          className="hidden"
-          onChange={(e) => e.target.files?.[0] && parseArquivo(e.target.files[0])}
-        />
       </div>
+
+      {modo === 'arquivo' ? (
+        <>
+          <p className="text-xs text-slate-400">
+            Aceita CSV ou XLSX. Duplicadas (mesmo bloco+número) são ignoradas. Tipos válidos:
+            apartamento, casa, sala, loja, kitnet, cobertura, outro.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={parsing || importando}
+              className="px-4 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-medium disabled:opacity-50"
+            >
+              {parsing ? 'Lendo...' : '📂 Escolher arquivo'}
+            </button>
+            <button
+              type="button"
+              onClick={baixarTemplate}
+              className="px-4 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium hover:bg-slate-700"
+            >
+              ⬇ Baixar modelo
+            </button>
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && parseArquivo(e.target.files[0])}
+            />
+          </div>
+        </>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs text-slate-400">
+            Suba um PDF com lista de unidades, planta ou memorial descritivo. A IA extrai e preenche automaticamente.
+          </p>
+          {!rows.length && (
+            <PdfAiImport
+              context="unidades"
+              onExtracted={handlePdfExtracted}
+              disabled={importando}
+            />
+          )}
+        </div>
+      )}
 
       {error && (
         <div className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
@@ -184,7 +240,7 @@ export default function UnidadesImport({ condominio_id, onDone }: Props) {
             <span><strong>{rows.length}</strong> unidades prontas pra importar.</span>
             <button
               type="button"
-              onClick={() => { setRows([]); if (inputRef.current) inputRef.current.value = '' }}
+              onClick={() => { setRows([]); setResults(null); if (inputRef.current) inputRef.current.value = '' }}
               className="text-xs text-slate-500 hover:underline"
             >
               Limpar

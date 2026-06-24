@@ -5,6 +5,8 @@ import { createComunicado, gerarComunicadoIA } from '../lib/comunicados'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Field, TextInput, TextArea } from '../components/ui/Input'
+import PdfAiImport from '../components/PdfAiImport'
+import type { PdfExtractResult, PdfComunicado } from '../lib/pdfAi'
 
 export default function ComunicadoNovo() {
   const navigate = useNavigate()
@@ -22,6 +24,15 @@ export default function ComunicadoNovo() {
   const [gerando, setGerando] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showPdf, setShowPdf] = useState(false)
+
+  function handlePdfExtracted(result: PdfExtractResult) {
+    const data = result.extracted as PdfComunicado
+    if (data.titulo) setTituloIA(data.titulo)
+    if (data.corpo) setCorpoIA(data.corpo)
+    setIaModelo('pdf')
+    setShowPdf(false)
+  }
 
   useEffect(() => {
     if (perfil?.condominio_id) setCondominioId(perfil.condominio_id)
@@ -107,11 +118,29 @@ export default function ComunicadoNovo() {
               placeholder={'Ex.: vai ter manutenção da caixa d\'água na quinta dia 12, das 8h às 12h. Avisar que vai faltar água nesse período e pedir pra encherem as garrafas antes.'}
             />
           </Field>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button onClick={handleGerar} disabled={gerando}>
               {gerando ? 'Gerando...' : '✨ Gerar com o Agente'}
             </Button>
+            <button
+              type="button"
+              onClick={() => setShowPdf((v) => !v)}
+              className="px-3 py-2 rounded-md border border-slate-700 bg-slate-800/60 text-sm text-amber-400 hover:bg-slate-800 transition-colors"
+            >
+              📄 {showPdf ? 'Fechar PDF' : 'Gerar a partir de PDF'}
+            </button>
           </div>
+          {showPdf && (
+            <div className="border border-amber-500/20 rounded-lg p-4 bg-amber-500/5 space-y-2">
+              <p className="text-xs text-slate-400">
+                Suba um documento PDF e a IA gera título e corpo do comunicado a partir do conteúdo. Você revisa antes de salvar.
+              </p>
+              <PdfAiImport
+                context="comunicado"
+                onExtracted={handlePdfExtracted}
+              />
+            </div>
+          )}
           {error && (
             <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
               {error}
