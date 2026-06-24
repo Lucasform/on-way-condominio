@@ -40,6 +40,8 @@ export default function Suporte() {
   const [loading, setLoading] = useState(true)
   const [moving, setMoving] = useState<string | null>(null)
   const [replying, setReplying] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [draftMap, setDraftMap] = useState<Record<string, string>>({})
 
   async function load() {
@@ -102,6 +104,15 @@ export default function Suporte() {
     setReplying(null)
   }
 
+  async function excluir(id: string) {
+    setDeleting(id)
+    const { error } = await supabase.from('feedback').delete().eq('id', id)
+    if (error) toast.error('Erro ao excluir', error.message)
+    else setItems((prev) => prev.filter((f) => f.id !== id))
+    setDeleting(null)
+    setConfirmDelete(null)
+  }
+
   const porColuna = (status: Status) => items.filter((f) => f.status === status)
 
   return (
@@ -138,8 +149,13 @@ export default function Suporte() {
                     onDraftChange={(v) => setDraftMap((prev) => ({ ...prev, [f.id]: v }))}
                     onMover={moverPara}
                     onResponder={salvarResposta}
+                    onExcluir={excluir}
+                    confirmDelete={confirmDelete === f.id}
+                    onRequestDelete={() => setConfirmDelete(f.id)}
+                    onCancelDelete={() => setConfirmDelete(null)}
                     moving={moving === f.id}
                     replying={replying === f.id}
+                    deleting={deleting === f.id}
                   />
                 ))}
               </div>
@@ -157,16 +173,26 @@ function FeedbackCard({
   onDraftChange,
   onMover,
   onResponder,
+  onExcluir,
+  confirmDelete,
+  onRequestDelete,
+  onCancelDelete,
   moving,
   replying,
+  deleting,
 }: {
   f: FeedbackItem
   draft: string
   onDraftChange: (v: string) => void
   onMover: (id: string, s: Status) => void
   onResponder: (id: string) => void
+  onExcluir: (id: string) => void
+  confirmDelete: boolean
+  onRequestDelete: () => void
+  onCancelDelete: () => void
   moving: boolean
   replying: boolean
+  deleting: boolean
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const showReplyBox = f.status === 'novo' || f.status === 'em_analise'
@@ -222,18 +248,44 @@ function FeedbackCard({
         </div>
       )}
 
-      {/* Botões de mover */}
+      {/* Botões de mover + excluir */}
       <div className="flex flex-wrap gap-1 pt-1">
         {COLUNAS.filter((c) => c.id !== f.status).map((c) => (
           <button
             key={c.id}
-            disabled={moving}
+            disabled={moving || deleting}
             onClick={() => onMover(f.id, c.id)}
             className="text-[10px] px-2 py-0.5 rounded border border-slate-700 text-slate-400 hover:text-slate-100 hover:border-slate-500 transition disabled:opacity-40"
           >
             {moving ? '...' : `→ ${c.label}`}
           </button>
         ))}
+
+        {!confirmDelete ? (
+          <button
+            disabled={moving || deleting}
+            onClick={onRequestDelete}
+            className="text-[10px] px-2 py-0.5 rounded border border-red-900/50 text-red-500 hover:border-red-600 hover:text-red-400 transition disabled:opacity-40 ml-auto"
+          >
+            Excluir
+          </button>
+        ) : (
+          <div className="flex gap-1 ml-auto">
+            <button
+              onClick={onCancelDelete}
+              className="text-[10px] px-2 py-0.5 rounded border border-slate-700 text-slate-400 hover:text-slate-200 transition"
+            >
+              Cancelar
+            </button>
+            <button
+              disabled={deleting}
+              onClick={() => onExcluir(f.id)}
+              className="text-[10px] px-2 py-0.5 rounded border border-red-700 bg-red-700/20 text-red-300 hover:bg-red-700/40 transition disabled:opacity-40"
+            >
+              {deleting ? '...' : 'Confirmar'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
