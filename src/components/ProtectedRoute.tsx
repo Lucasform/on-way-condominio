@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
+import { supabase } from '../lib/supabase'
 import type { Role } from '../types/database'
 
 interface Props {
@@ -50,9 +51,10 @@ export default function ProtectedRoute({ children, roles }: Props) {
   }
 
   if (!perfil) {
-    // Usuário autenticado mas sem perfil no banco: redireciona para login
-    // para limpar o estado e permitir novo acesso. Não travar na tela de erro.
-    return <Navigate to="/entrar" replace state={{ from: location }} />
+    // Usuário autenticado mas sem perfil no banco: faz signOut para limpar
+    // sessão e cache antes de redirecionar — evita loop infinito.
+    void supabase.auth.signOut()
+    return <Navigate to="/entrar" replace />
   }
 
   if (roles && !roles.includes(effectiveRole ?? perfil.role)) {
