@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase'
 
 export type PdfAiContext = 'unidades' | 'pessoas' | 'ocorrencia' | 'comunicado'
 
@@ -45,9 +45,6 @@ export interface PdfExtractResult {
 }
 
 const MAX_PDF_BYTES = 3 * 1024 * 1024 // 3 MB (base64 → ~4 MB payload, seguro para edge functions)
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
 export async function extractPdfWithAI(
   file: File,
