@@ -195,7 +195,45 @@ function FeedbackCard({
   deleting: boolean
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const compact = f.status === 'resolvido' || f.status === 'arquivado'
   const showReplyBox = f.status === 'novo' || f.status === 'em_analise'
+
+  if (compact) {
+    return (
+      <div className="rounded-lg border border-slate-800 bg-slate-950 px-3 py-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${TIPO_BADGE[f.tipo].cls}`}>
+            {TIPO_BADGE[f.tipo].label}
+          </span>
+          {f.condominios?.nome && (
+            <span className="text-[10px] text-slate-500 truncate">{f.condominios.nome}</span>
+          )}
+        </div>
+        {!confirmDelete ? (
+          <button
+            disabled={deleting}
+            onClick={onRequestDelete}
+            className="text-[10px] text-red-700 hover:text-red-500 transition shrink-0 disabled:opacity-40"
+          >
+            Excluir
+          </button>
+        ) : (
+          <div className="flex gap-1 shrink-0">
+            <button onClick={onCancelDelete} className="text-[10px] text-slate-500 hover:text-slate-300 transition">
+              Não
+            </button>
+            <button
+              disabled={deleting}
+              onClick={() => onExcluir(f.id)}
+              className="text-[10px] text-red-400 hover:text-red-300 transition disabled:opacity-40"
+            >
+              {deleting ? '...' : 'Sim'}
+            </button>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="rounded-lg border border-slate-800 bg-slate-950 p-3 space-y-2">
@@ -215,14 +253,6 @@ function FeedbackCard({
           {f.condominios?.nome && <span>{f.condominios.nome}</span>}
           {f.autor_nome && <span className="text-slate-600"> · {f.autor_nome}</span>}
         </p>
-      )}
-
-      {/* Resposta existente (status resolvido ou arquivado) */}
-      {f.resposta && !showReplyBox && (
-        <div className="bg-slate-900 border border-slate-800 rounded p-2 space-y-0.5">
-          <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wide">Resposta</p>
-          <p className="text-xs text-slate-400 leading-relaxed">{f.resposta}</p>
-        </div>
       )}
 
       {/* Caixa de resposta (Enviado e Em análise) */}
