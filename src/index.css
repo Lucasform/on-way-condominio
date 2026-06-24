@@ -61,3 +61,24 @@ html:not(.dark) .text-green-200,   html:not(.dark) .text-green-300,   html:not(.
 html:not(.dark) .text-purple-200,  html:not(.dark) .text-purple-300,  html:not(.dark) .text-purple-400  { color: rgb(126 34 206); }
 html:not(.dark) .text-rose-200,    html:not(.dark) .text-rose-300,    html:not(.dark) .text-rose-400    { color: rgb(190 18 60); }
 html:not(.dark) .text-cyan-200,    html:not(.dark) .text-cyan-300,    html:not(.dark) .text-cyan-400    { color: rgb(14 116 144); }
+
+/* ─── Landing page animations ─────────────────────────────────────────────── */
+@keyframes lp-fade-up {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes lp-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.lp-fade-up {
+  opacity: 0;
+  animation: lp-fade-up 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.lp-fade-in {
+  opacity: 0;
+  animation: lp-fade-in 0.9s ease forwards;
+}
