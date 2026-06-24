@@ -86,10 +86,11 @@ Deno.serve(async (req: Request) => {
     }
 
     const body = await req.json()
-    const { context, pdf_base64, filename } = body as {
+    const { context, pdf_base64, filename, instrucoes } = body as {
       context: PdfContext
       pdf_base64: string
       filename?: string
+      instrucoes?: string
     }
 
     if (!context || !PROMPTS[context]) {
@@ -115,6 +116,11 @@ Deno.serve(async (req: Request) => {
     if (!anthropicKey) {
       return jsonResponse({ error: 'ANTHROPIC_API_KEY não configurada.' }, 500)
     }
+
+    // Monta o prompt final: base + instruções específicas do usuário (se houver)
+    const promptFinal = instrucoes?.trim()
+      ? `${PROMPTS[context]}\n\nINSTRUÇÕES ADICIONAIS DO USUÁRIO:\n${instrucoes.trim()}`
+      : PROMPTS[context]
 
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -142,7 +148,7 @@ Deno.serve(async (req: Request) => {
               },
               {
                 type: 'text',
-                text: PROMPTS[context],
+                text: promptFinal,
               },
             ],
           },

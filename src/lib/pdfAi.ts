@@ -44,18 +44,22 @@ export interface PdfExtractResult {
   tokens: { input: number | null; output: number | null }
 }
 
-const MAX_PDF_BYTES = 5 * 1024 * 1024
+const MAX_PDF_BYTES = 3 * 1024 * 1024 // 3 MB (base64 → ~4 MB payload, seguro para edge functions)
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
 export async function extractPdfWithAI(
   file: File,
   context: PdfAiContext,
+  instrucoes?: string,
 ): Promise<PdfExtractResult> {
   if (file.type !== 'application/pdf') throw new Error('Selecione um arquivo PDF.')
   if (file.size > MAX_PDF_BYTES) {
     throw new Error(`PDF muito grande. Máximo ${MAX_PDF_BYTES / 1024 / 1024} MB.`)
   }
 
-  // Lê o arquivo como base64
+  // Converte para base64 em chunks para não travar o thread
   const arrayBuffer = await file.arrayBuffer()
   const bytes = new Uint8Array(arrayBuffer)
   let binary = ''
@@ -65,12 +69,35 @@ export async function extractPdfWithAI(
   }
   const pdf_base64 = btoa(binary)
 
-  const { data, error } = await supabase.functions.invoke('pdf-ai-extract', {
-    body: { context, pdf_base64, filename: file.name },
+  // Pega o token do usuário logado; cai no anon key se não estiver logado
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token ?? SUPABASE_ANON_KEY
+
+  // Usa fetch direto para ter acesso ao corpo de erro real (supabase.functions.invoke engole o body)
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/pdf-ai-extract`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      context,
+      pdf_base64,
+      filename: file.name,
+      instrucoes: instrucoes?.trim() || undefined,
+    }),
   })
 
-  if (error) throw new Error(error.message)
-  if (data?.error) throw new Error(data.error)
+  let data: Record<string, unknown>
+  try {
+    data = await res.json()
+  } catch {
+    throw new Error(`Erro ${res.status} na função de IA.`)
+  }
 
-  return data as PdfExtractResult
+  if (!res.ok) {
+    throw new Error((data?.error as string) ?? `Erro ${res.status} na função de IA.`)
+  }
+
+  return data as unknown as PdfExtractResult
 }
