@@ -11,6 +11,7 @@ import Logo from './Logo'
 import CondominioSwitcher from './CondominioSwitcher'
 import AccountMenu from './AccountMenu'
 import FeedbackWidget from './FeedbackWidget'
+import AppAiChat from './AppAiChat'
 import ThemeToggle from './ThemeToggle'
 import { prefetchRoutes } from '../lib/prefetchRoutes'
 import { useFeatureFlags } from '../contexts/FeatureFlagsContext'
@@ -270,6 +271,7 @@ export default function AppShell() {
           </FeatureGuard>
         </main>
       </div>
+      <AppAiChat />
       <FeedbackWidget />
     </div>
   )
