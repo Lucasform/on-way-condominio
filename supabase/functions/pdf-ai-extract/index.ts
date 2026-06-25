@@ -9,9 +9,9 @@
 import { handleCors, jsonResponse } from '../_shared/cors.ts'
 import { consumeIaRateLimit } from '../_shared/rate-limit.ts'
 
-const CLAUDE_MODEL = 'claude-haiku-4-5'
+const CLAUDE_MODEL = 'claude-sonnet-4-5'
 const MAX_PDF_BYTES = 5 * 1024 * 1024
-const MAX_TOKENS = 8192 // aumentado para documentos com muitas unidades/pessoas
+const MAX_TOKENS = 16000 // Sonnet suporta saída maior — cobre documentos com 300+ registros
 
 type PdfContext = 'unidades' | 'pessoas' | 'ocorrencia' | 'comunicado'
 
