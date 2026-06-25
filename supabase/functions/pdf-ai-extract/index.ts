@@ -10,7 +10,8 @@ import { handleCors, jsonResponse } from '../_shared/cors.ts'
 import { consumeIaRateLimit } from '../_shared/rate-limit.ts'
 
 const CLAUDE_MODEL = 'claude-haiku-4-5'
-const MAX_PDF_BYTES = 5 * 1024 * 1024 // 5 MB base64 decoded estimate
+const MAX_PDF_BYTES = 5 * 1024 * 1024
+const MAX_TOKENS = 8192 // aumentado para documentos com muitas unidades/pessoas
 
 type PdfContext = 'unidades' | 'pessoas' | 'ocorrencia' | 'comunicado'
 
@@ -67,6 +68,72 @@ Responda SOMENTE com JSON válido, sem markdown, sem explicação:
   "titulo": "Título objetivo e descritivo do comunicado",
   "corpo": "Texto completo do comunicado pronto para envio, com parágrafos separados por \\n\\n"
 }`,
+}
+
+/**
+ * Tenta extrair um objeto JSON válido do texto retornado pela IA.
+ * Usa múltiplas estratégias em ordem de preferência para lidar com
+ * saídas com markdown, vírgulas extras, caracteres de controle, etc.
+ */
+function parseAiJson(raw: string): unknown {
+  // Normaliza: remove BOM e espaços nas bordas
+  const text = raw.replace(/^﻿/, '').trim()
+
+  // Estratégia 1: bloco ```json ... ```
+  const mdBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/)
+  if (mdBlock) {
+    try { return JSON.parse(mdBlock[1].trim()) } catch {}
+    try { return JSON.parse(fixJson(mdBlock[1].trim())) } catch {}
+  }
+
+  // Estratégia 2: texto inteiro sem markdown
+  const noMd = text.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim()
+  try { return JSON.parse(noMd) } catch {}
+  try { return JSON.parse(fixJson(noMd)) } catch {}
+
+  // Estratégia 3: maior bloco {...} encontrado
+  const objMatch = text.match(/\{[\s\S]*\}/)
+  if (objMatch) {
+    try { return JSON.parse(objMatch[0]) } catch {}
+    try { return JSON.parse(fixJson(objMatch[0])) } catch {}
+  }
+
+  // Estratégia 4: JSON truncado — fecha arrays/objetos abertos
+  const partial = objMatch?.[0] ?? noMd
+  try { return JSON.parse(closeJson(partial)) } catch {}
+
+  throw new Error('Documento processado mas IA não gerou JSON estruturado. Tente um PDF com texto selecionável (não imagem).')
+}
+
+/** Remove vírgulas extras antes de } ou ] e escapa quebras de linha dentro de strings */
+function fixJson(s: string): string {
+  return s
+    .replace(/,(\s*[}\]])/g, '$1')               // trailing commas
+    .replace(/([^\\])"(\s*\n\s*)"([^:])/g, '$1$2$3') // quebra de linha entre strings
+}
+
+/** Fecha um JSON truncado contando colchetes/chaves abertas */
+function closeJson(s: string): string {
+  const fixed = fixJson(s)
+  // Remove a última linha incompleta (que provavelmente é o corte)
+  const lastComma = fixed.lastIndexOf(',')
+  const base = lastComma > fixed.length - 50 ? fixed.slice(0, lastComma) : fixed
+
+  // Conta colchetes abertos para fechar
+  const stack: string[] = []
+  let inString = false
+  let escape = false
+  for (const ch of base) {
+    if (escape) { escape = false; continue }
+    if (ch === '\\') { escape = true; continue }
+    if (ch === '"') { inString = !inString; continue }
+    if (!inString) {
+      if (ch === '{') stack.push('}')
+      else if (ch === '[') stack.push(']')
+      else if (ch === '}' || ch === ']') stack.pop()
+    }
+  }
+  return base + stack.reverse().join('')
 }
 
 Deno.serve(async (req: Request) => {
@@ -132,7 +199,7 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model: CLAUDE_MODEL,
-        max_tokens: 4096,
+        max_tokens: MAX_TOKENS,
         messages: [
           {
             role: 'user',
@@ -167,22 +234,14 @@ Deno.serve(async (req: Request) => {
     const data = await res.json()
     const rawText: string = data?.content?.[0]?.text ?? ''
 
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      return jsonResponse(
-        { error: 'Resposta da IA sem JSON válido.', raw: rawText.slice(0, 300) },
-        502,
-      )
-    }
-
     let extracted: unknown
     try {
-      extracted = JSON.parse(jsonMatch[0])
+      extracted = parseAiJson(rawText)
     } catch (e) {
       return jsonResponse(
         {
-          error: `JSON inválido: ${e instanceof Error ? e.message : String(e)}`,
-          raw: rawText.slice(0, 300),
+          error: `Não foi possível extrair dados do documento. ${e instanceof Error ? e.message : ''}`,
+          raw: rawText.slice(0, 400),
         },
         502,
       )
