@@ -8,6 +8,7 @@ export interface Column<T> {
   render?: (row: T) => ReactNode
   className?: string
   sortable?: boolean
+  nowrap?: boolean
 }
 
 interface Props<T> {
@@ -52,8 +53,9 @@ export default function DataTable<T>({
               <th
                 key={c.key}
                 className={[
-                  'text-left px-4 py-3 font-medium text-slate-300 text-xs uppercase tracking-wide select-none',
-                  c.sortable && onSort ? 'cursor-pointer hover:text-slate-100 group' : '',
+                  'text-left px-3 py-2 font-medium text-slate-400 text-xs uppercase tracking-wide select-none',
+                  c.sortable && onSort ? 'cursor-pointer hover:text-slate-200 group' : '',
+                  c.nowrap ? 'whitespace-nowrap' : '',
                   c.className ?? '',
                 ].join(' ')}
                 onClick={() => c.sortable && onSort && onSort(c.key)}
@@ -66,27 +68,31 @@ export default function DataTable<T>({
                 </span>
               </th>
             ))}
-            {actions && <th className="w-1 px-4 py-3" />}
+            {actions && <th className="w-1 px-3 py-2" />}
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
             <tr
               key={rowKey(row)}
-              className={`border-t border-slate-800/60 ${onRowClick ? 'cursor-pointer hover:bg-slate-800/40' : ''}`}
+              className={`border-t border-slate-800/40 ${onRowClick ? 'cursor-pointer hover:bg-slate-800/30' : ''}`}
               onClick={() => onRowClick?.(row)}
             >
               {columns.map((c) => (
                 <td
                   key={c.key}
-                  className={`px-4 py-3 text-slate-200 ${c.className ?? ''}`}
+                  className={[
+                    'px-3 py-2 text-slate-200 text-sm',
+                    c.nowrap ? 'whitespace-nowrap' : '',
+                    c.className ?? '',
+                  ].join(' ')}
                 >
                   {c.render ? c.render(row) : (row as Record<string, ReactNode>)[c.key]}
                 </td>
               ))}
               {actions && (
                 <td
-                  className="px-4 py-3 text-right"
+                  className="px-3 py-1.5 text-right"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {actions(row)}

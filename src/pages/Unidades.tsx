@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listUnidades, setUnidadeAtivo } from '../lib/unidades'
 import { listCondominios } from '../lib/condominios'
@@ -27,16 +27,17 @@ export default function Unidades() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showInactive, setShowInactive] = useState(false)
+  const [busca, setBusca] = useState('')
+  const [filtroTipo, setFiltroTipo] = useState('')
+  const [sortKey, setSortKey] = useState('identificador')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [showImport, setShowImport] = useState(false)
 
-  // Carrega lista de condomínios uma vez (pra montar o filtro do admin
-  // e pra exibir nome nas linhas)
   useEffect(() => {
     listCondominios()
       .then((cs) => {
         setCondos(cs)
-        if (isAdmin && cs.length && !scopeId) {
-          setScopeId(cs[0].id)
-        }
+        if (isAdmin && cs.length && !scopeId) setScopeId(cs[0].id)
       })
       .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -82,20 +83,50 @@ export default function Unidades() {
     }
   }
 
+  function handleSort(key: string) {
+    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    else { setSortKey(key); setSortDir('asc') }
+  }
+
   const condoNome = (id: string) => condos.find((c) => c.id === id)?.nome ?? '—'
+
+  const rowsFiltrados = (() => {
+    let base = [...rows]
+    if (busca.trim()) {
+      const q = busca.trim().toLowerCase()
+      base = base.filter((r) =>
+        r.numero.toLowerCase().includes(q) ||
+        (r.bloco ?? '').toLowerCase().includes(q),
+      )
+    }
+    if (filtroTipo) base = base.filter((r) => r.tipo === filtroTipo)
+    base.sort((a, b) => {
+      if (sortKey === 'area_m2') {
+        return sortDir === 'asc' ? (a.area_m2 ?? 0) - (b.area_m2 ?? 0) : (b.area_m2 ?? 0) - (a.area_m2 ?? 0)
+      }
+      let va = ''
+      let vb = ''
+      if (sortKey === 'identificador') { va = `${a.bloco ?? ''}-${a.numero}`; vb = `${b.bloco ?? ''}-${b.numero}` }
+      else if (sortKey === 'tipo') { va = a.tipo; vb = b.tipo }
+      return sortDir === 'asc' ? va.localeCompare(vb, 'pt') : vb.localeCompare(va, 'pt')
+    })
+    return base
+  })()
 
   const columns: Column<Unidade>[] = [
     {
       key: 'identificador',
       header: 'Identificação',
+      sortable: true,
+      nowrap: true,
       render: (r) => (
         <span className="font-medium text-slate-100">
           {r.bloco ? `${r.bloco} · ${r.numero}` : r.numero}
         </span>
       ),
     },
-    { key: 'tipo', header: 'Tipo', render: (r) => <span className="capitalize">{r.tipo}</span> },
-    { key: 'area_m2', header: 'Área', render: (r) => (r.area_m2 ? `${r.area_m2} m²` : '—') },
+    { key: 'tipo', header: 'Tipo', sortable: true, render: (r) => <span className="capitalize">{r.tipo}</span> },
+    { key: 'area_m2', header: 'Área', sortable: true, nowrap: true, render: (r) => (r.area_m2 ? `${r.area_m2} m²` : '—') },
   ]
   if (isAdmin) {
     columns.push({ key: 'condo', header: 'Condomínio', render: (r) => condoNome(r.condominio_id) })
@@ -114,10 +145,15 @@ export default function Unidades() {
   return (
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
-        title={`Unidades (${rows.length})`}
+        title={`Unidades (${rowsFiltrados.length}${rowsFiltrados.length !== rows.length ? ` de ${rows.length}` : ''})`}
         subtitle="Apartamentos, casas, salas e lojas do condomínio."
         actions={
           <>
+            {isGestor(perfil?.role) && (
+              <Button variant="secondary" onClick={() => setShowImport((v) => !v)}>
+                {showImport ? '✕ Fechar importação' : '⬆ Importar'}
+              </Button>
+            )}
             <Button variant="secondary" onClick={() => setShowInactive((v) => !v)}>
               {showInactive ? 'Ocultar inativos' : 'Mostrar inativos'}
             </Button>
@@ -128,14 +164,19 @@ export default function Unidades() {
         }
       />
 
+      {showImport && isGestor(perfil?.role) && (perfil?.condominio_id || (isAdmin && scopeId)) && (
+        <div className="mb-6 rounded-xl border border-slate-700 bg-slate-900/60 p-5">
+          <h2 className="text-sm font-semibold text-slate-200 mb-4">Importar unidades em massa</h2>
+          <UnidadesImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} />
+        </div>
+      )}
+
       {isAdmin && condos.length > 0 && (
         <div className="mb-4 max-w-xs">
           <label className="block text-xs font-medium text-slate-400 mb-1">Filtrar por condomínio</label>
           <Select value={scopeId ?? ''} onChange={(e) => setScopeId(e.target.value)}>
             {condos.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
-              </option>
+              <option key={c.id} value={c.id}>{c.nome}</option>
             ))}
           </Select>
         </div>
@@ -147,13 +188,47 @@ export default function Unidades() {
         </div>
       )}
 
+      <div className="flex flex-col sm:flex-row gap-2 mb-3">
+        <input
+          type="search"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          placeholder="Buscar por número ou bloco..."
+          className="flex-1 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 placeholder-slate-500 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        />
+        <select
+          value={filtroTipo}
+          onChange={(e) => setFiltroTipo(e.target.value)}
+          className="rounded-lg bg-slate-800/60 border border-slate-700 text-slate-300 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          <option value="">Todos os tipos</option>
+          <option value="apartamento">Apartamento</option>
+          <option value="casa">Casa</option>
+          <option value="sala">Sala</option>
+          <option value="loja">Loja</option>
+          <option value="outro">Outro</option>
+        </select>
+        {(busca || filtroTipo) && (
+          <button
+            type="button"
+            onClick={() => { setBusca(''); setFiltroTipo('') }}
+            className="px-3 py-2 text-xs text-slate-400 hover:text-slate-200 border border-slate-700 rounded-lg transition"
+          >
+            Limpar
+          </button>
+        )}
+      </div>
+
       <DataTable
         columns={columns}
-        rows={rows}
+        rows={rowsFiltrados}
         rowKey={(r) => r.id}
         loading={loading}
+        sortKey={sortKey}
+        sortDir={sortDir}
+        onSort={handleSort}
         onRowClick={(r) => navigate(`/unidades/${r.id}`)}
-        emptyMessage="Nenhuma unidade cadastrada."
+        emptyMessage="Nenhuma unidade encontrada."
         actions={(r) => (
           <div className="flex gap-1 justify-end">
             <Link to={`/unidades/${r.id}/historico`}>
@@ -168,17 +243,6 @@ export default function Unidades() {
           </div>
         )}
       />
-
-      {isGestor(perfil?.role) && (perfil?.condominio_id || (isAdmin && scopeId)) && (
-        <div className="mt-10">
-          <h2 className="text-base font-semibold text-slate-200 mb-1">Importar em massa</h2>
-          <p className="text-xs text-slate-400 mb-4">
-            Envie sua planilha em Excel ou CSV. Duplicadas (mesmo bloco + número) são ignoradas.
-          </p>
-          <UnidadesImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} />
-        </div>
-      )}
     </div>
   )
 }
-

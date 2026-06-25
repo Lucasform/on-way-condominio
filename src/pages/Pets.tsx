@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listPets, setPetAtivo } from '../lib/pets'
 import { listCondominios } from '../lib/condominios'
@@ -28,6 +28,10 @@ export default function Pets() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showInactive, setShowInactive] = useState(false)
+  const [busca, setBusca] = useState('')
+  const [filtroEspecie, setFiltroEspecie] = useState('')
+  const [sortKey, setSortKey] = useState('nome')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
 
   useEffect(() => {
     listCondominios()
@@ -82,18 +86,44 @@ export default function Pets() {
     }
   }
 
+  function handleSort(key: string) {
+    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    else { setSortKey(key); setSortDir('asc') }
+  }
+
   const unidadeLabel = (uid: string) => {
     const u = unidades.find((x) => x.id === uid)
     if (!u) return '—'
     return u.bloco ? `${u.bloco}-${u.numero}` : u.numero
   }
 
+  const rowsFiltrados = (() => {
+    let base = [...rows]
+    if (busca.trim()) {
+      const q = busca.trim().toLowerCase()
+      base = base.filter((r) =>
+        r.nome.toLowerCase().includes(q) ||
+        (r.raca ?? '').toLowerCase().includes(q),
+      )
+    }
+    if (filtroEspecie) base = base.filter((r) => r.especie === filtroEspecie)
+    base.sort((a, b) => {
+      let va = ''
+      let vb = ''
+      if (sortKey === 'nome') { va = a.nome; vb = b.nome }
+      else if (sortKey === 'especie') { va = a.especie; vb = b.especie }
+      else if (sortKey === 'unidade') { va = unidadeLabel(a.unidade_id); vb = unidadeLabel(b.unidade_id) }
+      return sortDir === 'asc' ? va.localeCompare(vb, 'pt') : vb.localeCompare(va, 'pt')
+    })
+    return base
+  })()
+
   const columns: Column<Pet>[] = [
-    { key: 'nome', header: 'Nome', render: (r) => <span className="font-medium text-slate-100">{r.nome}</span> },
-    { key: 'especie', header: 'Espécie', render: (r) => <span className="capitalize">{r.especie === 'cao' ? 'cão' : r.especie}</span> },
+    { key: 'nome', header: 'Nome', sortable: true, render: (r) => <span className="font-medium text-slate-100">{r.nome}</span> },
+    { key: 'especie', header: 'Espécie', sortable: true, render: (r) => <span className="capitalize">{r.especie === 'cao' ? 'cão' : r.especie}</span> },
     { key: 'raca', header: 'Raça', render: (r) => r.raca ?? '—' },
     { key: 'porte', header: 'Porte', render: (r) => r.porte ? <span className="capitalize">{r.porte}</span> : '—' },
-    { key: 'unidade', header: 'Unidade', render: (r) => unidadeLabel(r.unidade_id) },
+    { key: 'unidade', header: 'Unidade', sortable: true, nowrap: true, render: (r) => unidadeLabel(r.unidade_id) },
     {
       key: 'vacinacao',
       header: 'Vacina',
@@ -119,7 +149,7 @@ export default function Pets() {
   return (
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
-        title={`Pets (${rows.length})`}
+        title={`Pets (${rowsFiltrados.length}${rowsFiltrados.length !== rows.length ? ` de ${rows.length}` : ''})`}
         subtitle="Animais de estimação cadastrados no condomínio."
         actions={
           <>
@@ -150,13 +180,45 @@ export default function Pets() {
         </div>
       )}
 
+      <div className="flex flex-col sm:flex-row gap-2 mb-3">
+        <input
+          type="search"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          placeholder="Buscar por nome ou raça..."
+          className="flex-1 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 placeholder-slate-500 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        />
+        <select
+          value={filtroEspecie}
+          onChange={(e) => setFiltroEspecie(e.target.value)}
+          className="rounded-lg bg-slate-800/60 border border-slate-700 text-slate-300 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          <option value="">Todas as espécies</option>
+          <option value="cao">Cão</option>
+          <option value="gato">Gato</option>
+          <option value="outro">Outro</option>
+        </select>
+        {(busca || filtroEspecie) && (
+          <button
+            type="button"
+            onClick={() => { setBusca(''); setFiltroEspecie('') }}
+            className="px-3 py-2 text-xs text-slate-400 hover:text-slate-200 border border-slate-700 rounded-lg transition"
+          >
+            Limpar
+          </button>
+        )}
+      </div>
+
       <DataTable
         columns={columns}
-        rows={rows}
+        rows={rowsFiltrados}
         rowKey={(r) => r.id}
         loading={loading}
+        sortKey={sortKey}
+        sortDir={sortDir}
+        onSort={handleSort}
         onRowClick={(r) => navigate(`/pets/${r.id}`)}
-        emptyMessage="Nenhum pet cadastrado."
+        emptyMessage="Nenhum pet encontrado."
         actions={(r) => (
           <div className="flex gap-1 justify-end">
             <Link to={`/pets/${r.id}`}>
@@ -171,4 +233,3 @@ export default function Pets() {
     </div>
   )
 }
-

@@ -252,7 +252,7 @@ export default function Pessoas() {
     ),
     { key: 'vinculo', header: 'Vínculo', sortable: true, render: (r) => <span className="capitalize text-slate-300">{r.tipo_vinculo}</span> },
     { key: 'email', header: 'E-mail', sortable: true, render: (r) => r.email ?? '—' },
-    { key: 'telefone', header: 'Telefone', render: (r) => r.telefone ? formatPhone(r.telefone) : '—' },
+    { key: 'telefone', header: 'Telefone', nowrap: true, render: (r) => r.telefone ? formatPhone(r.telefone) : '—' },
     {
       key: 'ativo',
       header: 'Status',
