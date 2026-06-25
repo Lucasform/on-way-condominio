@@ -8,6 +8,7 @@ import TwoFactorPanel from '../components/TwoFactorPanel'
 import MeusCondominios from '../components/MeusCondominios'
 import Tabs from '../components/ui/Tabs'
 import { updateCanaisNotificacao } from '../lib/pessoas'
+import ReivindicarCadastroModal from '../components/ReivindicarCadastroModal'
 import { getPushStatus } from '../lib/push'
 import { CANAIS_NOTIFICACAO_PADRAO, type CanaisNotificacao } from '../types/pessoa'
 import { useConfirm } from '../components/ui/ConfirmProvider'
@@ -44,6 +45,7 @@ export default function MeuPerfil() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [pessoa, setPessoa] = useState<Pessoa | null>(null)
+  const [pessoaCarregada, setPessoaCarregada] = useState(false)
   const [canais, setCanais] = useState<CanaisNotificacao>(CANAIS_NOTIFICACAO_PADRAO)
   const [savingCanais, setSavingCanais] = useState(false)
   const [testingPush, setTestingPush] = useState(false)
@@ -90,9 +92,12 @@ export default function MeuPerfil() {
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle()
-      if (mounted && data) {
-        setPessoa(data as Pessoa)
-        setCanais((data as Pessoa).canais_notificacao ?? CANAIS_NOTIFICACAO_PADRAO)
+      if (mounted) {
+        if (data) {
+          setPessoa(data as Pessoa)
+          setCanais((data as Pessoa).canais_notificacao ?? CANAIS_NOTIFICACAO_PADRAO)
+        }
+        setPessoaCarregada(true)
       }
     })()
     return () => { mounted = false }
@@ -370,11 +375,16 @@ export default function MeuPerfil() {
     setSavingEmail(true)
     setFeedback(null)
     const { error } = await supabase.auth.updateUser({ email: next })
-    setSavingEmail(false)
     if (error) {
+      setSavingEmail(false)
       flash('err', traduzirErro(error.message))
       return
     }
+    // Sync to pessoas table so the record stays aligned when the change is confirmed
+    if (pessoa) {
+      await supabase.from('pessoas').update({ email: next }).eq('id', pessoa.id)
+    }
+    setSavingEmail(false)
     flash('ok', 'Confirme nos dois e-mails (atual e novo) pra concluir a alteração.')
   }
 
@@ -402,6 +412,10 @@ export default function MeuPerfil() {
       )}
 
       <MeusCondominios />
+
+      {pessoaCarregada && !pessoa && perfil.role === 'morador' && (
+        <ReivindicarCadastroModal onVinculado={() => window.location.reload()} />
+      )}
 
       <Tabs
         className="mb-6"

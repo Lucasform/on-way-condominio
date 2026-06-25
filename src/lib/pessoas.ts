@@ -85,6 +85,28 @@ export async function convidarPessoa(
   return { ok: true, email: data?.email }
 }
 
+export async function claimPessoa(cpf: string): Promise<{ ok: boolean; nome?: string; error?: string }> {
+  const { data, error } = await supabase.functions.invoke('claim-pessoa', {
+    body: { cpf: cpf.replace(/\D/g, '') },
+  })
+  if (error) return { ok: false, error: error.message }
+  if (data?.error) return { ok: false, error: data.error }
+  return { ok: true, nome: data?.nome }
+}
+
+export async function listPessoasSemConta(condominio_id: string): Promise<{ id: string; nome: string; email: string }[]> {
+  const { data, error } = await supabase
+    .from('pessoas')
+    .select('id, nome, email')
+    .eq('condominio_id', condominio_id)
+    .is('user_id', null)
+    .not('email', 'is', null)
+    .eq('ativo', true)
+    .order('nome')
+  if (error) throw error
+  return (data ?? []) as { id: string; nome: string; email: string }[]
+}
+
 export async function resetSenhaUsuario(pessoa_id: string): Promise<{ ok: boolean; email?: string; error?: string }> {
   const { data, error } = await supabase.functions.invoke('reset-senha-usuario', { body: { pessoa_id } })
   if (error) return { ok: false, error: error.message }

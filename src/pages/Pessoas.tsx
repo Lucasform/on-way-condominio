@@ -19,6 +19,7 @@ import DataTable, { type Column } from '../components/ui/DataTable'
 import PessoasImport from '../components/PessoasImport'
 import PessoasPdfImport from '../components/PessoasPdfImport'
 import FuncionariosImport from '../components/FuncionariosImport'
+import ConvidarEmLoteBtn from '../components/ConvidarEmLoteBtn'
 
 export default function Pessoas() {
   const { perfil } = useAuth()
@@ -271,6 +272,10 @@ export default function Pessoas() {
           { key: 'sem_cadastro', label: 'Sem cadastro', icon: '⚠', count: totais.sem_cadastro },
         ]}
       />
+
+      {tab === 'moradores' && !isAdmin && perfil?.condominio_id && (
+        <ConvidarEmLoteBtn condominioId={perfil.condominio_id} onDone={reload} />
+      )}
 
       {tab === 'sem_cadastro' ? (
         perfisSemCadastro.length === 0 ? (
