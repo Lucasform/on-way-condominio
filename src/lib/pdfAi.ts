@@ -44,12 +44,13 @@ export interface PdfExtractResult {
   tokens: { input: number | null; output: number | null }
 }
 
-const MAX_PDF_BYTES = 3 * 1024 * 1024 // 3 MB (base64 → ~4 MB payload, seguro para edge functions)
+const MAX_PDF_BYTES = 3 * 1024 * 1024
 
 export async function extractPdfWithAI(
   file: File,
   context: PdfAiContext,
   instrucoes?: string,
+  onProgress?: (charsReceived: number) => void,
 ): Promise<PdfExtractResult> {
   if (file.type !== 'application/pdf') throw new Error('Selecione um arquivo PDF.')
   if (file.size > MAX_PDF_BYTES) {
@@ -66,11 +67,9 @@ export async function extractPdfWithAI(
   }
   const pdf_base64 = btoa(binary)
 
-  // Pega o token do usuário logado; cai no anon key se não estiver logado
   const { data: { session } } = await supabase.auth.getSession()
   const token = session?.access_token ?? SUPABASE_ANON_KEY
 
-  // Usa fetch direto para ter acesso ao corpo de erro real (supabase.functions.invoke engole o body)
   const res = await fetch(`${SUPABASE_URL}/functions/v1/pdf-ai-extract`, {
     method: 'POST',
     headers: {
@@ -85,16 +84,63 @@ export async function extractPdfWithAI(
     }),
   })
 
-  let data: Record<string, unknown>
-  try {
-    data = await res.json()
-  } catch {
-    throw new Error(`Erro ${res.status} na função de IA.`)
-  }
-
+  // Non-streaming error response (auth, rate limit, validation errors)
   if (!res.ok) {
-    throw new Error((data?.error as string) ?? `Erro ${res.status} na função de IA.`)
+    let errMsg = `Erro ${res.status} na função de IA.`
+    try {
+      const data = await res.json() as Record<string, unknown>
+      if (data?.error) errMsg = data.error as string
+    } catch {}
+    throw new Error(errMsg)
   }
 
-  return data as unknown as PdfExtractResult
+  // Check if response is streaming SSE
+  const contentType = res.headers.get('content-type') ?? ''
+  if (!contentType.includes('text/event-stream')) {
+    // Fallback: non-streaming JSON (shouldn't happen in normal flow)
+    const data = await res.json() as Record<string, unknown>
+    if (data?.error) throw new Error(data.error as string)
+    return data as unknown as PdfExtractResult
+  }
+
+  // Consume SSE stream
+  if (!res.body) throw new Error('Resposta da IA sem corpo.')
+
+  const reader = res.body.getReader()
+  const decoder = new TextDecoder()
+  let lineBuffer = ''
+  let totalChars = 0
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    lineBuffer += decoder.decode(value, { stream: true })
+    const lines = lineBuffer.split('\n')
+    lineBuffer = lines.pop() ?? ''
+
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue
+      const raw = line.slice(6).trim()
+      if (!raw) continue
+
+      let event: Record<string, unknown>
+      try { event = JSON.parse(raw) } catch { continue }
+
+      if (event.type === 'text' && typeof event.text === 'string') {
+        totalChars += event.text.length
+        onProgress?.(totalChars)
+      }
+
+      if (event.type === 'done') {
+        return event as unknown as PdfExtractResult
+      }
+
+      if (event.type === 'error') {
+        throw new Error((event.error as string) ?? 'Erro durante extração.')
+      }
+    }
+  }
+
+  throw new Error('Processamento interrompido antes de completar. Tente novamente.')
 }

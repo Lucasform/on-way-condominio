@@ -1,17 +1,17 @@
 // supabase/functions/pdf-ai-extract/index.ts
 // Motor central de extração de dados via PDF + Claude.
-// Recebe um PDF em base64 + contexto e retorna JSON estruturado.
+// Usa streaming para suportar documentos grandes sem timeout.
 //
-// Body: { context: PdfContext, pdf_base64: string, filename?: string }
+// Body: { context: PdfContext, pdf_base64: string, filename?: string, instrucoes?: string }
 // Auth: JWT válido.
-// Secrets: ANTHROPIC_API_KEY
+// Resposta: text/event-stream com eventos { type:'text'|'done'|'error', ... }
 
-import { handleCors, jsonResponse } from '../_shared/cors.ts'
+import { handleCors, corsHeaders, jsonResponse } from '../_shared/cors.ts'
 import { consumeIaRateLimit } from '../_shared/rate-limit.ts'
 
 const CLAUDE_MODEL = 'claude-sonnet-4-5'
 const MAX_PDF_BYTES = 5 * 1024 * 1024
-const MAX_TOKENS = 16000 // Sonnet suporta saída maior — cobre documentos com 300+ registros
+const MAX_TOKENS = 16000
 
 type PdfContext = 'unidades' | 'pessoas' | 'ocorrencia' | 'comunicado'
 
@@ -70,56 +70,42 @@ Responda SOMENTE com JSON válido, sem markdown, sem explicação:
 }`,
 }
 
-/**
- * Tenta extrair um objeto JSON válido do texto retornado pela IA.
- * Usa múltiplas estratégias em ordem de preferência para lidar com
- * saídas com markdown, vírgulas extras, caracteres de controle, etc.
- */
 function parseAiJson(raw: string): unknown {
-  // Normaliza: remove BOM e espaços nas bordas
   const text = raw.replace(/^﻿/, '').trim()
 
-  // Estratégia 1: bloco ```json ... ```
   const mdBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/)
   if (mdBlock) {
     try { return JSON.parse(mdBlock[1].trim()) } catch {}
     try { return JSON.parse(fixJson(mdBlock[1].trim())) } catch {}
   }
 
-  // Estratégia 2: texto inteiro sem markdown
   const noMd = text.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim()
   try { return JSON.parse(noMd) } catch {}
   try { return JSON.parse(fixJson(noMd)) } catch {}
 
-  // Estratégia 3: maior bloco {...} encontrado
   const objMatch = text.match(/\{[\s\S]*\}/)
   if (objMatch) {
     try { return JSON.parse(objMatch[0]) } catch {}
     try { return JSON.parse(fixJson(objMatch[0])) } catch {}
   }
 
-  // Estratégia 4: JSON truncado — fecha arrays/objetos abertos
   const partial = objMatch?.[0] ?? noMd
   try { return JSON.parse(closeJson(partial)) } catch {}
 
   throw new Error('Documento processado mas IA não gerou JSON estruturado. Tente um PDF com texto selecionável (não imagem).')
 }
 
-/** Remove vírgulas extras antes de } ou ] e escapa quebras de linha dentro de strings */
 function fixJson(s: string): string {
   return s
-    .replace(/,(\s*[}\]])/g, '$1')               // trailing commas
-    .replace(/([^\\])"(\s*\n\s*)"([^:])/g, '$1$2$3') // quebra de linha entre strings
+    .replace(/,(\s*[}\]])/g, '$1')
+    .replace(/([^\\])"(\s*\n\s*)"([^:])/g, '$1$2$3')
 }
 
-/** Fecha um JSON truncado contando colchetes/chaves abertas */
 function closeJson(s: string): string {
   const fixed = fixJson(s)
-  // Remove a última linha incompleta (que provavelmente é o corte)
   const lastComma = fixed.lastIndexOf(',')
   const base = lastComma > fixed.length - 50 ? fixed.slice(0, lastComma) : fixed
 
-  // Conta colchetes abertos para fechar
   const stack: string[] = []
   let inString = false
   let escape = false
@@ -170,7 +156,6 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'pdf_base64 obrigatório.' }, 400)
     }
 
-    // Estimativa do tamanho real (base64 tem overhead ~33%)
     const estimatedBytes = Math.floor(pdf_base64.length * 0.75)
     if (estimatedBytes > MAX_PDF_BYTES) {
       return jsonResponse(
@@ -184,12 +169,11 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: 'ANTHROPIC_API_KEY não configurada.' }, 500)
     }
 
-    // Monta o prompt final: base + instruções específicas do usuário (se houver)
     const promptFinal = instrucoes?.trim()
       ? `${PROMPTS[context]}\n\nINSTRUÇÕES ADICIONAIS DO USUÁRIO:\n${instrucoes.trim()}`
       : PROMPTS[context]
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -200,6 +184,7 @@ Deno.serve(async (req: Request) => {
       body: JSON.stringify({
         model: CLAUDE_MODEL,
         max_tokens: MAX_TOKENS,
+        stream: true,
         messages: [
           {
             role: 'user',
@@ -223,37 +208,131 @@ Deno.serve(async (req: Request) => {
       }),
     })
 
-    if (!res.ok) {
-      const err = await res.text()
+    if (!anthropicRes.ok) {
+      const err = await anthropicRes.text()
       return jsonResponse(
-        { error: `Claude API ${res.status}: ${err.slice(0, 500)}` },
+        { error: `Claude API ${anthropicRes.status}: ${err.slice(0, 500)}` },
         502,
       )
     }
 
-    const data = await res.json()
-    const rawText: string = data?.content?.[0]?.text ?? ''
+    // Streaming response: forward text deltas as SSE, parse JSON at the end
+    const encoder = new TextEncoder()
+    const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>()
+    const writer = writable.getWriter()
 
-    let extracted: unknown
-    try {
-      extracted = parseAiJson(rawText)
-    } catch (e) {
-      return jsonResponse(
-        {
-          error: `Não foi possível extrair dados do documento. ${e instanceof Error ? e.message : ''}`,
-          raw: rawText.slice(0, 400),
-        },
-        502,
-      )
-    }
+    ;(async () => {
+      try {
+        let accumulatedText = ''
+        let inputTokens: number | null = null
+        let outputTokens: number | null = null
 
-    return jsonResponse({
-      context,
-      extracted,
-      modelo: CLAUDE_MODEL,
-      tokens: {
-        input: data?.usage?.input_tokens ?? null,
-        output: data?.usage?.output_tokens ?? null,
+        const reader = anthropicRes.body!.getReader()
+        const decoder = new TextDecoder()
+        let lineBuffer = ''
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          lineBuffer += decoder.decode(value, { stream: true })
+          const lines = lineBuffer.split('\n')
+          lineBuffer = lines.pop() ?? ''
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue
+            const raw = line.slice(6).trim()
+            if (!raw || raw === '[DONE]') continue
+
+            let event: Record<string, unknown>
+            try { event = JSON.parse(raw) } catch { continue }
+
+            if (event.type === 'message_start') {
+              const usage = (event.message as Record<string, unknown>)?.usage as Record<string, number> | undefined
+              if (usage) inputTokens = usage.input_tokens ?? null
+            }
+
+            if (event.type === 'content_block_delta') {
+              const delta = event.delta as Record<string, unknown> | undefined
+              if (delta?.type === 'text_delta' && typeof delta.text === 'string') {
+                accumulatedText += delta.text
+                await writer.write(encoder.encode(
+                  `data: ${JSON.stringify({ type: 'text', text: delta.text })}\n\n`,
+                ))
+              }
+            }
+
+            if (event.type === 'message_delta') {
+              const usage = (event.usage as Record<string, number> | undefined)
+              if (usage) outputTokens = usage.output_tokens ?? null
+            }
+
+            if (event.type === 'message_stop') {
+              let extracted: unknown
+              try {
+                extracted = parseAiJson(accumulatedText)
+              } catch (e) {
+                await writer.write(encoder.encode(
+                  `data: ${JSON.stringify({ type: 'error', error: e instanceof Error ? e.message : 'Falha ao interpretar JSON.' })}\n\n`,
+                ))
+                await writer.close()
+                return
+              }
+
+              await writer.write(encoder.encode(
+                `data: ${JSON.stringify({
+                  type: 'done',
+                  context,
+                  extracted,
+                  modelo: CLAUDE_MODEL,
+                  tokens: { input: inputTokens, output: outputTokens },
+                })}\n\n`,
+              ))
+              await writer.close()
+              return
+            }
+          }
+        }
+        // Stream ended without message_stop — try to parse whatever we got
+        if (accumulatedText) {
+          try {
+            const extracted = parseAiJson(accumulatedText)
+            await writer.write(encoder.encode(
+              `data: ${JSON.stringify({
+                type: 'done',
+                context,
+                extracted,
+                modelo: CLAUDE_MODEL,
+                tokens: { input: inputTokens, output: outputTokens },
+              })}\n\n`,
+            ))
+          } catch {
+            await writer.write(encoder.encode(
+              `data: ${JSON.stringify({ type: 'error', error: 'Stream encerrado sem resposta completa da IA.' })}\n\n`,
+            ))
+          }
+        } else {
+          await writer.write(encoder.encode(
+            `data: ${JSON.stringify({ type: 'error', error: 'Stream encerrado sem resposta da IA.' })}\n\n`,
+          ))
+        }
+        await writer.close()
+      } catch (e) {
+        try {
+          await writer.write(encoder.encode(
+            `data: ${JSON.stringify({ type: 'error', error: e instanceof Error ? e.message : String(e) })}\n\n`,
+          ))
+          await writer.close()
+        } catch {}
+      }
+    })()
+
+    return new Response(readable, {
+      headers: {
+        ...corsHeaders,
+        'content-type': 'text/event-stream',
+        'cache-control': 'no-cache',
+        'connection': 'keep-alive',
       },
     })
   } catch (e) {

@@ -26,7 +26,7 @@ const PLACEHOLDERS: Record<PdfAiContext, string> = {
 function buildReviewSystemPrompt(result: PdfExtractResult): string {
   const label = CONTEXT_LABELS[result.context]
   const tokens = result.tokens
-  const isNearLimit = (tokens.output ?? 0) > 7800
+  const isNearLimit = (tokens.output ?? 0) > 14000
   const extracted = result.extracted
 
   let count = 0
@@ -48,7 +48,7 @@ function buildReviewSystemPrompt(result: PdfExtractResult): string {
     'Contexto da extração:',
     `- Tipo: ${label}`,
     `- Total de registros extraídos: ${count}`,
-    `- Tokens de saída usados: ${tokens.output ?? '?'} de 8.192 disponíveis`,
+    `- Tokens de saída usados: ${tokens.output ?? '?'} de 16.000 disponíveis`,
     isNearLimit
       ? '- ATENÇÃO: o limite de processamento foi atingido — o PDF provavelmente tem mais registros. Sugira dividir em partes menores.'
       : '- O processamento foi concluído sem truncamento.',
@@ -63,7 +63,7 @@ function buildReviewSystemPrompt(result: PdfExtractResult): string {
 function buildFirstMessage(result: PdfExtractResult): string {
   const label = CONTEXT_LABELS[result.context]
   const tokens = result.tokens
-  const isNearLimit = (tokens.output ?? 0) > 7800
+  const isNearLimit = (tokens.output ?? 0) > 14000
   const extracted = result.extracted
 
   let count = 0
@@ -97,6 +97,7 @@ export default function PdfAiImport({ context, onExtracted, disabled, placeholde
   const [dragging, setDragging] = useState(false)
   const [instrucoes, setInstrucoes] = useState('')
   const [extractResult, setExtractResult] = useState<PdfExtractResult | null>(null)
+  const [streamChars, setStreamChars] = useState(0)
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [chatInput, setChatInput] = useState('')
@@ -106,9 +107,10 @@ export default function PdfAiImport({ context, onExtracted, disabled, placeholde
 
   async function process(file: File) {
     setErrorMsg(null)
+    setStreamChars(0)
     setPhase('loading')
     try {
-      const result = await extractPdfWithAI(file, context, instrucoes)
+      const result = await extractPdfWithAI(file, context, instrucoes, (chars) => setStreamChars(chars))
       setExtractResult(result)
       setSystemPrompt(buildReviewSystemPrompt(result))
       setChatMessages([{ role: 'assistant', content: buildFirstMessage(result) }])
@@ -184,7 +186,7 @@ export default function PdfAiImport({ context, onExtracted, disabled, placeholde
   // ---- FASE REVIEW ----
   if (phase === 'review' && extractResult) {
     const tokens = extractResult.tokens
-    const isNearLimit = (tokens.output ?? 0) > 7800
+    const isNearLimit = (tokens.output ?? 0) > 14000
 
     return (
       <div className="space-y-3">
@@ -195,7 +197,7 @@ export default function PdfAiImport({ context, onExtracted, disabled, placeholde
           </span>
           {tokens.output != null && (
             <span className={isNearLimit ? 'text-amber-400 font-medium' : 'text-slate-600'}>
-              {tokens.output.toLocaleString()} / 8.192 tokens
+              {tokens.output.toLocaleString()} / 16.000 tokens
               {isNearLimit && ' ⚠️'}
             </span>
           )}
@@ -318,7 +320,16 @@ export default function PdfAiImport({ context, onExtracted, disabled, placeholde
         {phase === 'loading' ? (
           <div className="flex flex-col items-center gap-3">
             <span className="inline-block w-7 h-7 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-            <span className="text-sm text-slate-400">Agente lendo o documento...</span>
+            <span className="text-sm text-slate-400">
+              {streamChars > 0
+                ? `Extraindo dados... ${streamChars.toLocaleString('pt-BR')} caracteres`
+                : 'Agente lendo o documento...'}
+            </span>
+            {streamChars > 0 && (
+              <div className="w-32 h-1 rounded-full bg-slate-800 overflow-hidden">
+                <div className="h-full rounded-full bg-amber-400/60 animate-pulse" style={{ width: '100%' }} />
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2">
