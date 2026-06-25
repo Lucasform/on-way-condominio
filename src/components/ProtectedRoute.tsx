@@ -46,8 +46,7 @@ export default function ProtectedRoute({ children, roles }: Props) {
     if (!graceExpired) {
       return <FullscreenLoader text="Validando sessão..." />
     }
-    const fallback = location.pathname === '/' ? '/landing' : '/entrar'
-    return <Navigate to={fallback} replace state={{ from: location }} />
+    return <Navigate to="/entrar" replace state={{ from: location }} />
   }
 
   if (!perfil) {

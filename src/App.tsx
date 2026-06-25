@@ -103,7 +103,7 @@ const Comecar = lazy(() => import('./pages/Comecar'))
 function RootRoute() {
   const { user, loading } = useAuth()
   if (loading) return <PageLoader />
-  if (!user) return <Navigate to="/landing" replace />
+  if (!user) return <Navigate to="/entrar" replace />
   return <Home />
 }
 
