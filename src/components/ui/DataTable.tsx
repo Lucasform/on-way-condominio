@@ -7,6 +7,7 @@ export interface Column<T> {
   header: string
   render?: (row: T) => ReactNode
   className?: string
+  sortable?: boolean
 }
 
 interface Props<T> {
@@ -17,6 +18,9 @@ interface Props<T> {
   actions?: (row: T) => ReactNode
   emptyMessage?: string
   loading?: boolean
+  sortKey?: string
+  sortDir?: 'asc' | 'desc'
+  onSort?: (key: string) => void
 }
 
 export default function DataTable<T>({
@@ -27,6 +31,9 @@ export default function DataTable<T>({
   actions,
   emptyMessage = 'Nada encontrado.',
   loading = false,
+  sortKey,
+  sortDir,
+  onSort,
 }: Props<T>) {
   if (loading) {
     return <TableSkeleton rows={5} cols={columns.length || 4} />
@@ -44,9 +51,19 @@ export default function DataTable<T>({
             {columns.map((c) => (
               <th
                 key={c.key}
-                className={`text-left px-4 py-3 font-medium text-slate-300 text-xs uppercase tracking-wide ${c.className ?? ''}`}
+                className={[
+                  'text-left px-4 py-3 font-medium text-slate-300 text-xs uppercase tracking-wide select-none',
+                  c.sortable && onSort ? 'cursor-pointer hover:text-slate-100 group' : '',
+                  c.className ?? '',
+                ].join(' ')}
+                onClick={() => c.sortable && onSort && onSort(c.key)}
               >
-                {c.header}
+                <span className="inline-flex items-center gap-1">
+                  {c.header}
+                  {c.sortable && onSort && (
+                    <SortIcon active={sortKey === c.key} dir={sortKey === c.key ? (sortDir ?? 'asc') : 'asc'} />
+                  )}
+                </span>
               </th>
             ))}
             {actions && <th className="w-1 px-4 py-3" />}
@@ -80,5 +97,13 @@ export default function DataTable<T>({
         </tbody>
       </table>
     </div>
+  )
+}
+
+function SortIcon({ active, dir }: { active: boolean; dir: 'asc' | 'desc' }) {
+  return (
+    <span className={`transition-opacity ${active ? 'opacity-100 text-brand-400' : 'opacity-0 group-hover:opacity-40'}`}>
+      {active && dir === 'desc' ? '↓' : '↑'}
+    </span>
   )
 }

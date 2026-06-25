@@ -39,6 +39,11 @@ export default function Pessoas() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showInactive, setShowInactive] = useState(false)
+  const [busca, setBusca] = useState('')
+  const [filtroVinculo, setFiltroVinculo] = useState('')
+  const [sortKey, setSortKey] = useState('nome')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+  const [showImport, setShowImport] = useState(false)
 
   useEffect(() => {
     listCondominios()
@@ -86,14 +91,47 @@ export default function Pessoas() {
 
   const RESIDENCIAIS = ['titular', 'conjuge', 'filho', 'dependente', 'inquilino', 'morador']
 
+  function handleSort(key: string) {
+    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    else { setSortKey(key); setSortDir('asc') }
+  }
+
   const rowsFiltrados = (() => {
+    let base: Pessoa[]
     if (tab === 'funcionarios') {
-      return rows.filter((p) => p.tipo_vinculo === 'funcionario' || p.tipo_vinculo === 'outro')
+      base = rows.filter((p) => p.tipo_vinculo === 'funcionario' || p.tipo_vinculo === 'outro')
+    } else if (tab === 'diretoria') {
+      base = rows.filter((p) => p.user_id && diretoriaIds.has(p.user_id))
+    } else {
+      base = rows.filter((p) => RESIDENCIAIS.includes(p.tipo_vinculo))
     }
-    if (tab === 'diretoria') {
-      return rows.filter((p) => p.user_id && diretoriaIds.has(p.user_id))
+
+    // Texto livre: nome ou email
+    if (busca.trim()) {
+      const q = busca.trim().toLowerCase()
+      base = base.filter((p) =>
+        p.nome.toLowerCase().includes(q) ||
+        (p.email ?? '').toLowerCase().includes(q),
+      )
     }
-    return rows.filter((p) => RESIDENCIAIS.includes(p.tipo_vinculo))
+
+    // Filtro de vínculo
+    if (filtroVinculo) {
+      base = base.filter((p) => p.tipo_vinculo === filtroVinculo)
+    }
+
+    // Ordenação
+    base = [...base].sort((a, b) => {
+      let va = ''
+      let vb = ''
+      if (sortKey === 'nome') { va = a.nome; vb = b.nome }
+      else if (sortKey === 'unidade') { va = unidadeLabel(a.unidade_id); vb = unidadeLabel(b.unidade_id) }
+      else if (sortKey === 'vinculo') { va = a.tipo_vinculo; vb = b.tipo_vinculo }
+      else if (sortKey === 'email') { va = a.email ?? ''; vb = b.email ?? '' }
+      return sortDir === 'asc' ? va.localeCompare(vb, 'pt') : vb.localeCompare(va, 'pt')
+    })
+
+    return base
   })()
   const totais = {
     moradores: rows.filter((p) => RESIDENCIAIS.includes(p.tipo_vinculo)).length,
@@ -207,13 +245,13 @@ export default function Pessoas() {
   }
 
   const columns: Column<Pessoa>[] = [
-    { key: 'nome', header: 'Nome', render: (r) => <span className="font-medium text-slate-100">{r.nome}</span> },
+    { key: 'nome', header: 'Nome', sortable: true, render: (r) => <span className="font-medium text-slate-100">{r.nome}</span> },
     ...(tab === 'funcionarios'
       ? [{ key: 'setor', header: 'Setor', render: (r: Pessoa) => r.setor ?? '—' } as Column<Pessoa>]
-      : [{ key: 'unidade', header: 'Unidade', render: (r: Pessoa) => unidadeLabel(r.unidade_id) } as Column<Pessoa>]
+      : [{ key: 'unidade', header: 'Unidade', sortable: true, render: (r: Pessoa) => unidadeLabel(r.unidade_id) } as Column<Pessoa>]
     ),
-    { key: 'vinculo', header: 'Vínculo', render: (r) => <span className="capitalize text-slate-300">{r.tipo_vinculo}</span> },
-    { key: 'email', header: 'E-mail', render: (r) => r.email ?? '—' },
+    { key: 'vinculo', header: 'Vínculo', sortable: true, render: (r) => <span className="capitalize text-slate-300">{r.tipo_vinculo}</span> },
+    { key: 'email', header: 'E-mail', sortable: true, render: (r) => r.email ?? '—' },
     { key: 'telefone', header: 'Telefone', render: (r) => r.telefone ? formatPhone(r.telefone) : '—' },
     {
       key: 'ativo',
@@ -230,10 +268,15 @@ export default function Pessoas() {
   return (
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
-        title={`Pessoas (${rowsFiltrados.length})`}
+        title={`Pessoas (${rowsFiltrados.length}${rowsFiltrados.length !== rows.length ? ` de ${rows.length}` : ''})`}
         subtitle="Moradores, funcionários e diretoria. Filtre pelas abas."
         actions={
           <>
+            {isGestor(perfil?.role) && (
+              <Button variant="secondary" onClick={() => setShowImport((v) => !v)}>
+                {showImport ? '✕ Fechar importação' : '⬆ Importar'}
+              </Button>
+            )}
             <Button variant="secondary" onClick={() => setShowInactive((v) => !v)}>
               {showInactive ? 'Ocultar inativos' : 'Mostrar inativos'}
             </Button>
@@ -243,6 +286,21 @@ export default function Pessoas() {
           </>
         }
       />
+
+      {/* Importação colapsável no topo */}
+      {showImport && isGestor(perfil?.role) && (perfil?.condominio_id || (isAdmin && scopeId)) && (
+        <div className="mb-6 rounded-xl border border-slate-700 bg-slate-900/60 p-5">
+          <h2 className="text-sm font-semibold text-slate-200 mb-4">Importar em massa</h2>
+          {tab === 'funcionarios' ? (
+            <FuncionariosImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} />
+          ) : (
+            <div className="space-y-4">
+              <PessoasImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} />
+              <PessoasPdfImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} onDone={() => { reload(); setShowImport(false) }} />
+            </div>
+          )}
+        </div>
+      )}
 
       {isAdmin && condos.length > 0 && (
         <div className="mb-4 max-w-xs">
@@ -275,6 +333,40 @@ export default function Pessoas() {
 
       {tab === 'moradores' && !isAdmin && perfil?.condominio_id && (
         <ConvidarEmLoteBtn condominioId={perfil.condominio_id} onDone={reload} />
+      )}
+
+      {tab !== 'sem_cadastro' && (
+        <div className="flex flex-col sm:flex-row gap-2 mb-3">
+          <input
+            type="search"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por nome ou e-mail..."
+            className="flex-1 rounded-lg bg-slate-800/60 border border-slate-700 text-slate-200 placeholder-slate-500 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+          {tab !== 'diretoria' && (
+            <select
+              value={filtroVinculo}
+              onChange={(e) => setFiltroVinculo(e.target.value)}
+              className="rounded-lg bg-slate-800/60 border border-slate-700 text-slate-300 text-sm px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            >
+              <option value="">Todos os vínculos</option>
+              {tab === 'funcionarios'
+                ? <><option value="funcionario">Funcionário</option><option value="outro">Outro</option></>
+                : <><option value="titular">Titular</option><option value="conjuge">Cônjuge</option><option value="filho">Filho</option><option value="dependente">Dependente</option><option value="inquilino">Inquilino</option><option value="morador">Morador</option></>
+              }
+            </select>
+          )}
+          {(busca || filtroVinculo) && (
+            <button
+              type="button"
+              onClick={() => { setBusca(''); setFiltroVinculo('') }}
+              className="px-3 py-2 text-xs text-slate-400 hover:text-slate-200 border border-slate-700 rounded-lg transition"
+            >
+              Limpar
+            </button>
+          )}
+        </div>
       )}
 
       {tab === 'sem_cadastro' ? (
@@ -322,6 +414,9 @@ export default function Pessoas() {
           rows={rowsFiltrados}
           rowKey={(r) => r.id}
           loading={loading}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={handleSort}
           onRowClick={(r) => navigate(`/pessoas/${r.id}`)}
           emptyMessage={
             tab === 'moradores' ? 'Nenhum morador cadastrado nesse condomínio.'
@@ -351,19 +446,6 @@ export default function Pessoas() {
         />
       )}
 
-      {isGestor(perfil?.role) && (perfil?.condominio_id || (isAdmin && scopeId)) && tab !== 'sem_cadastro' && tab !== 'diretoria' && (
-        <div className="mt-10">
-          <h2 className="text-base font-semibold text-slate-200 mb-1">Importar em massa</h2>
-          {tab === 'funcionarios' ? (
-            <FuncionariosImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} />
-          ) : (
-            <div className="space-y-4">
-              <PessoasImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} />
-              <PessoasPdfImport condominio_id={(perfil?.condominio_id ?? scopeId) as string} onDone={reload} />
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 }
