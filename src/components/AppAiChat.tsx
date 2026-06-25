@@ -14,7 +14,6 @@ Seja objetivo e responda em português brasileiro. Não invente funcionalidades 
 
 const SUGESTOES = [
   'Como importar moradores via PDF?',
-  'Por que a IA importou menos registros que o esperado?',
   'Como registrar uma ocorrência?',
   'Como criar um comunicado para todos os moradores?',
 ]
