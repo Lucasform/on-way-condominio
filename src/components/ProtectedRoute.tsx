@@ -9,18 +9,24 @@ interface Props {
   roles?: Role[]
 }
 
-// Janela curta antes de redirecionar pra /login quando perdemos `user`.
-// Cobre o caso de refresh de token em andamento (SIGNED_OUT transitório).
+// Janela curta antes de redirecionar quando perdemos `user` (refresh transitório).
 const REDIRECT_GRACE_MS = 1500
+
+// Janela para aguardar perfil carregar do banco após SIGNED_IN event.
+// Evita signOut prematuro quando user chega antes do perfil.
+const PERFIL_GRACE_MS = 3000
 
 export default function ProtectedRoute({ children, roles }: Props) {
   const { user, perfil, effectiveRole, loading } = useAuth()
   const location = useLocation()
 
-  // Se tínhamos `user` há pouco e agora não temos, esperamos a janela de graça
-  // antes de mandar pra /login. Evita "logout" visual em refresh de token.
+  // Grace period para user transitoriamente null (token refresh)
   const sawUserRef = useRef(false)
   const [graceExpired, setGraceExpired] = useState(false)
+
+  // Grace period para perfil: após SIGNED_IN, perfil carrega async
+  const [perfilGraceExpired, setPerfilGraceExpired] = useState(false)
+  const perfilTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -29,14 +35,34 @@ export default function ProtectedRoute({ children, roles }: Props) {
       return
     }
     if (!sawUserRef.current) {
-      // Nunca tivemos user nessa montagem; nada a esperar
       setGraceExpired(true)
       return
     }
-    // Tivemos user e ele sumiu — janela de graça
     const t = setTimeout(() => setGraceExpired(true), REDIRECT_GRACE_MS)
     return () => clearTimeout(t)
   }, [user])
+
+  useEffect(() => {
+    if (perfil) {
+      // Perfil chegou — cancela qualquer timer pendente
+      if (perfilTimerRef.current) {
+        clearTimeout(perfilTimerRef.current)
+        perfilTimerRef.current = null
+      }
+      setPerfilGraceExpired(false)
+      return
+    }
+    if (!user) {
+      // Sem user, não precisamos esperar perfil
+      setPerfilGraceExpired(true)
+      return
+    }
+    // Tem user mas não tem perfil: inicia timer de graça
+    perfilTimerRef.current = setTimeout(() => setPerfilGraceExpired(true), PERFIL_GRACE_MS)
+    return () => {
+      if (perfilTimerRef.current) clearTimeout(perfilTimerRef.current)
+    }
+  }, [user, perfil])
 
   if (loading) {
     return <FullscreenLoader text="Carregando..." />
@@ -50,8 +76,10 @@ export default function ProtectedRoute({ children, roles }: Props) {
   }
 
   if (!perfil) {
-    // Usuário autenticado mas sem perfil no banco: faz signOut para limpar
-    // sessão e cache antes de redirecionar — evita loop infinito.
+    if (!perfilGraceExpired) {
+      return <FullscreenLoader text="Carregando perfil..." />
+    }
+    // Perfil genuinamente ausente após grace period
     void supabase.auth.signOut()
     return <Navigate to="/entrar" replace />
   }

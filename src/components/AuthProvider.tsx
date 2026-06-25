@@ -117,13 +117,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(sess)
 
         // 2) Se tem session, hidrata perfil do cache imediatamente (se houver)
-        //    e dispara revalidação em background — sem bloquear o render
         const uid = sess?.user.id ?? null
         if (uid) {
           const cached = readCache(uid)
-          if (cached) setPerfil(cached)
-          // background revalidate — não bloqueia loading
-          void loadPerfil(uid, !cached)
+          if (cached) {
+            setPerfil(cached)
+            // Cache hit: loading pode terminar agora; revalida em background
+            void loadPerfil(uid, false)
+          } else {
+            // Sem cache: aguarda perfil do banco antes de liberar loading
+            // (evita que ProtectedRoute veja user+perfil=null ao mesmo tempo)
+            await loadPerfil(uid, false)
+          }
         } else {
           setPerfil(null)
         }
