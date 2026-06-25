@@ -1,5 +1,6 @@
 export type Role =
   | 'admin_onway'
+  | 'parceiro'
   | 'admin'
   | 'administradora'
   | 'sindico'

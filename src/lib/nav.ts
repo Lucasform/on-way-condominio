@@ -20,6 +20,68 @@ const COMMON_TOP: MenuItem[] = [{ to: '/', label: 'Início' }]
 
 const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
   // ============================================================
+  // Parceiro — gestor externo de múltiplos condomínios
+  // Criado apenas por admin_onway via convite de plataforma.
+  // Acesso idêntico ao admin, sem itens de plataforma (auditorias,
+  // funcionalidades, assinaturas, planos, suporte).
+  // Multi-condo via CondominioSwitcher (perfis_condominios).
+  // ============================================================
+  parceiro: [
+    ...COMMON_TOP,
+    {
+      label: 'Visão geral',
+      children: [
+        { to: '/dashboard', label: 'Acompanhamento Geral' },
+        { to: '/painel', label: 'Painel de trabalho' },
+      ],
+    },
+    {
+      label: 'Gestão',
+      children: [
+        { to: '/unidades', label: 'Unidades' },
+        { to: '/pessoas', label: 'Pessoas' },
+        { to: '/regimento', label: 'Regimento' },
+      ],
+    },
+    {
+      label: 'Operação',
+      children: [
+        { to: '/ocorrencias', label: 'Ocorrências' },
+        { to: '/notificacoes', label: 'Notificações' },
+        { to: '/multas', label: 'Multas' },
+        { to: '/chamados', label: 'Chamados' },
+        { to: '/solicitacoes', label: 'Solicitações' },
+        { to: '/encomendas', label: 'Serviços de Portaria' },
+        { to: '/acessos', label: 'Acessos autorizados' },
+        { to: '/servicos', label: 'Prestação de Serviços' },
+      ],
+    },
+    {
+      label: 'Comunicação',
+      children: [
+        { to: '/mural', label: 'Mural informativo' },
+        { to: '/calendario', label: 'Calendário' },
+        { to: '/chat', label: 'Chat interno' },
+        { to: '/comunicados', label: 'Comunicados' },
+        { to: '/classificados', label: 'Classificados' },
+        { to: '/emails-log', label: 'E-mail' },
+        { to: '/whatsapp', label: 'WhatsApp' },
+        { to: '/fila-envios', label: 'Fila de envios' },
+      ],
+    },
+    {
+      label: 'Administração',
+      children: [
+        { to: '/assembleias', label: 'Assembleias' },
+        { to: '/votacoes', label: 'Votações' },
+        { to: '/relatorios', label: 'Relatórios' },
+        { to: '/templates', label: 'Templates' },
+        { to: '/ajuda', label: 'Ajuda' },
+      ],
+    },
+  ],
+
+  // ============================================================
   // Administrador OnWay — operador do SaaS, visão global
   // ============================================================
   admin_onway: [
@@ -73,6 +135,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/votacoes', label: 'Votações' },
         { to: '/relatorios', label: 'Relatórios' },
         { to: '/templates', label: 'Templates' },
+        { to: '/parceiros', label: 'Parceiros' },
         { to: '/auditoria', label: 'Auditorias' },
         { to: '/funcionalidades', label: 'Funcionalidades' },
         { to: '/assinaturas', label: 'Assinaturas' },
@@ -483,6 +546,7 @@ export const NAV_ICON: Record<string, string> = {
   '/relatorios': '📈',
   '/templates': '🧩',
   '/auditoria': '🔍',
+  '/parceiros': '🤝',
   '/mais': '⋯',
 }
 
@@ -534,6 +598,7 @@ export const NAV_COLOR: Record<string, string> = {
   '/relatorios': 'bg-gradient-to-br from-sky-500 to-sky-600',
   '/templates': 'bg-gradient-to-br from-slate-500 to-slate-600',
   '/auditoria': 'bg-gradient-to-br from-rose-500 to-rose-600',
+  '/parceiros': 'bg-gradient-to-br from-teal-500 to-teal-600',
   '/mais': 'bg-gradient-to-br from-slate-500 to-slate-600',
 }
 
@@ -546,6 +611,7 @@ export function iconColorFor(to: string): string {
 // ============================================================
 const BOTTOM_BY_ROLE: Record<Role, MenuLeaf[]> = {
   admin_onway:    [{ to: '/', label: 'Início' }, { to: '/painel', label: 'Painel' }, { to: '/ocorrencias', label: 'Ocorr.' }, { to: '/chat', label: 'Chat' }],
+  parceiro:       [{ to: '/', label: 'Início' }, { to: '/painel', label: 'Painel' }, { to: '/ocorrencias', label: 'Ocorr.' }, { to: '/chat', label: 'Chat' }],
   admin:          [{ to: '/', label: 'Início' }, { to: '/painel', label: 'Painel' }, { to: '/ocorrencias', label: 'Ocorr.' }, { to: '/chat', label: 'Chat' }],
   administradora: [{ to: '/', label: 'Início' }, { to: '/painel', label: 'Painel' }, { to: '/ocorrencias', label: 'Ocorr.' }, { to: '/chat', label: 'Chat' }],
   sindico:        [{ to: '/', label: 'Início' }, { to: '/painel', label: 'Painel' }, { to: '/ocorrencias', label: 'Ocorr.' }, { to: '/chat', label: 'Chat' }],
@@ -565,6 +631,7 @@ export function bottomNavFor(role: Role): MenuLeaf[] {
 export function roleLabel(role: Role): string {
   return {
     admin_onway: 'Administrador OnWay',
+    parceiro: 'Parceiro OnWay',
     admin: 'Administrador',
     administradora: 'Administradora',
     sindico: 'Síndico',
