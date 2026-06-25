@@ -96,6 +96,13 @@ export default function Pessoas() {
     else { setSortKey(key); setSortDir('asc') }
   }
 
+  const unidadeLabel = (uid: string | null) => {
+    if (!uid) return '—'
+    const u = unidades.find((x) => x.id === uid)
+    if (!u) return '—'
+    return u.bloco ? `${u.bloco}-${u.numero}` : u.numero
+  }
+
   const rowsFiltrados = (() => {
     let base: Pessoa[]
     if (tab === 'funcionarios') {
@@ -235,13 +242,6 @@ export default function Pessoas() {
     } catch (e) {
       toast.error('Erro', e instanceof Error ? e.message : String(e))
     }
-  }
-
-  const unidadeLabel = (uid: string | null) => {
-    if (!uid) return '—'
-    const u = unidades.find((x) => x.id === uid)
-    if (!u) return '—'
-    return u.bloco ? `${u.bloco}-${u.numero}` : u.numero
   }
 
   const columns: Column<Pessoa>[] = [
