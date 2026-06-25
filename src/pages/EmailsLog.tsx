@@ -281,9 +281,12 @@ export default function EmailsLog() {
         return
       }
       if (form.destinoTipo === 'todos' && destinatarios.length > 1) {
-        if (!window.confirm(`Enviar pra ${destinatarios.length} morador${destinatarios.length === 1 ? '' : 'es'}?`)) {
-          return
-        }
+        const ok = await confirm({
+          title: 'Confirmar envio em massa',
+          message: `Enviar para ${destinatarios.length} morador${destinatarios.length === 1 ? '' : 'es'}?`,
+          confirmText: 'Enviar',
+        })
+        if (!ok) return
       }
       const corpoHtml = form.corpo
         .split(/\n{2,}/)

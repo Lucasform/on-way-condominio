@@ -26,6 +26,7 @@ import type {
 } from '../types/condominioFornecedor'
 import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
+import { usePrompt } from '../components/ui/PromptProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import Tabs from '../components/ui/Tabs'
@@ -87,6 +88,7 @@ export default function CondominioFornecedoresPage() {
   const { user, perfil } = useAuth()
   const toast = useToast()
   const confirm = useConfirm()
+  const prompt = usePrompt()
   const staff = isStaff(perfil?.role)
   const gestor = isGestor(perfil?.role)
 
@@ -224,7 +226,7 @@ export default function CondominioFornecedoresPage() {
 
   async function handleRecusar(r: CondominioFornecedor) {
     if (!user) return
-    const motivo = window.prompt('Motivo da recusa (opcional):')
+    const motivo = await prompt({ title: 'Recusar fornecedor', message: `Motivo da recusa de "${r.nome}" (opcional):`, placeholder: 'Ex: Não atende os critérios', optional: true })
     if (motivo === null) return
     setWorking(true)
     try {
@@ -276,13 +278,14 @@ export default function CondominioFornecedoresPage() {
   }
 
   async function handleDelete(r: CondominioFornecedor) {
-    if (!window.confirm(`Apagar ${r.nome} DEFINITIVAMENTE?`)) return
+    const ok = await confirm({ title: 'Apagar fornecedor', message: `Apagar "${r.nome}" DEFINITIVAMENTE? Esta ação não pode ser desfeita.`, tone: 'danger', confirmText: 'Apagar' })
+    if (!ok) return
     setWorking(true)
     try {
       await deleteFornecedor(r.id)
       await load()
     } catch (e) {
-      alert(e instanceof Error ? e.message : 'Erro ao excluir.')
+      toast.error('Erro ao excluir', e instanceof Error ? e.message : '')
     } finally {
       setWorking(false)
     }

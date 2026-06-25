@@ -13,6 +13,7 @@ import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
 import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
+import { usePrompt } from '../components/ui/PromptProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Tabs from '../components/ui/Tabs'
 import { Select } from '../components/ui/Input'
@@ -118,6 +119,7 @@ export default function Painel() {
   const { perfil } = useAuth()
   const toast = useToast()
   const confirm = useConfirm()
+  const prompt = usePrompt()
   const navigate = useNavigate()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
@@ -318,10 +320,17 @@ export default function Painel() {
           if (!ok) return
           await changeMultaStatus(card.id, 'aplicada')
         } else if (target === 'finalizada') {
-          const opt = window.prompt('Finalizar como: 1=Paga, 2=Cancelada, 3=Arquivada\nDigite 1, 2 ou 3:')
-          const novoStatus = opt === '1' ? 'paga' : opt === '2' ? 'cancelada' : opt === '3' ? 'arquivada' : null
-          if (!novoStatus) return
-          await changeMultaStatus(card.id, novoStatus as StatusMulta)
+          const opt = await prompt({
+            title: 'Finalizar multa',
+            message: 'Selecione como a multa será finalizada:',
+            options: [
+              { value: 'paga', label: 'Paga' },
+              { value: 'cancelada', label: 'Cancelada' },
+              { value: 'arquivada', label: 'Arquivada' },
+            ],
+          })
+          if (!opt) return
+          await changeMultaStatus(card.id, opt as StatusMulta)
         }
       }
       await reload()

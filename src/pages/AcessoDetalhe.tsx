@@ -13,6 +13,7 @@ import type { AcessoAutorizado, AcessoEvento, StatusAcesso, TipoEventoAcesso } f
 import type { Unidade } from '../types/unidade'
 import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
+import { usePrompt } from '../components/ui/PromptProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import DeleteButton from '../components/ui/DeleteButton'
@@ -60,6 +61,7 @@ export default function AcessoDetalhe() {
   const { user, perfil } = useAuth()
   const toast = useToast()
   const confirm = useConfirm()
+  const prompt = usePrompt()
   const staff = isStaff(perfil?.role)
   const podeApagar = isGestor(perfil?.role)
 
@@ -157,7 +159,7 @@ export default function AcessoDetalhe() {
     if (!acesso || !user) return
     let motivo: string | null = null
     if (askMotivo) {
-      const m = window.prompt(tipo === 'negada' ? 'Motivo da negativa:' : 'Motivo (opcional):')
+      const m = await prompt({ title: tipo === 'negada' ? 'Motivo da negativa' : 'Informar motivo', placeholder: tipo === 'negada' ? 'Ex: Documento irregular' : 'Opcional', optional: true })
       if (m === null) return
       motivo = m || null
     }

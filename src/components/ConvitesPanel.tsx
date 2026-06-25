@@ -270,9 +270,20 @@ export default function ConvitesPanel({ condominio_id }: Props) {
             )}
             {convites.map((c) => {
               const st = statusDe(c)
+              const u = c.unidade_id ? unidades.find((x) => x.id === c.unidade_id) : null
+              const uLabel = u ? (u.bloco ? `${u.bloco}-${u.numero}` : u.numero) : null
               return (
                 <tr key={c.id}>
-                  <td className="py-2 font-mono text-brand-400">{c.codigo}</td>
+                  <td className="py-2">
+                    <span className="font-mono text-brand-400">{c.codigo}</span>
+                    {(uLabel || c.setor || c.pessoa_nome) && (
+                      <div className="flex flex-wrap gap-x-2 mt-0.5">
+                        {uLabel && <span className="text-xs text-slate-400">🏠 {uLabel}</span>}
+                        {c.setor && <span className="text-xs text-slate-400">👷 {c.setor}</span>}
+                        {c.pessoa_nome && <span className="text-xs text-slate-400">👤 {c.pessoa_nome}</span>}
+                      </div>
+                    )}
+                  </td>
                   <td className="py-2 capitalize">{c.role}</td>
                   <td className="py-2">{c.usos}/{c.usos_max}</td>
                   <td className="py-2 text-xs">{formatDate(c.expira_em)}</td>
@@ -314,10 +325,21 @@ export default function ConvitesPanel({ condominio_id }: Props) {
         )}
         {convites.map((c) => {
           const st = statusDe(c)
+          const u = c.unidade_id ? unidades.find((x) => x.id === c.unidade_id) : null
+          const uLabel = u ? (u.bloco ? `${u.bloco}-${u.numero}` : u.numero) : null
           return (
             <div key={c.id} className="rounded-md border border-slate-700 bg-slate-900/40 p-3 space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-mono text-brand-400 text-sm">{c.codigo}</span>
+                <div>
+                  <span className="font-mono text-brand-400 text-sm">{c.codigo}</span>
+                  {(uLabel || c.setor || c.pessoa_nome) && (
+                    <div className="flex flex-wrap gap-x-2 mt-0.5">
+                      {uLabel && <span className="text-xs text-slate-400">🏠 {uLabel}</span>}
+                      {c.setor && <span className="text-xs text-slate-400">👷 {c.setor}</span>}
+                      {c.pessoa_nome && <span className="text-xs text-slate-400">👤 {c.pessoa_nome}</span>}
+                    </div>
+                  )}
+                </div>
                 <Pill tone={st.tone}>{st.label}</Pill>
               </div>
               <div className="text-xs text-slate-400 grid grid-cols-2 gap-x-2 gap-y-0.5">

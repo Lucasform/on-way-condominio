@@ -9,6 +9,7 @@ import type { Unidade } from '../types/unidade'
 import { useAuth } from '../components/AuthProvider'
 import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
+import { usePrompt } from '../components/ui/PromptProvider'
 import { isGestor } from '../lib/permissions'
 import PageHeader from '../components/ui/PageHeader'
 import EmptyState from '../components/ui/EmptyState'
@@ -25,6 +26,7 @@ export default function Pessoas() {
   const { perfil } = useAuth()
   const toast = useToast()
   const confirm = useConfirm()
+  const prompt = usePrompt()
   const navigate = useNavigate()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
@@ -227,14 +229,14 @@ export default function Pessoas() {
 
   async function handleExcluirConta(p: { id: string; nome_exibicao: string | null }) {
     const nome = p.nome_exibicao ?? '(sem nome)'
-    const motivo = window.prompt(
-      `Excluir DEFINITIVAMENTE a conta de "${nome}"?\n\n` +
-      `Isso remove o login e envia um e-mail avisando.\n` +
-      `Cadastros em /pessoas associados ficam sem login (você pode reaproveitá-los).\n\n` +
-      `Motivo (opcional, vai no e-mail):`,
-      '',
-    )
-    if (motivo === null) return // cancelou
+    const motivo = await prompt({
+      title: `Excluir conta de "${nome}"`,
+      message: 'Isso remove o login e envia um e-mail avisando. Cadastros associados ficam sem login (podem ser reaproveitados).',
+      placeholder: 'Motivo (opcional, vai no e-mail)',
+      confirmText: 'Excluir conta',
+      optional: true,
+    })
+    if (motivo === null) return
     try {
       const r = await excluirUsuarioAuth(p.id, motivo || undefined)
       toast.success(r.email_enviado ? 'Conta excluída. E-mail enviado.' : 'Conta excluída (sem e-mail).')

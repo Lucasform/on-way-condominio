@@ -5,6 +5,7 @@ import { AuthProvider } from './components/AuthProvider'
 import { TenantProvider } from './components/TenantProvider'
 import { ToastProvider } from './components/ui/Toast'
 import { ConfirmProvider } from './components/ui/ConfirmProvider'
+import { PromptProvider } from './components/ui/PromptProvider'
 import ProtectedRoute from './components/ProtectedRoute'
 import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext'
 import AppShell from './components/AppShell'
@@ -113,6 +114,7 @@ export default function App() {
     <TenantProvider>
     <ToastProvider>
     <ConfirmProvider>
+    <PromptProvider>
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -733,6 +735,7 @@ export default function App() {
         </Routes>
         </Suspense>
       </BrowserRouter>
+    </PromptProvider>
     </ConfirmProvider>
     </ToastProvider>
     </TenantProvider>

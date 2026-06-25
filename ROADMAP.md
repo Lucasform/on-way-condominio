@@ -48,7 +48,7 @@ Roadmap específico das levas atuais. Cada leva = 1 commit + push.
 - [x] M7. SMTP custom Resend ativado em Supabase Auth (sender `nao-responda@onwaytech.com.br`).
 
 ### Pendente (não iniciado)
-- [ ] Customizar 5 templates HTML do Supabase Auth (Confirm signup, Magic Link, Change Email, Reset Password, Invite user) — hoje rodam template default cinza com "Supabase" no rodapé.
+- [x] Customizar 5 templates HTML do Supabase Auth (Confirm signup, Magic Link, Change Email, Reset Password, Invite user) — branding OnWay (fundo escuro, violeta, sem "Supabase").
 - [ ] Refactor multi-condomínio (`perfis_condominios`) — Leva L original. Permite 1 user gerir N condos.
-- [ ] Polish: trocar `alert/confirm/prompt` por modal/toast (incluindo `handleExcluirConta` em /pessoas).
-- [ ] ConvitesPanel: badge "🏠 Unidade X / 👷 Setor Y / 👤 Nome" abaixo do código quando vier travado.
+- [x] Polish: trocar `alert/confirm/prompt` por modal/toast — PromptProvider + usePrompt criados; todos os window.prompt/confirm/alert substituídos (Pessoas, MeuPerfil, AcessoDetalhe, CondominioAnexosManager, CondominioFornecedoresPage, EmailsLog, Painel).
+- [x] ConvitesPanel: badge "🏠 Unidade X / 👷 Setor Y / 👤 Nome" abaixo do código quando vier travado.

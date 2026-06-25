@@ -12,6 +12,7 @@ import {
 import DeleteButton from './ui/DeleteButton'
 import Button from './ui/Button'
 import { useConfirm } from './ui/ConfirmProvider'
+import { usePrompt } from './ui/PromptProvider'
 import Pill from './ui/Pill'
 import { TextInput } from './ui/Input'
 
@@ -34,6 +35,7 @@ export default function CondominioAnexosManager({
 }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const confirm = useConfirm()
+  const prompt = usePrompt()
   const [anexos, setAnexos] = useState<CondominioAnexo[]>([])
   const [loading, setLoading] = useState(true)
   const [novoNome, setNovoNome] = useState('')
@@ -109,7 +111,7 @@ export default function CondominioAnexosManager({
   }
 
   async function handleRenomear(a: CondominioAnexo) {
-    const novo = window.prompt('Novo nome:', a.nome)
+    const novo = await prompt({ title: 'Renomear anexo', placeholder: 'Nome do arquivo', defaultValue: a.nome })
     if (!novo || novo.trim() === a.nome) return
     try { await renomearAnexo(a.id, novo); await reload() }
     catch (e) { setError(e instanceof Error ? e.message : 'Erro.') }

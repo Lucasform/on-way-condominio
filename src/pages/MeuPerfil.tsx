@@ -12,6 +12,8 @@ import ReivindicarCadastroModal from '../components/ReivindicarCadastroModal'
 import { getPushStatus } from '../lib/push'
 import { CANAIS_NOTIFICACAO_PADRAO, type CanaisNotificacao } from '../types/pessoa'
 import { useConfirm } from '../components/ui/ConfirmProvider'
+import { usePrompt } from '../components/ui/PromptProvider'
+import { useToast } from '../components/ui/Toast'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { removeWhiteBackground } from '../lib/removeBackground'
@@ -42,6 +44,8 @@ const ROLES_QUE_ASSINAM: string[] = ['admin_onway', 'administradora', 'sindico',
 export default function MeuPerfil() {
   const { user, perfil, refreshPerfil } = useAuth()
   const confirm = useConfirm()
+  const prompt = usePrompt()
+  const toast = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [pessoa, setPessoa] = useState<Pessoa | null>(null)
@@ -364,6 +368,24 @@ export default function MeuPerfil() {
     await refreshPerfil()
     setUploadingAssinatura(false)
     flash('ok', 'Assinatura removida.')
+  }
+
+  async function handleSolicitarExclusao() {
+    const conf = await prompt({
+      title: 'Solicitar exclusão de conta',
+      message: 'Sua conta será desativada e enviada para revisão de exclusão. Digite EXCLUIR para confirmar:',
+      placeholder: 'EXCLUIR',
+      confirmText: 'Solicitar exclusão',
+    })
+    if (conf !== 'EXCLUIR') return
+    const { error } = await supabase.functions.invoke('solicitar-exclusao-conta', {})
+    if (error) {
+      toast.error('Erro ao solicitar', error.message)
+      return
+    }
+    toast.success('Solicitação registrada. Você receberá um e-mail em até 5 dias úteis.')
+    await supabase.auth.signOut()
+    window.location.href = '/entrar'
   }
 
   async function handleChangeEmail(e: FormEvent) {
@@ -793,7 +815,7 @@ export default function MeuPerfil() {
           >
             📥 Baixar meus dados
           </button>
-          <Button type="button" variant="danger" onClick={solicitarExclusao}>
+          <Button type="button" variant="danger" onClick={handleSolicitarExclusao}>
             🗑 Solicitar exclusão da conta
           </Button>
         </div>
@@ -940,18 +962,4 @@ async function exportarMeusDados(perfil: { id: string; role: string }, pessoa: P
   URL.revokeObjectURL(url)
 }
 
-async function solicitarExclusao() {
-  const conf = window.prompt(
-    'Tem certeza? Sua conta será desativada e enviada pra revisão de exclusão.\nDigite EXCLUIR pra confirmar:',
-  )
-  if (conf !== 'EXCLUIR') return
-  const { error } = await supabase.functions.invoke('solicitar-exclusao-conta', {})
-  if (error) {
-    alert('Erro ao solicitar: ' + error.message)
-    return
-  }
-  alert('Solicitação registrada. Você receberá um e-mail em até 5 dias úteis.')
-  await supabase.auth.signOut()
-  window.location.href = '/entrar'
-}
 
