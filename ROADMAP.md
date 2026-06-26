@@ -65,19 +65,73 @@ Roadmap específico das levas atuais. Cada leva = 1 commit + push.
 > **Legenda prioridade:** 🔴 Urgente · 🟡 Alta · 🟢 Normal · ⚪ Backlog
 > **Legenda tipo:** 🔒 Segurança · ✨ UX · ⚡ Perf · 🏗️ Arquitetura · 💎 Produto
 
+### Grupo 1 — Segurança
+
 | # | Item | Tipo | Esforço | Impacto | Prioridade | Leva |
 |---|------|------|---------|---------|------------|------|
-| G1 | **Proteção força bruta no login** — 5 tentativas falhas = lock 15 min. Campo `locked_until` em `perfis`, verificado na Edge Function de login. | 🔒 | P | Alto | 🔴 Urgente | G |
-| G2 | **2FA TOTP via Supabase Auth** — habilitar no dashboard + tela de setup em Meu Perfil (QR code + backup codes). Disponível para admin_onway e parceiro. | 🔒 | P | Médio | 🟡 Alta | G |
-| G3 | **Anti-enumeração no "esqueci senha"** — garantir que o copy nunca vaza se e-mail existe. Revisar `EsqueciSenha.tsx` + padronizar resposta da Edge Function. | 🔒 | XS | Médio | 🟡 Alta | G |
-| G4 | **Branding pré-paint por condomínio** — script inline no `index.html` lê o slug da URL e aplica CSS vars `--c-primary-*` antes do React montar. Elimina flash de tema no carregamento. | ✨ | P | Médio | 🟡 Alta | G |
-| H1 | **Command Palette (Cmd+K)** — busca global por: página/rota, morador por nome, unidade por número. Abre modal com lista filtrada + navegação por teclado. | ✨ | M | Alto | 🟡 Alta | H |
-| H2 | **Auditoria centralizada via helper** — `logAction({ entity, action, entityId, diff })` em todas as Edge Functions. Substitui as chamadas manuais dispersas. Painel de auditoria fica muito mais completo. | 🏗️ | M | Alto | 🟡 Alta | H |
-| H3 | **Feature flags configuráveis pelo síndico** — expandir o `FeatureFlagsProvider` existente para ter UI de toggle em Configurações. Síndico habilita/desabilita módulos (WhatsApp, Acessos, Classificados) sem precisar de admin_onway. | 💎 | M | Médio | 🟢 Normal | H |
-| I1 | **DataScope por role — morador vê só seus próprios registros** — ocorrências e multas do morador filtram por `created_by = auth.uid()` ou `unidade_id = perfil.unidade_id`. Hoje já acontece parcialmente; formalizar nas RLS policies. | 🏗️ | M | Alto | 🟡 Alta | I |
-| I2 | **Workflow de aprovação em multas** — multa acima de um valor configurável vai para `PENDING_APPROVAL` antes de notificar o morador. Síndico aprova/rejeita. Segregação: quem registra ≠ quem aprova. | 💎 | G | Alto | 🟢 Normal | I |
-| I3 | **Workflow de aprovação em chamados** — chamado com custo estimado ≥ limiar precisa de ok do síndico antes de contratar fornecedor. Status DRAFT → PENDING → APPROVED → IN_PROGRESS. | 💎 | G | Médio | 🟢 Normal | I |
+| G1 | **Proteção força bruta no login** — 5 tentativas falhas = lock 15 min. Campo `locked_until` em `perfis`, verificado antes do Supabase `signIn`. Desbloqueia automaticamente ao expirar. | 🔒 | P | Alto | 🔴 Urgente | G |
+| G2 | **2FA TOTP via Supabase Auth** — habilitar MFA no dashboard + tela de setup em Meu Perfil (QR code + 6 backup codes de uso único). Obrigatório para admin_onway e parceiro. | 🔒 | P | Médio | 🟡 Alta | G |
+| G3 | **Anti-enumeração no "esqueci senha"** — copy padronizado ("se o e-mail existir…"), Edge Function sempre responde ok independente do e-mail existir ou não. | 🔒 | XS | Médio | 🟡 Alta | G |
+| G4 | **Session idle timeout** — 30 min sem atividade = logout automático. Crítico para terminais compartilhados (portaria, ronda). `lastActivity` em sessionStorage + listener `mousemove/keydown`. | 🔒 | P | Alto | 🔴 Urgente | G |
+
+### Grupo 2 — UX e Navegação
+
+| # | Item | Tipo | Esforço | Impacto | Prioridade | Leva |
+|---|------|------|---------|---------|------------|------|
+| H1 | **Command Palette (Cmd+K)** — modal global de busca por página/rota, morador por nome, unidade por número. Navegação por teclado (setas + Enter + Esc). | ✨ | M | Alto | 🟡 Alta | H |
+| H2 | **Branding pré-paint por condomínio** — script inline no `index.html` lê o slug da URL e aplica CSS vars antes do React montar. Elimina flash de tema no carregamento pelo `slug`. | ✨ | P | Médio | 🟡 Alta | H |
+| H3 | **Page Toolbar padronizado** — componente `<PageToolbar title subtitle action secondaryActions />` com colapso "⋯ Mais" no mobile. Substituir os `<div className="flex...">` repetidos em cada página. | ✨ | M | Médio | 🟢 Normal | H |
+| H4 | **Filtros persistentes na URL** — status, data, busca como query params (`?status=aberta&from=2026-01-01`). Permite compartilhar link de filtro e voltar sem perder o contexto. | ✨ | M | Alto | 🟡 Alta | H |
+| H5 | **Empty states com CTA contextual** — padronizar todas as páginas: ícone + texto + botão de ação primária quando lista vazia. Ex: `/multas` vazia → "Nenhuma multa registrada · + Registrar multa". | ✨ | P | Médio | 🟢 Normal | H |
+
+### Grupo 3 — Performance
+
+| # | Item | Tipo | Esforço | Impacto | Prioridade | Leva |
+|---|------|------|---------|---------|------------|------|
+| K1 | **Cache SWR custom para leituras recorrentes** — `swrStore` com TTL 30–60s para dados que não mudam a cada click (lista de unidades, condominios, pessoas). Invalida por prefixo ao mutar. Reduz chamadas redundantes ao Supabase. | ⚡ | M | Alto | 🟡 Alta | K |
+| K2 | **Debounce em todos os campos de busca** — hoje alguns campos buscam em cada keystroke. Padronizar `useDebounce(300ms)` em todos os inputs de filtro/busca do app. | ⚡ | P | Médio | 🟡 Alta | K |
+| K3 | **Renovação silenciosa de sessão** — renovar access token a cada 10 min de uso ativo (via `setInterval` + `supabase.auth.refreshSession()`). Evita expiração silenciosa mid-action. | ⚡ | P | Alto | 🟡 Alta | K |
+
+### Grupo 4 — Relatórios e Exportação
+
+| # | Item | Tipo | Esforço | Impacto | Prioridade | Leva |
+|---|------|------|---------|---------|------------|------|
+| L1 | **CSV export com BOM UTF-8 em todas as listas** — botão "Exportar CSV" em Multas, Ocorrências, Chamados, Pessoas, Encomendas. BOM `﻿` no início para Excel abrir sem problema de acento. | 💎 | P | Alto | 🟡 Alta | L |
+| L2 | **Presets de período nas listagens** — chips rápidos "Hoje · 7d · 30d · Mês · Trimestre" ao lado dos filtros de data. Evita o usuário preencher datas manualmente. | ✨ | P | Médio | 🟡 Alta | L |
+| L3 | **Report Builder no-code** — página `/relatorios/builder`: escolhe fonte (Multas, Ocorrências, Chamados, Pessoas), seleciona colunas, aplica filtros, agrupa por campo, exporta CSV. Diferencial para síndicos que precisam de BI simples. | 💎 | GG | Alto | 🟢 Normal | L |
+| L4 | **Relatório narrativo por período** — resumo textual automático mensal: "Em junho: 12 ocorrências, 3 multas aplicadas (R$ 1.800), 8 chamados — 2 abertos". Gerado por IA (Haiku) ou por template simples. | 💎 | M | Alto | 🟢 Normal | L |
+
+### Grupo 5 — Dashboard e Analytics
+
+| # | Item | Tipo | Esforço | Impacto | Prioridade | Leva |
+|---|------|------|---------|---------|------------|------|
+| N1 | **Charts SVG sem biblioteca** — gráficos Donut (multas por status) e Bars (ocorrências por mês) implementados com SVG/CSS puro. Sem recharts, sem bundle extra. Leves e customizáveis. | ✨ | M | Alto | 🟡 Alta | N |
+| N2 | **Dashboard configurável por role** — síndico escolhe quais widgets KPI aparecer no seu painel. Morador tem painel diferente (débitos, avisos, próximos eventos). Portaria vê encomendas e acessos. | 💎 | G | Alto | 🟢 Normal | N |
+| N3 | **Event tracking fire-and-forget** — `trackEvent('multa.criada')`, `trackEvent('ocorrencia.analisada_ia')` via `POST /analytics` com `keepalive: true`. Permite ver quais features são mais usadas por condomínio. | 🏗️ | M | Médio | 🟢 Normal | N |
+
+### Grupo 6 — Arquitetura e DX
+
+| # | Item | Tipo | Esforço | Impacto | Prioridade | Leva |
+|---|------|------|---------|---------|------------|------|
+| I1 | **DataScope formalizado nas RLS** — morador vê só seus registros (ocorrências por `created_by`, multas por `unidade_id`, chamados por `created_by`). Hoje parcialmente feito, formalizar policies explícitas. | 🏗️ | M | Alto | 🟡 Alta | I |
+| I2 | **Auditoria centralizada via helper** — `logAction({ entity, action, entityId, diff })` chamado por todas as Edge Functions. Substitui chamadas manuais dispersas. Painel de auditoria fica muito mais completo. | 🏗️ | M | Alto | 🟡 Alta | I |
+| I3 | **Feature flags configuráveis pelo síndico** — UI de toggle em Configurações: síndico habilita/desabilita módulos (WhatsApp, Acessos, Classificados) sem precisar de admin_onway. | 💎 | M | Médio | 🟢 Normal | I |
+
+### Grupo 7 — Workflows
+
+| # | Item | Tipo | Esforço | Impacto | Prioridade | Leva |
+|---|------|------|---------|---------|------------|------|
+| W1 | **Aprovação de multas (SoD)** — multa acima de limiar configurável vai para `PENDING_APPROVAL` antes de notificar o morador. Quem registra ≠ quem aprova. Síndico aprova/rejeita com comentário. | 💎 | G | Alto | 🟢 Normal | W |
+| W2 | **Aprovação de chamados com custo** — chamado com custo estimado ≥ limiar precisa de ok do síndico antes de acionar fornecedor. Status: DRAFT → PENDING → APPROVED → IN_PROGRESS → DONE. | 💎 | G | Médio | 🟢 Normal | W |
+
+### Grupo 8 — Produto Avançado (backlog)
+
+| # | Item | Tipo | Esforço | Impacto | Prioridade | Leva |
+|---|------|------|---------|---------|------------|------|
 | J1 | **Campos personalizáveis por condomínio** — síndico cria campos extras em Unidade, Pessoa e Ocorrência (TEXT, NUMBER, DATE, SELECT). Tabelas `campos_extras_defs` + `campos_extras_valores`. Diferencial de produto real. | 💎 | GG | Alto | ⚪ Backlog | J |
+| J2 | **Assinatura de entrega de encomenda** — canvas com Pointer Events (mouse/touch) para morador assinar ao retirar pacote. Salva como PNG em Storage. Útil juridicamente. | 💎 | M | Médio | ⚪ Backlog | J |
+| J3 | **Scanner de código de barras em encomendas** — BarcodeDetector API (Chrome/Android) para portaria ler código de rastreio. Fallback: digitar manualmente. | 💎 | M | Médio | ⚪ Backlog | J |
+| J4 | **Demo mode** — quando condomínio sem dados, exibe dados de exemplo (moradores fictícios, ocorrências, multas) para trial e demonstração comercial. Toggle via feature flag. | 💎 | G | Alto | ⚪ Backlog | J |
 
 ---
 
@@ -85,21 +139,50 @@ Roadmap específico das levas atuais. Cada leva = 1 commit + push.
 
 - [ ] G1. Proteção força bruta no login — `perfis.locked_until`, bloqueia após 5 tentativas, desbloqueia automático após 15 min
 - [ ] G2. 2FA TOTP — habilitar Supabase Auth MFA + tela setup em Meu Perfil (QR + 6 backup codes de uso único)
-- [ ] G3. Anti-enumeração "esqueci senha" — revisar copy + garantir que Edge Function não vaza existência de e-mail
-- [ ] G4. Branding pré-paint — script inline `index.html` aplica CSS vars do slug antes do React montar
+- [ ] G3. Anti-enumeração "esqueci senha" — copy padronizado, Edge Function sempre responde ok
+- [ ] G4. Session idle timeout — 30 min sem atividade = logout (sessionStorage lastActivity + listener)
 
-### Leva H — UX Avançada
+### Leva H — UX e Navegação
 
-- [ ] H1. Command Palette (Cmd+K) — modal global de busca por página/morador/unidade com navegação por teclado
-- [ ] H2. Helper `logAction()` centralizado — uma função, todas as Edge Functions chamam, auditoria completa automaticamente
-- [ ] H3. Feature flags configuráveis — UI de toggle em Configurações do condomínio (módulos on/off pelo síndico)
+- [ ] H1. Command Palette (Cmd+K) — modal global de busca por página, morador, unidade
+- [ ] H2. Branding pré-paint — script inline `index.html` aplica CSS vars do slug antes do React montar
+- [ ] H3. Page Toolbar padronizado — componente `<PageToolbar>` substituindo cabeçalhos manuais em cada página
+- [ ] H4. Filtros persistentes na URL — query params para status, data, busca; compartilhável
+- [ ] H5. Empty states com CTA — ícone + texto + botão de ação em toda página com lista vazia
 
-### Leva I — Workflows e Permissões
+### Leva K — Performance
 
-- [ ] I1. DataScope formalizado — RLS policies explícitas para morador ver só seus registros (ocorrências, multas, chamados)
-- [ ] I2. Aprovação de multas — status PENDING_APPROVAL + tela de revisão para síndico (segregação de função)
-- [ ] I3. Aprovação de chamados — limiar de custo configurável + fluxo DRAFT → PENDING → APPROVED
+- [ ] K1. Cache SWR custom — TTL 30–60s para leituras recorrentes (unidades, pessoas, condominios), invalidação por prefixo
+- [ ] K2. Debounce padronizado — `useDebounce(300ms)` em todos os campos de busca e filtro
+- [ ] K3. Renovação silenciosa de sessão — refresh token a cada 10 min de uso via `setInterval`
 
-### Leva J — Produto Avançado (backlog)
+### Leva L — Relatórios e Exportação
 
-- [ ] J1. Campos personalizáveis por condomínio — UI de criação de campos extras em Unidade, Pessoa e Ocorrência
+- [ ] L1. CSV export com BOM UTF-8 — botão "Exportar CSV" em Multas, Ocorrências, Chamados, Pessoas, Encomendas
+- [ ] L2. Presets de período — chips "Hoje · 7d · 30d · Mês · Trimestre" nos filtros de data
+- [ ] L3. Report Builder no-code — `/relatorios/builder` com fonte → colunas → filtros → agrupamento → export CSV
+- [ ] L4. Relatório narrativo — resumo mensal em texto (IA Haiku ou template)
+
+### Leva N — Dashboard e Analytics
+
+- [ ] N1. Charts SVG sem biblioteca — Donut (multas por status) + Bars (ocorrências por mês) em SVG/CSS puro
+- [ ] N2. Dashboard configurável por role — síndico, morador e portaria com widgets diferentes
+- [ ] N3. Event tracking — `trackEvent()` fire-and-forget para medir uso de features por condomínio
+
+### Leva I — Arquitetura
+
+- [ ] I1. DataScope nas RLS — formalizar policies de morador ver só seus registros
+- [ ] I2. Helper `logAction()` centralizado — auditoria completa automática em todas as Edge Functions
+- [ ] I3. Feature flags por síndico — UI de toggle em Configurações do condomínio
+
+### Leva W — Workflows de Aprovação
+
+- [ ] W1. Aprovação de multas com SoD — PENDING_APPROVAL + tela de revisão + segregação de função
+- [ ] W2. Aprovação de chamados com custo — limiar configurável + fluxo de aprovação pelo síndico
+
+### Leva J — Produto Avançado (backlog — não iniciar sem go)
+
+- [ ] J1. Campos personalizáveis por condomínio — extras em Unidade, Pessoa, Ocorrência
+- [ ] J2. Assinatura de entrega de encomenda — canvas touch, salva PNG no Storage
+- [ ] J3. Scanner código de barras — BarcodeDetector API para rastrear encomendas na portaria
+- [ ] J4. Demo mode — dados fictícios para trial e demonstração comercial
