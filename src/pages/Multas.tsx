@@ -62,6 +62,18 @@ export default function Multas() {
   const [dataAte, setDataAte] = useState('')
   const dataDeRef = useRef<HTMLInputElement>(null)
   const dataAteRef = useRef<HTMLInputElement>(null)
+
+  function setPreset(days: number | 'hoje' | 'mes') {
+    const fmt = (d: Date) => d.toISOString().slice(0, 10)
+    const today = new Date()
+    if (days === 'hoje') { setDataDe(fmt(today)); setDataAte(fmt(today)); return }
+    if (days === 'mes') {
+      setDataDe(fmt(new Date(today.getFullYear(), today.getMonth(), 1)))
+      setDataAte(fmt(today)); return
+    }
+    const from = new Date(today); from.setDate(from.getDate() - days)
+    setDataDe(fmt(from)); setDataAte(fmt(today))
+  }
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkBusy, setBulkBusy] = useState(false)
 
@@ -221,9 +233,20 @@ export default function Multas() {
             className="px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm"
           />
         </div>
-        {(dataDe || dataAte) && (
-          <Button size="sm" variant="ghost" onClick={() => { setDataDe(''); setDataAte('') }}>Limpar datas</Button>
-        )}
+        <div className="flex flex-wrap gap-1 items-end pb-0.5">
+          {(['hoje', 7, 30, 'mes'] as const).map((p) => (
+            <button
+              key={String(p)}
+              onClick={() => setPreset(p)}
+              className="px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+            >
+              {p === 'hoje' ? 'Hoje' : p === 'mes' ? 'Este mês' : `${p}d`}
+            </button>
+          ))}
+          {(dataDe || dataAte) && (
+            <button onClick={() => { setDataDe(''); setDataAte('') }} className="px-2 py-1 text-xs rounded-md text-slate-500 hover:text-slate-300 transition-colors">✕</button>
+          )}
+        </div>
         {filteredRows.length > 0 && !isMorador && (
           <div className="ml-auto text-sm text-slate-400">
             Soma: <span className="text-slate-100 font-semibold">R$ {total.toFixed(2).replace('.', ',')}</span>
@@ -250,7 +273,12 @@ export default function Multas() {
       {loading ? (
         <TableSkeleton rows={6} cols={5} />
       ) : filteredRows.length === 0 ? (
-        <EmptyState message="Nenhuma multa encontrada." />
+        <EmptyState
+          icon="📋"
+          message="Nenhuma multa encontrada."
+          hint={dataDe || dataAte || statusFilter ? 'Tente ajustar os filtros.' : 'Multas são geradas a partir de ocorrências.'}
+          action={!isMorador ? <Link to="/ocorrencias"><Button size="sm" variant="secondary">Ver ocorrências →</Button></Link> : undefined}
+        />
       ) : (
         <div className="rounded-lg border border-slate-800 overflow-hidden">
           <table className="w-full text-sm">

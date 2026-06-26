@@ -7,19 +7,18 @@ import Button from '../components/ui/Button'
 export default function EsqueciSenha() {
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setSubmitting(true)
-    setError(null)
     try {
       await requestPasswordReset(email)
-      setSent(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro')
+      // Never expose whether the email exists — always show success.
+      console.warn('[EsqueciSenha]', err)
     } finally {
+      setSent(true)
       setSubmitting(false)
     }
   }
@@ -53,12 +52,6 @@ export default function EsqueciSenha() {
               className="w-full px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 focus:border-brand-700 focus:outline-none focus:ring-1 focus:ring-brand-700 text-sm"
             />
           </label>
-
-          {error && (
-            <div className="text-sm text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border border-red-300 dark:border-red-500/30 rounded-md px-3 py-2">
-              {error}
-            </div>
-          )}
 
           <Button type="submit" disabled={submitting} className="w-full">
             {submitting ? 'Enviando...' : 'Enviar link de recuperação'}

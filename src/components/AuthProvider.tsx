@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
-import { consumeLogoutIntent, fetchCurrentPerfil } from '../lib/auth'
+import { consumeLogoutIntent, fetchCurrentPerfil, markLogoutIntent } from '../lib/auth'
 import type { Perfil } from '../types/database'
 
 interface AuthContextValue {
@@ -197,6 +197,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sub.subscription.unsubscribe()
     }
   }, [])
+
+  // Idle timeout: 30 min without activity → force logout. Critical for shared terminals (portaria).
+  useEffect(() => {
+    if (!session) return
+    const IDLE_MS = 30 * 60 * 1000
+    const KEY = 'onway:last-activity'
+    function touch() {
+      try { sessionStorage.setItem(KEY, String(Date.now())) } catch { /* ignore */ }
+    }
+    touch()
+    const events = ['mousemove', 'keydown', 'touchstart', 'click'] as const
+    events.forEach((ev) => window.addEventListener(ev, touch, { passive: true }))
+    const interval = setInterval(async () => {
+      const last = Number(sessionStorage.getItem(KEY) ?? 0)
+      if (Date.now() - last > IDLE_MS) {
+        clearInterval(interval)
+        markLogoutIntent()
+        await supabase.auth.signOut()
+      }
+    }, 60_000)
+    return () => {
+      events.forEach((ev) => window.removeEventListener(ev, touch))
+      clearInterval(interval)
+    }
+  }, [session?.user.id])
 
   if (hardError && loading === false) {
     return <RecoveryScreen message={hardError} />

@@ -1,5 +1,6 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useDebounce } from '../hooks/useDebounce'
 import { listChamados, updateChamadoStatus } from '../lib/chamados'
 import { listCondominios } from '../lib/condominios'
 import { supabase } from '../lib/supabase'
@@ -88,8 +89,21 @@ export default function Chamados() {
   const [prioFilter, setPrioFilter] = useState<'' | PrioridadeChamado>('')
   const [catFilter, setCatFilter] = useState<'' | CategoriaChamado>('')
   const [busca, setBusca] = useState('')
+  const debouncedBusca = useDebounce(busca, 300)
   const [soMeus, setSoMeus] = useState(false)
   const [assigneeNomes, setAssigneeNomes] = useState<Record<string, string>>({})
+
+  function setPreset(days: number | 'hoje' | 'mes') {
+    const fmt = (d: Date) => d.toISOString().slice(0, 10)
+    const today = new Date()
+    if (days === 'hoje') { setDataDe(fmt(today)); setDataAte(fmt(today)); return }
+    if (days === 'mes') {
+      setDataDe(fmt(new Date(today.getFullYear(), today.getMonth(), 1)))
+      setDataAte(fmt(today)); return
+    }
+    const from = new Date(today); from.setDate(from.getDate() - days)
+    setDataDe(fmt(from)); setDataAte(fmt(today))
+  }
 
   async function reload() {
     if (isAdmin && !scopeId) return
@@ -149,7 +163,7 @@ export default function Chamados() {
   const filteredRows = useMemo(() => {
     const de = dataDe ? new Date(dataDe + 'T00:00:00').getTime() : null
     const ate = dataAte ? new Date(dataAte + 'T23:59:59').getTime() : null
-    const q = busca.trim().toLowerCase()
+    const q = debouncedBusca.trim().toLowerCase()
     return rows.filter((r) => {
       const t = new Date(r.created_at).getTime()
       if (de !== null && t < de) return false
@@ -160,7 +174,7 @@ export default function Chamados() {
       if (q && !(r.titulo.toLowerCase().includes(q) || r.descricao.toLowerCase().includes(q))) return false
       return true
     })
-  }, [rows, dataDe, dataAte, prioFilter, catFilter, soMeus, busca, perfil?.id])
+  }, [rows, dataDe, dataAte, prioFilter, catFilter, soMeus, debouncedBusca, perfil?.id])
 
   const arquivaveis = filteredRows.filter((c) => c.status !== 'cancelado' && c.status !== 'finalizado').map((c) => c.id)
   const todosSelecionados = arquivaveis.length > 0 && arquivaveis.every((id) => selected.has(id))
@@ -262,9 +276,20 @@ export default function Chamados() {
           <label className="block text-xs font-medium text-slate-400 mb-1">Até</label>
           <input ref={dataAteRef} type="date" value={dataAte} onChange={(e) => setDataAte(e.target.value)} onClick={() => dataAteRef.current?.showPicker?.()} className="px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm transition-colors hover:border-slate-600 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50" />
         </div>
-        {(dataDe || dataAte) && (
-          <Button size="sm" variant="ghost" onClick={() => { setDataDe(''); setDataAte('') }}>Limpar datas</Button>
-        )}
+        <div className="flex flex-wrap gap-1 items-end pb-0.5">
+          {(['hoje', 7, 30, 'mes'] as const).map((p) => (
+            <button
+              key={String(p)}
+              onClick={() => setPreset(p)}
+              className="px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+            >
+              {p === 'hoje' ? 'Hoje' : p === 'mes' ? 'Este mês' : `${p}d`}
+            </button>
+          ))}
+          {(dataDe || dataAte) && (
+            <button onClick={() => { setDataDe(''); setDataAte('') }} className="px-2 py-1 text-xs rounded-md text-slate-500 hover:text-slate-300 transition-colors">✕</button>
+          )}
+        </div>
       </div>
 
       {podeBulk && (
@@ -294,7 +319,12 @@ export default function Chamados() {
       {loading ? (
         <CardListSkeleton rows={5} />
       ) : filteredRows.length === 0 ? (
-        <EmptyState message="Nenhum chamado encontrado." />
+        <EmptyState
+          icon="🔧"
+          message="Nenhum chamado encontrado."
+          hint={dataDe || dataAte || statusFilter || busca ? 'Tente ajustar os filtros.' : undefined}
+          action={podeAbrir ? <Link to="/chamados/novo"><Button size="sm">+ Abrir chamado</Button></Link> : undefined}
+        />
       ) : (
         <div className="space-y-2">
           {filteredRows.map((c) => (
