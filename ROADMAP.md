@@ -107,6 +107,7 @@ Roadmap específico das levas atuais. Cada leva = 1 commit + push.
 |---|------|------|---------|---------|------------|------|
 | N1 | **Charts SVG sem biblioteca** — gráficos Donut (multas por status) e Bars (ocorrências por mês) implementados com SVG/CSS puro. Sem recharts, sem bundle extra. Leves e customizáveis. | ✨ | M | Alto | 🟡 Alta | N |
 | N2 | **Dashboard configurável por role** — síndico escolhe quais widgets KPI aparecer no seu painel. Morador tem painel diferente (débitos, avisos, próximos eventos). Portaria vê encomendas e acessos. | 💎 | G | Alto | 🟢 Normal | N |
+| N4 | **Painel de Atalhos personalizáveis** — seção "Atalhos" no topo do dashboard com checkboxes de ações frequentes. Cada role tem seu catálogo: síndico (Registrar multa, Nova ocorrência, Convocar assembleia, Enviar comunicado…), portaria (Nova encomenda, Registrar acesso, Abrir chamado…), morador (Abrir chamado, Ver débitos, Votar…). Usuário marca os que quer; ficam como botões de 1 clique com ícone. Salvo em `perfis.shortcuts: string[]`. | ✨ | M | Alto | 🟡 Alta | N |
 | N3 | **Event tracking fire-and-forget** — `trackEvent('multa.criada')`, `trackEvent('ocorrencia.analisada_ia')` via `POST /analytics` com `keepalive: true`. Permite ver quais features são mais usadas por condomínio. | 🏗️ | M | Médio | 🟢 Normal | N |
 
 ### Grupo 6 — Arquitetura e DX
@@ -168,6 +169,7 @@ Roadmap específico das levas atuais. Cada leva = 1 commit + push.
 - [ ] N1. Charts SVG sem biblioteca — Donut (multas por status) + Bars (ocorrências por mês) em SVG/CSS puro
 - [ ] N2. Dashboard configurável por role — síndico, morador e portaria com widgets diferentes
 - [ ] N3. Event tracking — `trackEvent()` fire-and-forget para medir uso de features por condomínio
+- [ ] N4. Painel de Atalhos personalizáveis — checkboxes no topo do dashboard, cada role tem catálogo de ações, salvo em `perfis.shortcuts[]`
 
 ### Leva I — Arquitetura
 
