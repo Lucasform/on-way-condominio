@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listOcorrencias, getOcorrenciaFotoSignedUrl } from '../lib/ocorrencias'
+import { downloadCsv } from '../lib/csv'
 import { listUnidades } from '../lib/unidades'
 import { listCondominios } from '../lib/condominios'
 import type { Ocorrencia, StatusOcorrencia } from '../types/ocorrencia'
@@ -116,11 +117,30 @@ export default function Ocorrencias() {
         title={`Ocorrências${rows.length > 0 ? ` (${rows.length})` : ''}`}
         subtitle="Registros de incidentes e relatos no condomínio."
         actions={
-          podeRegistrar ? (
-            <Link to="/ocorrencias/novo">
-              <Button>+ Nova ocorrência</Button>
-            </Link>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            {rows.length > 0 && (
+              <button
+                onClick={() => downloadCsv(
+                  `ocorrencias-${new Date().toISOString().slice(0, 10)}.csv`,
+                  ['Data', 'Unidade / Local', 'Descrição', 'Status'],
+                  rows.map((o) => [
+                    new Date(o.created_at).toLocaleDateString('pt-BR'),
+                    [unidadeLabel(o.unidade_id), o.local].filter(Boolean).join(' · '),
+                    o.descricao,
+                    STATUS_LABEL[o.status],
+                  ])
+                )}
+                className="text-xs px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+              >
+                ↓ CSV
+              </button>
+            )}
+            {podeRegistrar && (
+              <Link to="/ocorrencias/novo">
+                <Button>+ Nova ocorrência</Button>
+              </Link>
+            )}
+          </div>
         }
       />
       {podeRegistrar && <Fab to="/ocorrencias/novo" label="Nova ocorrência" />}

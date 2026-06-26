@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useDebounce } from '../hooks/useDebounce'
 import { downloadCsv } from '../lib/csv'
 import { listChamados, updateChamadoStatus } from '../lib/chamados'
@@ -73,26 +73,38 @@ export default function Chamados() {
   const { perfil } = useAuth()
   const confirm = useConfirm()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const isAdmin = perfil?.role === 'admin_onway' && !perfil?.condominio_id
 
   const [condos, setCondos] = useState<Condominio[]>([])
   const [scopeId, setScopeId] = useState<string | null>(null)
-  const [statusFilter, setStatusFilter] = useState<'' | StatusChamado>('')
+  const [statusFilter, setStatusFilter] = useState<'' | StatusChamado>((searchParams.get('status') ?? '') as '' | StatusChamado)
   const [rows, setRows] = useState<Chamado[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [dataDe, setDataDe] = useState('')
-  const [dataAte, setDataAte] = useState('')
+  const [dataDe, setDataDe] = useState(searchParams.get('de') ?? '')
+  const [dataAte, setDataAte] = useState(searchParams.get('ate') ?? '')
   const dataDeRef = useRef<HTMLInputElement>(null)
   const dataAteRef = useRef<HTMLInputElement>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkBusy, setBulkBusy] = useState(false)
-  const [prioFilter, setPrioFilter] = useState<'' | PrioridadeChamado>('')
-  const [catFilter, setCatFilter] = useState<'' | CategoriaChamado>('')
-  const [busca, setBusca] = useState('')
+  const [prioFilter, setPrioFilter] = useState<'' | PrioridadeChamado>((searchParams.get('prio') ?? '') as '' | PrioridadeChamado)
+  const [catFilter, setCatFilter] = useState<'' | CategoriaChamado>((searchParams.get('cat') ?? '') as '' | CategoriaChamado)
+  const [busca, setBusca] = useState(searchParams.get('q') ?? '')
   const debouncedBusca = useDebounce(busca, 300)
   const [soMeus, setSoMeus] = useState(false)
   const [assigneeNomes, setAssigneeNomes] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    const p = new URLSearchParams()
+    if (statusFilter) p.set('status', statusFilter)
+    if (prioFilter) p.set('prio', prioFilter)
+    if (catFilter) p.set('cat', catFilter)
+    if (debouncedBusca) p.set('q', debouncedBusca)
+    if (dataDe) p.set('de', dataDe)
+    if (dataAte) p.set('ate', dataAte)
+    setSearchParams(p, { replace: true })
+  }, [statusFilter, prioFilter, catFilter, debouncedBusca, dataDe, dataAte])
 
   function setPreset(days: number | 'hoje' | 'mes') {
     const fmt = (d: Date) => d.toISOString().slice(0, 10)

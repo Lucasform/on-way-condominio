@@ -1,7 +1,16 @@
 import { supabase } from './supabase'
 import type { Unidade, UnidadeInput } from '../types/unidade'
+import { cacheGet, cacheSet, cacheInvalidate } from './cache'
+
+const CACHE_TTL = 60_000
+const CACHE_KEY = 'unidades:all'
 
 export async function listUnidades(opts: { condominio_id?: string; ativo?: boolean } = {}): Promise<Unidade[]> {
+  const noOpts = !opts.condominio_id && opts.ativo === undefined
+  if (noOpts) {
+    const cached = cacheGet<Unidade[]>(CACHE_KEY)
+    if (cached) return cached
+  }
   let q = supabase
     .from('unidades')
     .select('*')
@@ -11,7 +20,13 @@ export async function listUnidades(opts: { condominio_id?: string; ativo?: boole
   if (opts.ativo !== undefined) q = q.eq('ativo', opts.ativo)
   const { data, error } = await q
   if (error) throw error
-  return (data ?? []) as Unidade[]
+  const result = (data ?? []) as Unidade[]
+  if (noOpts) cacheSet(CACHE_KEY, result, CACHE_TTL)
+  return result
+}
+
+export function invalidateUnidadesCache(): void {
+  cacheInvalidate('unidades:')
 }
 
 export async function getUnidade(id: string): Promise<Unidade | null> {

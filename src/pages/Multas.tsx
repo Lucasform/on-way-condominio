@@ -2,6 +2,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { listMultas, MULTA_STATUS_LABEL, changeMultaStatus } from '../lib/multas'
 import { downloadCsv } from '../lib/csv'
+import DonutChart from '../components/ui/DonutChart'
 import { listCondominios } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
 import type { Multa, StatusMulta } from '../types/multa'
@@ -136,6 +137,18 @@ export default function Multas() {
 
   const total = filteredRows.reduce((sum, m) => sum + Number(m.valor), 0)
 
+  const STATUS_COLORS: Record<string, string> = {
+    em_analise: '#f59e0b',
+    aplicada: '#ef4444',
+    paga: '#10b981',
+    contestada: '#8b5cf6',
+    cancelada: '#64748b',
+    arquivada: '#334155',
+  }
+  const donutSegments = Object.entries(
+    filteredRows.reduce((acc, m) => { acc[m.status] = (acc[m.status] ?? 0) + 1; return acc }, {} as Record<string, number>)
+  ).map(([status, count]) => ({ label: MULTA_STATUS_LABEL[status as keyof typeof MULTA_STATUS_LABEL] ?? status, value: count, color: STATUS_COLORS[status] ?? '#64748b' }))
+
   const podeBulk = !isMorador
   const arquivaveis = filteredRows.filter((m) => m.status !== 'arquivada').map((m) => m.id)
   const todosSelecionados = arquivaveis.length > 0 && arquivaveis.every((id) => selected.has(id))
@@ -249,7 +262,18 @@ export default function Multas() {
           )}
         </div>
         {filteredRows.length > 0 && !isMorador && (
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <DonutChart segments={donutSegments} size={40} thickness={8} />
+              <div className="flex flex-col gap-0.5">
+                {donutSegments.map((s) => (
+                  <span key={s.label} className="flex items-center gap-1 text-[10px] text-slate-400">
+                    <span className="inline-block w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: s.color }} />
+                    {s.value} {s.label.toLowerCase()}
+                  </span>
+                ))}
+              </div>
+            </div>
             <span className="text-sm text-slate-400">
               Soma: <span className="text-slate-100 font-semibold">R$ {total.toFixed(2).replace('.', ',')}</span>
             </span>

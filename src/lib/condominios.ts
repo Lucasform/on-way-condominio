@@ -1,12 +1,27 @@
 import { supabase } from './supabase'
 import type { Condominio, CondominioInput } from '../types/condominio'
+import { cacheGet, cacheSet, cacheInvalidate } from './cache'
+
+const CACHE_TTL = 60_000
+const CACHE_KEY = 'condominios:all'
 
 export async function listCondominios(opts: { ativo?: boolean } = {}): Promise<Condominio[]> {
+  const noOpts = opts.ativo === undefined
+  if (noOpts) {
+    const cached = cacheGet<Condominio[]>(CACHE_KEY)
+    if (cached) return cached
+  }
   let q = supabase.from('condominios').select('*').order('nome', { ascending: true })
   if (opts.ativo !== undefined) q = q.eq('ativo', opts.ativo)
   const { data, error } = await q
   if (error) throw error
-  return (data ?? []) as Condominio[]
+  const result = (data ?? []) as Condominio[]
+  if (noOpts) cacheSet(CACHE_KEY, result, CACHE_TTL)
+  return result
+}
+
+export function invalidateCondominiosCache(): void {
+  cacheInvalidate('condominios:')
 }
 
 export async function getCondominio(id: string): Promise<Condominio | null> {
