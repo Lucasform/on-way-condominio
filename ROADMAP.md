@@ -49,6 +49,57 @@ Roadmap específico das levas atuais. Cada leva = 1 commit + push.
 
 ### Pendente (não iniciado)
 - [x] Customizar 5 templates HTML do Supabase Auth (Confirm signup, Magic Link, Change Email, Reset Password, Invite user) — branding OnWay (fundo escuro, violeta, sem "Supabase").
-- [ ] Refactor multi-condomínio (`perfis_condominios`) — Leva L original. Permite 1 user gerir N condos.
+- [x] Refactor multi-condomínio (`perfis_condominios`) + perfil Parceiro (migration 0105, Parceiros.tsx, SignupParceiro.tsx, edge `redeem-plataforma-invite`).
 - [x] Polish: trocar `alert/confirm/prompt` por modal/toast — PromptProvider + usePrompt criados; todos os window.prompt/confirm/alert substituídos (Pessoas, MeuPerfil, AcessoDetalhe, CondominioAnexosManager, CondominioFornecedoresPage, EmailsLog, Painel).
 - [x] ConvitesPanel: badge "🏠 Unidade X / 👷 Setor Y / 👤 Nome" abaixo do código quando vier travado.
+
+---
+
+## BACKLOG — Melhorias inspiradas no Evercol (estudo 2026-06-25)
+
+> Estudo completo do repositório `Catalisa/evercol` (NestJS + Next.js + Prisma, multi-tenant enterprise).
+> Cada item abaixo é acionável para o OnWay Condomínio com a stack atual (React + Supabase + TypeScript).
+>
+> **Legenda esforço:** XS < 1h · P = 1–4h · M = 4–12h · G = 1–3 dias · GG = semana+
+> **Legenda impacto:** Baixo · Médio · Alto · Crítico
+> **Legenda prioridade:** 🔴 Urgente · 🟡 Alta · 🟢 Normal · ⚪ Backlog
+> **Legenda tipo:** 🔒 Segurança · ✨ UX · ⚡ Perf · 🏗️ Arquitetura · 💎 Produto
+
+| # | Item | Tipo | Esforço | Impacto | Prioridade | Leva |
+|---|------|------|---------|---------|------------|------|
+| G1 | **Proteção força bruta no login** — 5 tentativas falhas = lock 15 min. Campo `locked_until` em `perfis`, verificado na Edge Function de login. | 🔒 | P | Alto | 🔴 Urgente | G |
+| G2 | **2FA TOTP via Supabase Auth** — habilitar no dashboard + tela de setup em Meu Perfil (QR code + backup codes). Disponível para admin_onway e parceiro. | 🔒 | P | Médio | 🟡 Alta | G |
+| G3 | **Anti-enumeração no "esqueci senha"** — garantir que o copy nunca vaza se e-mail existe. Revisar `EsqueciSenha.tsx` + padronizar resposta da Edge Function. | 🔒 | XS | Médio | 🟡 Alta | G |
+| G4 | **Branding pré-paint por condomínio** — script inline no `index.html` lê o slug da URL e aplica CSS vars `--c-primary-*` antes do React montar. Elimina flash de tema no carregamento. | ✨ | P | Médio | 🟡 Alta | G |
+| H1 | **Command Palette (Cmd+K)** — busca global por: página/rota, morador por nome, unidade por número. Abre modal com lista filtrada + navegação por teclado. | ✨ | M | Alto | 🟡 Alta | H |
+| H2 | **Auditoria centralizada via helper** — `logAction({ entity, action, entityId, diff })` em todas as Edge Functions. Substitui as chamadas manuais dispersas. Painel de auditoria fica muito mais completo. | 🏗️ | M | Alto | 🟡 Alta | H |
+| H3 | **Feature flags configuráveis pelo síndico** — expandir o `FeatureFlagsProvider` existente para ter UI de toggle em Configurações. Síndico habilita/desabilita módulos (WhatsApp, Acessos, Classificados) sem precisar de admin_onway. | 💎 | M | Médio | 🟢 Normal | H |
+| I1 | **DataScope por role — morador vê só seus próprios registros** — ocorrências e multas do morador filtram por `created_by = auth.uid()` ou `unidade_id = perfil.unidade_id`. Hoje já acontece parcialmente; formalizar nas RLS policies. | 🏗️ | M | Alto | 🟡 Alta | I |
+| I2 | **Workflow de aprovação em multas** — multa acima de um valor configurável vai para `PENDING_APPROVAL` antes de notificar o morador. Síndico aprova/rejeita. Segregação: quem registra ≠ quem aprova. | 💎 | G | Alto | 🟢 Normal | I |
+| I3 | **Workflow de aprovação em chamados** — chamado com custo estimado ≥ limiar precisa de ok do síndico antes de contratar fornecedor. Status DRAFT → PENDING → APPROVED → IN_PROGRESS. | 💎 | G | Médio | 🟢 Normal | I |
+| J1 | **Campos personalizáveis por condomínio** — síndico cria campos extras em Unidade, Pessoa e Ocorrência (TEXT, NUMBER, DATE, SELECT). Tabelas `campos_extras_defs` + `campos_extras_valores`. Diferencial de produto real. | 💎 | GG | Alto | ⚪ Backlog | J |
+
+---
+
+### Leva G — Segurança (próxima a executar)
+
+- [ ] G1. Proteção força bruta no login — `perfis.locked_until`, bloqueia após 5 tentativas, desbloqueia automático após 15 min
+- [ ] G2. 2FA TOTP — habilitar Supabase Auth MFA + tela setup em Meu Perfil (QR + 6 backup codes de uso único)
+- [ ] G3. Anti-enumeração "esqueci senha" — revisar copy + garantir que Edge Function não vaza existência de e-mail
+- [ ] G4. Branding pré-paint — script inline `index.html` aplica CSS vars do slug antes do React montar
+
+### Leva H — UX Avançada
+
+- [ ] H1. Command Palette (Cmd+K) — modal global de busca por página/morador/unidade com navegação por teclado
+- [ ] H2. Helper `logAction()` centralizado — uma função, todas as Edge Functions chamam, auditoria completa automaticamente
+- [ ] H3. Feature flags configuráveis — UI de toggle em Configurações do condomínio (módulos on/off pelo síndico)
+
+### Leva I — Workflows e Permissões
+
+- [ ] I1. DataScope formalizado — RLS policies explícitas para morador ver só seus registros (ocorrências, multas, chamados)
+- [ ] I2. Aprovação de multas — status PENDING_APPROVAL + tela de revisão para síndico (segregação de função)
+- [ ] I3. Aprovação de chamados — limiar de custo configurável + fluxo DRAFT → PENDING → APPROVED
+
+### Leva J — Produto Avançado (backlog)
+
+- [ ] J1. Campos personalizáveis por condomínio — UI de criação de campos extras em Unidade, Pessoa e Ocorrência
