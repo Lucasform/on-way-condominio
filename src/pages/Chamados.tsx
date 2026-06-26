@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useDebounce } from '../hooks/useDebounce'
+import { downloadCsv } from '../lib/csv'
 import { listChamados, updateChamadoStatus } from '../lib/chamados'
 import { listCondominios } from '../lib/condominios'
 import { supabase } from '../lib/supabase'
@@ -202,11 +203,31 @@ export default function Chamados() {
       <PageHeader
         title="Chamados de manutenção"
         actions={
-          podeAbrir ? (
-            <Link to="/chamados/novo">
-              <Button>+ Novo chamado</Button>
-            </Link>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            {filteredRows.length > 0 && (
+              <button
+                onClick={() => downloadCsv(
+                  `chamados-${new Date().toISOString().slice(0, 10)}.csv`,
+                  ['Data', 'Título', 'Categoria', 'Prioridade', 'Status'],
+                  filteredRows.map((c) => [
+                    new Date(c.created_at).toLocaleDateString('pt-BR'),
+                    c.titulo,
+                    c.categoria,
+                    PRIO_LABEL[c.prioridade],
+                    STATUS_LABEL[c.status],
+                  ])
+                )}
+                className="text-xs px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+              >
+                ↓ CSV
+              </button>
+            )}
+            {podeAbrir && (
+              <Link to="/chamados/novo">
+                <Button>+ Novo chamado</Button>
+              </Link>
+            )}
+          </div>
         }
       />
       {podeAbrir && <Fab to="/chamados/novo" label="Novo chamado" />}

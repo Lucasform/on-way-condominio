@@ -198,6 +198,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // Silently renew session token every 10 min to prevent mid-action expiry.
+  useEffect(() => {
+    if (!session) return
+    const interval = setInterval(async () => {
+      const { error } = await supabase.auth.refreshSession()
+      if (error) console.warn('[AuthProvider] Session refresh failed:', error.message)
+    }, 10 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [session?.user.id])
+
   // Idle timeout: 30 min without activity → force logout. Critical for shared terminals (portaria).
   useEffect(() => {
     if (!session) return

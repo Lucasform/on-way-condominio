@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from 'react'
+import { useDebounce } from '../hooks/useDebounce'
 import { Link, useNavigate } from 'react-router-dom'
 import { listPessoas, setPessoaAtivo, convidarPessoa, resetSenhaUsuario, excluirUsuarioAuth } from '../lib/pessoas'
 import { listCondominios } from '../lib/condominios'
@@ -42,6 +43,7 @@ export default function Pessoas() {
   const [error, setError] = useState<string | null>(null)
   const [showInactive, setShowInactive] = useState(false)
   const [busca, setBusca] = useState('')
+  const debouncedBusca = useDebounce(busca, 300)
   const [filtroVinculo, setFiltroVinculo] = useState('')
   const [sortKey, setSortKey] = useState('nome')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
@@ -116,8 +118,8 @@ export default function Pessoas() {
     }
 
     // Texto livre: nome ou email
-    if (busca.trim()) {
-      const q = busca.trim().toLowerCase()
+    if (debouncedBusca.trim()) {
+      const q = debouncedBusca.trim().toLowerCase()
       base = base.filter((p) =>
         p.nome.toLowerCase().includes(q) ||
         (p.email ?? '').toLowerCase().includes(q),

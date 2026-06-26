@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listMultas, MULTA_STATUS_LABEL, changeMultaStatus } from '../lib/multas'
+import { downloadCsv } from '../lib/csv'
 import { listCondominios } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
 import type { Multa, StatusMulta } from '../types/multa'
@@ -248,8 +249,26 @@ export default function Multas() {
           )}
         </div>
         {filteredRows.length > 0 && !isMorador && (
-          <div className="ml-auto text-sm text-slate-400">
-            Soma: <span className="text-slate-100 font-semibold">R$ {total.toFixed(2).replace('.', ',')}</span>
+          <div className="ml-auto flex items-center gap-3">
+            <span className="text-sm text-slate-400">
+              Soma: <span className="text-slate-100 font-semibold">R$ {total.toFixed(2).replace('.', ',')}</span>
+            </span>
+            <button
+              onClick={() => downloadCsv(
+                `multas-${new Date().toISOString().slice(0, 10)}.csv`,
+                ['Data', 'Unidade', 'Descrição', 'Valor', 'Status'],
+                filteredRows.map((m) => [
+                  new Date(m.created_at).toLocaleDateString('pt-BR'),
+                  unidadeLabel(m.unidade_id),
+                  m.descricao,
+                  Number(m.valor).toFixed(2).replace('.', ','),
+                  MULTA_STATUS_LABEL[m.status],
+                ])
+              )}
+              className="text-xs px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+            >
+              ↓ CSV
+            </button>
           </div>
         )}
       </div>

@@ -158,7 +158,12 @@ export default function Ocorrencias() {
       {loading ? (
         <CardListSkeleton rows={5} />
       ) : rows.length === 0 ? (
-        <EmptyState message="Nenhuma ocorrência encontrada com os filtros atuais." />
+        <EmptyState
+          icon="📝"
+          message="Nenhuma ocorrência registrada."
+          hint={statusFilter ? 'Tente mudar o filtro de status.' : undefined}
+          action={podeRegistrar ? <Link to="/ocorrencias/novo"><Button size="sm">+ Registrar ocorrência</Button></Link> : undefined}
+        />
       ) : (
         <div className="space-y-3">
           {rows.map((o) => (

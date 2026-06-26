@@ -61,6 +61,18 @@ export default function Encomendas() {
   const [dataAte, setDataAte] = useState('')
   const dataDeRef = useRef<HTMLInputElement>(null)
   const dataAteRef = useRef<HTMLInputElement>(null)
+
+  function setPreset(days: number | 'hoje' | 'mes') {
+    const fmt = (d: Date) => d.toISOString().slice(0, 10)
+    const today = new Date()
+    if (days === 'hoje') { setDataDe(fmt(today)); setDataAte(fmt(today)); return }
+    if (days === 'mes') {
+      setDataDe(fmt(new Date(today.getFullYear(), today.getMonth(), 1)))
+      setDataAte(fmt(today)); return
+    }
+    const from = new Date(today); from.setDate(from.getDate() - days)
+    setDataDe(fmt(from)); setDataAte(fmt(today))
+  }
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [bulkBusy, setBulkBusy] = useState(false)
   const podeBulk = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico', 'portaria'].includes(perfil.role)
@@ -224,9 +236,20 @@ export default function Encomendas() {
           <label className="block text-xs font-medium text-slate-400 mb-1">Até</label>
           <input ref={dataAteRef} type="date" value={dataAte} onChange={(e) => setDataAte(e.target.value)} onClick={() => dataAteRef.current?.showPicker?.()} className="px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm" />
         </div>
-        {(dataDe || dataAte) && (
-          <Button size="sm" variant="ghost" onClick={() => { setDataDe(''); setDataAte('') }}>Limpar datas</Button>
-        )}
+        <div className="flex flex-wrap gap-1 items-end pb-0.5">
+          {(['hoje', 7, 30, 'mes'] as const).map((p) => (
+            <button
+              key={String(p)}
+              onClick={() => setPreset(p)}
+              className="px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+            >
+              {p === 'hoje' ? 'Hoje' : p === 'mes' ? 'Este mês' : `${p}d`}
+            </button>
+          ))}
+          {(dataDe || dataAte) && (
+            <button onClick={() => { setDataDe(''); setDataAte('') }} className="px-2 py-1 text-xs rounded-md text-slate-500 hover:text-slate-300 transition-colors">✕</button>
+          )}
+        </div>
       </div>
 
       {podeBulk && selected.size > 0 && (
