@@ -33,7 +33,9 @@ const MODULOS: { key: FeatureKey; label: string; descricao: string; emoji: strin
 export default function Configuracoes() {
   const { perfil, user } = useAuth()
   const toast = useToast()
-  const { flags } = useFeatureFlags()
+  const { flags, launchMode, toggleLaunchMode } = useFeatureFlags()
+  const isAdminOnway = perfil?.role === 'admin_onway'
+  const [launchBusy, setLaunchBusy] = useState(false)
 
   const isGestorCondo =
     perfil && ['administradora', 'sindico', 'subsindico', 'admin_onway'].includes(perfil.role)
@@ -86,6 +88,49 @@ export default function Configuracoes() {
         title="Configurações do condomínio"
         subtitle="Ative ou desative módulos para este condomínio."
       />
+
+      {isAdminOnway && (
+        <div className={`mb-8 flex items-center justify-between gap-4 rounded-xl border p-5 ${
+          launchMode
+            ? 'border-emerald-500/30 bg-emerald-500/5'
+            : 'border-slate-700 bg-slate-900/40'
+        }`}>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🚀</span>
+              <span className="font-semibold text-slate-100">Modo Lançamento</span>
+              {launchMode && (
+                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2 py-0.5">Ativo</span>
+              )}
+            </div>
+            <p className="text-sm text-slate-400 mt-1 max-w-md">
+              {launchMode
+                ? 'Todos os condomínios têm acesso gratuito a todas as funcionalidades. Stripe configurado mas não cobra ninguém.'
+                : 'Planos e pagamentos ativos. Condomínios sem assinatura verão o bloqueio de funcionalidades.'}
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={launchBusy}
+            onClick={async () => {
+              setLaunchBusy(true)
+              try {
+                await toggleLaunchMode(!launchMode)
+                toast.success(launchMode ? 'Modo lançamento desativado. Cobrança ativa.' : 'Modo lançamento ativado. Tudo gratuito.')
+              } catch {
+                toast.error('Erro ao alterar modo lançamento.')
+              } finally {
+                setLaunchBusy(false)
+              }
+            }}
+            className={`shrink-0 relative w-12 h-7 rounded-full transition-colors ${
+              launchMode ? 'bg-emerald-500' : 'bg-slate-700'
+            } disabled:opacity-40`}
+          >
+            <span className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-transform ${launchMode ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="text-sm text-slate-500">Carregando...</div>
