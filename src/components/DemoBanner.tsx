@@ -9,13 +9,12 @@ export default function DemoBanner() {
 
   useEffect(() => {
     if (!perfil?.condominio_id) { setIsDemo(false); return }
-    supabase
+    void supabase
       .from('condominios')
       .select('is_demo')
       .eq('id', perfil.condominio_id)
       .maybeSingle()
       .then(({ data }) => setIsDemo(data?.is_demo === true))
-      .catch(() => {})
   }, [perfil?.condominio_id])
 
   if (!isDemo) return null

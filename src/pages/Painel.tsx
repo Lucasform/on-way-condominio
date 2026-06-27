@@ -90,14 +90,16 @@ function ocorrenciaColumn(o: Ocorrencia): ColumnKey {
 
 function multaColumn(m: Multa): ColumnKey {
   switch (m.status as StatusMulta) {
+    case 'pendente_aprovacao':
     case 'em_analise':
-      return 'envio' // pendente de aplicar
+      return 'envio'
     case 'aplicada':
     case 'contestada':
       return 'em_curso'
     case 'paga':
     case 'cancelada':
     case 'arquivada':
+    default:
       return 'finalizada'
   }
 }
@@ -105,6 +107,7 @@ function multaColumn(m: Multa): ColumnKey {
 function chamadoColumn(c: Chamado): ColumnKey {
   switch (c.status as StatusChamado) {
     case 'aberto':
+    case 'pendente_aprovacao':
       return 'chegou'
     case 'em_andamento':
     case 'aguardando':

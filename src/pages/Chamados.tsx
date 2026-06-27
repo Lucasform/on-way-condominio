@@ -33,6 +33,7 @@ const STATUS_LABEL: Record<StatusChamado, string> = {
   resolvido: 'Resolvido',
   finalizado: 'Finalizado',
   cancelado: 'Cancelado',
+  pendente_aprovacao: 'Aguard. aprovação',
 }
 
 const STATUS_CLASS: Record<StatusChamado, string> = {
@@ -42,6 +43,7 @@ const STATUS_CLASS: Record<StatusChamado, string> = {
   resolvido: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
   finalizado: 'bg-slate-500/15 text-slate-300 border-slate-500/40',
   cancelado: 'bg-slate-700/40 text-slate-500 border-slate-700',
+  pendente_aprovacao: 'bg-violet-500/10 text-violet-300 border-violet-500/30',
 }
 
 const PRIO_CLASS: Record<PrioridadeChamado, string> = {

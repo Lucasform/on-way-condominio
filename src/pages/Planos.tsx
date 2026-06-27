@@ -27,6 +27,8 @@ const FEATURE_LABEL: Record<FeatureKey, string> = {
   whatsapp:     'WhatsApp',
   reservas:     'Reserva de Espaços',
   solicitacoes: 'Solicitações',
+  veiculos:     'Veículos',
+  pets:         'Pets',
 }
 
 const ROLES_PERMITIDOS = ['admin_onway', 'parceiro', 'administradora', 'sindico', 'subsindico']

@@ -51,6 +51,7 @@ const MULTA_STATUS_CLASS: Record<StatusMulta, string> = {
   contestada: 'text-orange-300',
   cancelada: 'text-slate-500',
   arquivada: 'text-slate-400',
+  pendente_aprovacao: 'text-violet-300',
 }
 
 export default function UnidadeHistorico() {

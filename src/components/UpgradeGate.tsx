@@ -22,6 +22,8 @@ const FEATURE_LABEL: Record<FeatureKey, string> = {
   whatsapp:      'WhatsApp',
   reservas:      'Reservas',
   solicitacoes:  'Solicitações',
+  veiculos:      'Veículos',
+  pets:          'Pets',
 }
 
 interface Props {

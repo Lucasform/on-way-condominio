@@ -33,6 +33,7 @@ const STATUS_CLASS: Record<StatusMulta, string> = {
   contestada: 'bg-orange-500/10 text-orange-300 border-orange-500/30',
   cancelada: 'bg-slate-700/40 text-slate-500 border-slate-700',
   arquivada: 'bg-slate-700/40 text-slate-400 border-slate-700',
+  pendente_aprovacao: 'bg-violet-500/10 text-violet-300 border-violet-500/30',
 }
 
 // Aviso de vencimento na lista (só multas aplicadas com vencimento definido).
