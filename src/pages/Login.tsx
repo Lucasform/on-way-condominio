@@ -73,6 +73,28 @@ export default function Login() {
   const [mfa, setMfa] = useState<{ factorId: string; challengeId: string } | null>(null)
   const [mfaCode, setMfaCode] = useState('')
 
+  // G1: brute-force protection — 5 failures = 15min block (per email, localStorage)
+  const LOCK_KEY = (e: string) => `onway:login:${e.toLowerCase().trim()}`
+  const MAX_ATTEMPTS = 5
+  const LOCK_MS = 15 * 60 * 1000
+  function getAttemptData(e: string) {
+    try { return JSON.parse(localStorage.getItem(LOCK_KEY(e)) ?? 'null') as { count: number; lockedUntil: number } | null }
+    catch { return null }
+  }
+  function isLocked(e: string): { locked: boolean; minutesLeft: number } {
+    const d = getAttemptData(e)
+    if (!d || Date.now() > d.lockedUntil) return { locked: false, minutesLeft: 0 }
+    return { locked: d.count >= MAX_ATTEMPTS, minutesLeft: Math.ceil((d.lockedUntil - Date.now()) / 60000) }
+  }
+  function recordFailure(e: string) {
+    const d = getAttemptData(e) ?? { count: 0, lockedUntil: 0 }
+    const next = { count: d.count + 1, lockedUntil: d.count + 1 >= MAX_ATTEMPTS ? Date.now() + LOCK_MS : d.lockedUntil }
+    try { localStorage.setItem(LOCK_KEY(e), JSON.stringify(next)) } catch { /* ignore */ }
+  }
+  function clearFailures(e: string) {
+    try { localStorage.removeItem(LOCK_KEY(e)) } catch { /* ignore */ }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-400">
@@ -87,6 +109,14 @@ export default function Login() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    // G1: check brute-force lock before attempting
+    if (modo === 'senha') {
+      const { locked, minutesLeft } = isLocked(email)
+      if (locked) {
+        setError(`Muitas tentativas incorretas. Tente novamente em ${minutesLeft} min.`)
+        return
+      }
+    }
     setSubmitting(true)
     setError(null)
     setMagicSent(false)
@@ -106,13 +136,19 @@ export default function Login() {
             return
           }
         }
+        clearFailures(email) // login ok: reset counter
         navigate('/', { replace: true })
       } else {
         await signInWithMagicLink(email)
         setMagicSent(true)
       }
     } catch (err) {
-      setError(traduzErroAuth(err))
+      if (modo === 'senha') recordFailure(email)
+      const { locked, minutesLeft } = isLocked(email)
+      setError(locked
+        ? `Conta bloqueada por excesso de tentativas. Tente novamente em ${minutesLeft} min.`
+        : traduzErroAuth(err)
+      )
     } finally {
       setSubmitting(false)
     }

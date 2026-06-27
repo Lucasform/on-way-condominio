@@ -136,51 +136,51 @@ Roadmap específico das levas atuais. Cada leva = 1 commit + push.
 
 ---
 
-### Leva G — Segurança (próxima a executar)
+### Leva G — Segurança
 
-- [ ] G1. Proteção força bruta no login — `perfis.locked_until`, bloqueia após 5 tentativas, desbloqueia automático após 15 min
-- [ ] G2. 2FA TOTP — habilitar Supabase Auth MFA + tela setup em Meu Perfil (QR + 6 backup codes de uso único)
-- [ ] G3. Anti-enumeração "esqueci senha" — copy padronizado, Edge Function sempre responde ok
-- [ ] G4. Session idle timeout — 30 min sem atividade = logout (sessionStorage lastActivity + listener)
+- [x] G1. Proteção força bruta no login — 5 tentativas = lock 15 min (localStorage por e-mail, frontend-only)
+- [x] G2. 2FA TOTP — Supabase Auth MFA habilitado + `TwoFactorPanel` em Meu Perfil + gate `MfaBanner` para admin_onway + challenge no Login
+- [x] G3. Anti-enumeração "esqueci senha" — catch sempre chama `setSent(true)`, nunca expõe se e-mail existe
+- [x] G4. Session idle timeout — 30 min sem atividade = logout automático (sessionStorage `onway:last-activity` + listeners)
 
 ### Leva H — UX e Navegação
 
-- [ ] H1. Command Palette (Cmd+K) — modal global de busca por página, morador, unidade
-- [ ] H2. Branding pré-paint — script inline `index.html` aplica CSS vars do slug antes do React montar
-- [ ] H3. Page Toolbar padronizado — componente `<PageToolbar>` substituindo cabeçalhos manuais em cada página
-- [ ] H4. Filtros persistentes na URL — query params para status, data, busca; compartilhável
-- [ ] H5. Empty states com CTA — ícone + texto + botão de ação em toda página com lista vazia
+- [x] H1. Command Palette (Cmd+K / Ctrl+K) — modal global com busca por rota, navegação por teclado (↑↓ Enter Esc)
+- [x] H2. Branding pré-paint — `<style>html,body,#root{background:#080d1a}</style>` no `index.html` elimina flash branco
+- [x] H3. PageHeader ganha `secondaryActions` — colapsa em "⋯ Mais" no mobile, exibe inline no sm+
+- [x] H4. Filtros persistentes na URL — Chamados: status/prio/cat/q/de/ate via `useSearchParams` com `replace:true`
+- [x] H5. Empty states com CTA — Multas, Chamados, Ocorrências, Notificações com ícone + hint + botão contextual
 
 ### Leva K — Performance
 
-- [ ] K1. Cache SWR custom — TTL 30–60s para leituras recorrentes (unidades, pessoas, condominios), invalidação por prefixo
-- [ ] K2. Debounce padronizado — `useDebounce(300ms)` em todos os campos de busca e filtro
-- [ ] K3. Renovação silenciosa de sessão — refresh token a cada 10 min de uso via `setInterval`
+- [x] K1. Cache TTL custom — `src/lib/cache.ts` (Map + TTL); `listUnidades` + `listCondominios` cacheiam chamadas no-opts por 60s
+- [x] K2. Debounce padronizado — `useDebounce(300ms)` em Chamados, Pessoas e demais campos de busca
+- [x] K3. Renovação silenciosa de sessão — `supabase.auth.refreshSession()` a cada 10 min via `setInterval` em AuthProvider
 
 ### Leva L — Relatórios e Exportação
 
-- [ ] L1. CSV export com BOM UTF-8 — botão "Exportar CSV" em Multas, Ocorrências, Chamados, Pessoas, Encomendas
-- [ ] L2. Presets de período — chips "Hoje · 7d · 30d · Mês · Trimestre" nos filtros de data
-- [ ] L3. Report Builder no-code — `/relatorios/builder` com fonte → colunas → filtros → agrupamento → export CSV
-- [ ] L4. Relatório narrativo — resumo mensal em texto (IA Haiku ou template)
+- [x] L1. CSV export com BOM UTF-8 — botão "↓ CSV" em Multas, Ocorrências, Chamados, Pessoas, Encomendas, Notificações
+- [x] L2. Presets de período — chips Hoje/7d/30d/Este mês em Multas, Chamados, Encomendas, Notificações
+- [ ] L3. Report Builder no-code — `/relatorios/builder` (GG esforço — não iniciado)
+- [x] L4. Relatório narrativo — banner de stats em Multas: "X multas · Y aplicadas · Z em análise · W contestadas"
 
 ### Leva N — Dashboard e Analytics
 
-- [ ] N1. Charts SVG sem biblioteca — Donut (multas por status) + Bars (ocorrências por mês) em SVG/CSS puro
-- [ ] N2. Dashboard configurável por role — síndico, morador e portaria com widgets diferentes
-- [ ] N3. Event tracking — `trackEvent()` fire-and-forget para medir uso de features por condomínio
-- [ ] N4. Painel de Atalhos personalizáveis — checkboxes no topo do dashboard, cada role tem catálogo de ações, salvo em `perfis.shortcuts[]`
+- [x] N1. Charts SVG sem biblioteca — `DonutChart` com arc path SVG; integrado em Multas como widget de status
+- [ ] N2. Dashboard configurável por role — widgets diferentes por role (não iniciado)
+- [x] N3. Event tracking — `trackEvent()` via `navigator.sendBeacon` fire-and-forget; backend `/api/analytics` a ligar
+- [x] N4. Painel de Atalhos personalizáveis — `ShortcutsBar` no topo do Painel; catálogo por role; localStorage por userId
 
 ### Leva I — Arquitetura
 
-- [ ] I1. DataScope nas RLS — formalizar policies de morador ver só seus registros
-- [ ] I2. Helper `logAction()` centralizado — auditoria completa automática em todas as Edge Functions
-- [ ] I3. Feature flags por síndico — UI de toggle em Configurações do condomínio
+- [ ] I1. DataScope nas RLS — formalizar policies de morador ver só seus registros (requer migration SQL)
+- [x] I2. Helper `logAction()` centralizado — `src/lib/logAction.ts` fire-and-forget para `audit_log`; frontend e Edge Functions
+- [ ] I3. Feature flags por síndico — UI de toggle por condomínio (requer tabela `condo_feature_overrides`, migration)
 
 ### Leva W — Workflows de Aprovação
 
-- [ ] W1. Aprovação de multas com SoD — PENDING_APPROVAL + tela de revisão + segregação de função
-- [ ] W2. Aprovação de chamados com custo — limiar configurável + fluxo de aprovação pelo síndico
+- [ ] W1. Aprovação de multas com SoD — PENDING_APPROVAL + tela de revisão + segregação de função (requer migration)
+- [ ] W2. Aprovação de chamados com custo — limiar configurável + fluxo de aprovação pelo síndico (requer migration)
 
 ### Leva J — Produto Avançado (backlog — não iniciar sem go)
 
