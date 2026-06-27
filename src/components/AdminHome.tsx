@@ -18,11 +18,47 @@ interface CondoUso {
   logo_url?: string | null
 }
 
+const CATALOGO_ATALHOS = [
+  { id: 'condominios',    label: '🏢 Gerenciar condomínios', to: '/condominios' },
+  { id: 'dashboard',      label: '📊 Dashboard global',       to: '/dashboard' },
+  { id: 'painel',         label: '🛠 Painel de serviços',     to: '/painel' },
+  { id: 'parceiros',      label: '🤝 Parceiros',              to: '/parceiros' },
+  { id: 'relatorios',     label: '📋 Relatórios',             to: '/relatorios' },
+  { id: 'auditoria',      label: '🔍 Auditoria',              to: '/auditoria' },
+  { id: 'assinaturas',    label: '💳 Assinaturas',            to: '/assinaturas' },
+  { id: 'emails-log',     label: '📧 Log de e-mails',         to: '/emails-log' },
+  { id: 'funcionalidades',label: '⚙️ Funcionalidades',        to: '/funcionalidades' },
+  { id: 'suporte',        label: '❓ Suporte',                to: '/suporte' },
+  { id: 'fila-envios',    label: '📤 Fila de envios',         to: '/fila-envios' },
+] as const
+
+const ATALHOS_PADRAO = ['condominios', 'dashboard', 'painel']
+
 export default function AdminHome() {
   const { perfil, refreshPerfil, user } = useAuth()
   const [condos, setCondos] = useState<CondoUso[]>([])
   const [loading, setLoading] = useState(true)
   const [trocando, setTrocando] = useState<string | null>(null)
+  const [editandoAtalhos, setEditandoAtalhos] = useState(false)
+  const [atalhosSelecionados, setAtalhosSelecionados] = useState<string[]>(ATALHOS_PADRAO)
+
+  const storageKey = `adminHome_atalhos_${user?.id ?? 'anon'}`
+
+  useEffect(() => {
+    if (!user) return
+    try {
+      const saved = localStorage.getItem(storageKey)
+      if (saved) setAtalhosSelecionados(JSON.parse(saved) as string[])
+    } catch { /* usa padrão */ }
+  }, [user, storageKey])
+
+  function toggleAtalho(id: string) {
+    setAtalhosSelecionados(prev => {
+      const next = prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
+      localStorage.setItem(storageKey, JSON.stringify(next))
+      return next
+    })
+  }
 
   useEffect(() => {
     let mounted = true
@@ -95,25 +131,61 @@ export default function AdminHome() {
 
       <AdminKPIs />
 
-      <div className="flex flex-wrap justify-center gap-3 mb-8 mt-6">
-        <Link
-          to="/condominios"
-          className="px-4 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium hover:bg-slate-700"
-        >
-          🏢 Gerenciar condomínios
-        </Link>
-        <Link
-          to="/dashboard"
-          className="px-4 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium hover:bg-slate-700"
-        >
-          📊 Dashboard global
-        </Link>
-        <Link
-          to="/painel"
-          className="px-4 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium hover:bg-slate-700"
-        >
-          🛠 Painel de serviços
-        </Link>
+      <div className="mb-8 mt-6">
+        <div className="flex flex-wrap justify-center gap-3">
+          {CATALOGO_ATALHOS.filter(a => atalhosSelecionados.includes(a.id)).map(a => (
+            <Link
+              key={a.id}
+              to={a.to}
+              className="px-4 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium hover:bg-slate-700"
+            >
+              {a.label}
+            </Link>
+          ))}
+          <button
+            onClick={() => setEditandoAtalhos(v => !v)}
+            title="Personalizar atalhos"
+            className={`px-3 py-2 rounded-md border text-sm font-medium transition ${
+              editandoAtalhos
+                ? 'bg-brand-700 border-brand-600 text-white'
+                : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-500'
+            }`}
+          >
+            ✏️
+          </button>
+        </div>
+
+        {editandoAtalhos && (
+          <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/60 p-4 max-w-xl mx-auto">
+            <p className="text-xs text-slate-400 mb-3 text-center">Escolha quais atalhos aparecem na sua tela inicial</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {CATALOGO_ATALHOS.map(a => {
+                const ativo = atalhosSelecionados.includes(a.id)
+                return (
+                  <button
+                    key={a.id}
+                    onClick={() => toggleAtalho(a.id)}
+                    className={`px-3 py-2 rounded text-xs font-medium text-left transition border ${
+                      ativo
+                        ? 'bg-brand-700/30 border-brand-600 text-brand-300'
+                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
+                    }`}
+                  >
+                    {ativo ? '✓ ' : ''}{a.label}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="mt-3 text-center">
+              <button
+                onClick={() => setEditandoAtalhos(false)}
+                className="text-xs text-slate-400 hover:text-slate-200"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <h2 className="text-center text-sm font-semibold uppercase tracking-wide text-slate-400 mb-3">

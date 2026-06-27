@@ -175,4 +175,26 @@
 
 ---
 
-*Última atualização: 2026-06-26*
+## 13. Classificados em Mobile
+
+| # | Cenário | Device | Resultado esperado | OK? |
+|---|---------|--------|--------------------|-----|
+| 13.1 | Lista de classificados em 375px | 375px | Cards em coluna única, foto e título legíveis | |
+| 13.2 | Criar anúncio com upload de foto via câmera | iOS / Android | Galeria ou câmera abre; foto aparece no preview | |
+| 13.3 | Detalhe do anúncio em mobile | 375px | Foto em destaque, texto não transborda | |
+| 13.4 | Botão "Publicar" acessível no formulário | 375px | Visível após scroll; sem overlap com teclado | |
+
+---
+
+## 14. Atalhos Customizáveis (Admin OnWay)
+
+| # | Cenário | Device | Resultado esperado | OK? |
+|---|---------|--------|--------------------|-----|
+| 14.1 | Atalhos padrão visíveis na home admin | 375px | Botões em wrap sem overflow | |
+| 14.2 | Botão ✏️ abre painel de personalização | 375px | Grid de 11 opções aparece abaixo; scrollável | |
+| 14.3 | Toque em opção ativa/desativa atalho | 375px | Feedback visual imediato; área de toque >= 44px | |
+| 14.4 | Preferência persiste após fechar e reabrir | iOS / Android | Atalhos mantidos na próxima visita | |
+
+---
+
+*Última atualização: 2026-06-27*

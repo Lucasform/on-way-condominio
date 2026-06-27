@@ -221,4 +221,63 @@
 
 ---
 
-*Última atualização: 2026-06-26*
+## 17. Classificados
+
+| # | Cenário | Usuário | Resultado esperado | OK? |
+|---|---------|---------|-------------------|-----|
+| 17.1 | Morador publica anúncio com foto | morador | Anúncio aparece em /classificados | |
+| 17.2 | Morador publica anúncio sem foto | morador | Funciona sem imagem | |
+| 17.3 | Morador edita próprio anúncio | morador | Alterações salvas; outros usuários não veem botão editar | |
+| 17.4 | Morador exclui próprio anúncio | morador | Anúncio some da listagem | |
+| 17.5 | Morador tenta editar anúncio de outro | morador | Botão editar ausente; acesso bloqueado por RLS | |
+| 17.6 | Filtro por categoria | Qualquer | Lista filtra corretamente | |
+| 17.7 | Módulo desabilitado por feature flag | morador | /classificados redireciona para / | |
+| 17.8 | Visualizar detalhe do anúncio | Qualquer | Página /classificados/:id abre com foto e dados | |
+
+---
+
+## 18. Veículos e Pets
+
+| # | Cenário | Usuário | Resultado esperado | OK? |
+|---|---------|---------|-------------------|-----|
+| 18.1 | Cadastrar veículo para unidade | sindico | Veículo listado em /veiculos com placa e modelo | |
+| 18.2 | Editar veículo | sindico | Campos atualizados corretamente | |
+| 18.3 | Excluir veículo | sindico | Veículo removido da listagem | |
+| 18.4 | Morador vê apenas veículos da própria unidade | morador | RLS isola por unidade | |
+| 18.5 | Cadastrar pet para unidade | sindico | Pet listado em /pets com nome e espécie | |
+| 18.6 | Morador vê apenas pets da própria unidade | morador | RLS isola por unidade | |
+
+---
+
+## 19. Calendário e Solicitações
+
+| # | Cenário | Usuário | Resultado esperado | OK? |
+|---|---------|---------|-------------------|-----|
+| 19.1 | Síndico cria evento no calendário | sindico | Evento aparece em /calendario para todos do condo | |
+| 19.2 | Morador vê calendário do condomínio | morador | Eventos visíveis, sem botão de criação | |
+| 19.3 | Editar evento existente | sindico | Alterações refletidas imediatamente | |
+| 19.4 | Excluir evento | sindico | Evento removido do calendário | |
+| 19.5 | Abrir solicitação de serviço | morador | Status inicial `aberta`; aparece em /solicitacoes | |
+| 19.6 | Síndico responde à solicitação | sindico | Status muda; morador recebe notificação | |
+| 19.7 | Encerrar solicitação | sindico | Status = `encerrada`; some da fila ativa | |
+
+---
+
+## 20. Administrador OnWay — Home e Atalhos
+
+| # | Cenário | Usuário | Resultado esperado | OK? |
+|---|---------|---------|-------------------|-----|
+| 20.1 | Home admin exibe indicadores do mês | admin_onway | Cards com resposta média no chat, multas e ocorrências > 7 dias carregam | |
+| 20.2 | Atalhos padrão aparecem ao primeiro acesso | admin_onway | "Gerenciar condomínios", "Dashboard global", "Painel de serviços" visíveis | |
+| 20.3 | Botão ✏️ abre painel de personalização | admin_onway | Grid com 11 opções de atalho aparece abaixo dos botões | |
+| 20.4 | Ativar atalho "Parceiros" | admin_onway | Botão "🤝 Parceiros" aparece imediatamente na fila | |
+| 20.5 | Desativar atalho "Dashboard global" | admin_onway | Botão some dos atalhos; opção no grid fica desmarcada | |
+| 20.6 | Preferência persiste após reload | admin_onway | Ao recarregar a página, atalhos personalizados se mantêm | |
+| 20.7 | Botão ✏️ fecha painel ao clicar novamente | admin_onway | Painel some; botão volta ao estilo inativo | |
+| 20.8 | Nenhum atalho selecionado | admin_onway | Fila de atalhos fica vazia; botão ✏️ permanece visível | |
+| 20.9 | Entrar em condomínio via card | admin_onway | Clica "Entrar nesse condomínio", app carrega o condo selecionado | |
+| 20.10 | Voltar pra visão global (view-as) | admin_onway | Botão "← Voltar pra visão global" aparece ao entrar num condo; clique sai do view-as | |
+
+---
+
+*Última atualização: 2026-06-27*
