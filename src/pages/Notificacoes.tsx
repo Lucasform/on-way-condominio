@@ -10,8 +10,10 @@ import { useAuth } from '../components/AuthProvider'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
+import EmptyState from '../components/ui/EmptyState'
 import { Select } from '../components/ui/Input'
 import DataTable, { type Column } from '../components/ui/DataTable'
+import { downloadCsv } from '../lib/csv'
 
 const STATUS_CLASS: Record<StatusNotificacao, string> = {
   pendente:     'bg-amber-500/10 text-amber-300 border border-amber-500/30',
@@ -88,6 +90,18 @@ export default function Notificacoes() {
   }
 
   const condoNome = (id: string) => condos.find((c) => c.id === id)?.nome ?? '-'
+
+  function setPreset(days: number | 'hoje' | 'mes') {
+    const fmt = (d: Date) => d.toISOString().slice(0, 10)
+    const today = new Date()
+    if (days === 'hoje') { setDataDe(fmt(today)); setDataAte(fmt(today)); return }
+    if (days === 'mes') {
+      setDataDe(fmt(new Date(today.getFullYear(), today.getMonth(), 1)))
+      setDataAte(fmt(today)); return
+    }
+    const from = new Date(today); from.setDate(from.getDate() - days)
+    setDataDe(fmt(from)); setDataAte(fmt(today))
+  }
 
   const podeCriar = perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role)
   const podeBulk = podeCriar
@@ -174,11 +188,30 @@ export default function Notificacoes() {
         title="Notificações"
         subtitle="Advertências formais emitidas a partir de uma ocorrência. Sem valor financeiro."
         actions={
-          podeCriar ? (
-            <Link to="/ocorrencias">
-              <Button variant="secondary">Ir para ocorrências →</Button>
-            </Link>
-          ) : undefined
+          <div className="flex items-center gap-2">
+            {filteredRows.length > 0 && (
+              <button
+                onClick={() => downloadCsv(
+                  `notificacoes-${new Date().toISOString().slice(0, 10)}.csv`,
+                  ['Data', 'Assunto', 'Unidade', 'Status'],
+                  filteredRows.map((r) => [
+                    new Date(r.created_at).toLocaleDateString('pt-BR'),
+                    r.assunto,
+                    unidadeLabel(r.unidade_id),
+                    NOTIFICACAO_STATUS_LABEL[r.status],
+                  ])
+                )}
+                className="text-xs px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+              >
+                ↓ CSV
+              </button>
+            )}
+            {podeCriar && (
+              <Link to="/ocorrencias">
+                <Button variant="secondary">Ir para ocorrências →</Button>
+              </Link>
+            )}
+          </div>
         }
       />
 
@@ -210,9 +243,20 @@ export default function Notificacoes() {
           <label className="block text-xs font-medium text-slate-400 mb-1">Até</label>
           <input ref={dataAteRef} type="date" value={dataAte} onChange={(e) => setDataAte(e.target.value)} onClick={() => dataAteRef.current?.showPicker?.()} className="px-3 py-2 rounded-md bg-slate-950 border border-slate-700 text-slate-100 text-sm" />
         </div>
-        {(dataDe || dataAte) && (
-          <Button size="sm" variant="ghost" onClick={() => { setDataDe(''); setDataAte('') }}>Limpar datas</Button>
-        )}
+        <div className="flex flex-wrap gap-1 items-end pb-0.5">
+          {(['hoje', 7, 30, 'mes'] as const).map((p) => (
+            <button
+              key={String(p)}
+              onClick={() => setPreset(p)}
+              className="px-2 py-1 text-xs rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+            >
+              {p === 'hoje' ? 'Hoje' : p === 'mes' ? 'Este mês' : `${p}d`}
+            </button>
+          ))}
+          {(dataDe || dataAte) && (
+            <button onClick={() => { setDataDe(''); setDataAte('') }} className="px-2 py-1 text-xs rounded-md text-slate-500 hover:text-slate-300 transition-colors">✕</button>
+          )}
+        </div>
       </div>
 
       {podeBulk && (
@@ -239,14 +283,23 @@ export default function Notificacoes() {
         </div>
       )}
 
-      <DataTable
-        columns={columns}
-        rows={filteredRows}
-        rowKey={(r) => r.id}
-        loading={loading}
-        onRowClick={(r) => navigate(`/notificacoes/${r.id}`)}
-        emptyMessage="Nenhuma notificação."
-      />
+      {!loading && filteredRows.length === 0 ? (
+        <EmptyState
+          icon="🔔"
+          message="Nenhuma notificação encontrada."
+          hint={dataDe || dataAte || status ? 'Tente ajustar os filtros.' : 'Notificações são geradas a partir de ocorrências.'}
+          action={podeCriar ? <Link to="/ocorrencias"><Button size="sm" variant="secondary">Ver ocorrências →</Button></Link> : undefined}
+        />
+      ) : (
+        <DataTable
+          columns={columns}
+          rows={filteredRows}
+          rowKey={(r) => r.id}
+          loading={loading}
+          onRowClick={(r) => navigate(`/notificacoes/${r.id}`)}
+          emptyMessage="Nenhuma notificação."
+        />
+      )}
     </div>
   )
 }

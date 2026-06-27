@@ -2,6 +2,7 @@
 import { useDebounce } from '../hooks/useDebounce'
 import { Link, useNavigate } from 'react-router-dom'
 import { listPessoas, setPessoaAtivo, convidarPessoa, resetSenhaUsuario, excluirUsuarioAuth } from '../lib/pessoas'
+import { downloadCsv } from '../lib/csv'
 import { listCondominios } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
 import type { Pessoa } from '../types/pessoa'
@@ -276,6 +277,25 @@ export default function Pessoas() {
         subtitle="Moradores, funcionários e diretoria. Filtre pelas abas."
         actions={
           <>
+            {tab !== 'sem_cadastro' && rowsFiltrados.length > 0 && (
+              <button
+                onClick={() => downloadCsv(
+                  `pessoas-${tab}-${new Date().toISOString().slice(0, 10)}.csv`,
+                  ['Nome', 'Vínculo', 'Unidade', 'E-mail', 'Telefone', 'Ativo'],
+                  rowsFiltrados.map((p) => [
+                    p.nome,
+                    p.tipo_vinculo,
+                    unidadeLabel(p.unidade_id),
+                    p.email ?? '',
+                    p.telefone ?? '',
+                    p.ativo ? 'Sim' : 'Não',
+                  ])
+                )}
+                className="text-xs px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+              >
+                ↓ CSV
+              </button>
+            )}
             {isGestor(perfil?.role) && (
               <Button variant="secondary" onClick={() => setShowImport((v) => !v)}>
                 {showImport ? '✕ Fechar importação' : '⬆ Importar'}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link, NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from './AuthProvider'
 import { signOut } from '../lib/auth'
@@ -11,6 +11,7 @@ import Logo from './Logo'
 import CondominioSwitcher from './CondominioSwitcher'
 import AccountMenu from './AccountMenu'
 import FeedbackWidget from './FeedbackWidget'
+import CommandPalette from './ui/CommandPalette'
 import AppAiChat from './AppAiChat'
 import ThemeToggle from './ThemeToggle'
 import { prefetchRoutes } from '../lib/prefetchRoutes'
@@ -81,6 +82,16 @@ export default function AppShell() {
     return () => { alive = false; clearInterval(t) }
   }, [perfil])
 
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  const closePalette = useCallback(() => setPaletteOpen(false), [])
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setPaletteOpen((v) => !v) }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
   const [condoLogo, setCondoLogo] = useState<string | null>(null)
   const [condoNome, setCondoNome] = useState<string | null>(null)
 
@@ -115,6 +126,7 @@ export default function AppShell() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex transition-colors">
+      <CommandPalette open={paletteOpen} onClose={closePalette} />
       {/* Sidebar — só desktop. No mobile a navegação é o launcher de ícones. */}
       <aside
         className="hidden md:flex w-64 shrink-0 border-r border-slate-800 bg-slate-900/40 flex-col"

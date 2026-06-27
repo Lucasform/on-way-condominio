@@ -149,6 +149,21 @@ export default function Multas() {
     filteredRows.reduce((acc, m) => { acc[m.status] = (acc[m.status] ?? 0) + 1; return acc }, {} as Record<string, number>)
   ).map(([status, count]) => ({ label: MULTA_STATUS_LABEL[status as keyof typeof MULTA_STATUS_LABEL] ?? status, value: count, color: STATUS_COLORS[status] ?? '#64748b' }))
 
+  // L4: narrative stats summary
+  const statsNarrative = (() => {
+    if (filteredRows.length === 0) return null
+    const aplicadas = filteredRows.filter((m) => m.status === 'aplicada').length
+    const emAnalise = filteredRows.filter((m) => m.status === 'em_analise').length
+    const contestadas = filteredRows.filter((m) => m.status === 'contestada').length
+    const pagas = filteredRows.filter((m) => m.status === 'paga').length
+    const parts: string[] = []
+    if (aplicadas) parts.push(`${aplicadas} aplicada${aplicadas > 1 ? 's' : ''}`)
+    if (emAnalise) parts.push(`${emAnalise} em análise`)
+    if (contestadas) parts.push(`${contestadas} contestada${contestadas > 1 ? 's' : ''}`)
+    if (pagas) parts.push(`${pagas} paga${pagas > 1 ? 's' : ''}`)
+    return `${filteredRows.length} multa${filteredRows.length > 1 ? 's' : ''} · ${parts.join(' · ')}`
+  })()
+
   const podeBulk = !isMorador
   const arquivaveis = filteredRows.filter((m) => m.status !== 'arquivada').map((m) => m.id)
   const todosSelecionados = arquivaveis.length > 0 && arquivaveis.every((id) => selected.has(id))
@@ -261,6 +276,9 @@ export default function Multas() {
             <button onClick={() => { setDataDe(''); setDataAte('') }} className="px-2 py-1 text-xs rounded-md text-slate-500 hover:text-slate-300 transition-colors">✕</button>
           )}
         </div>
+        {statsNarrative && (
+          <p className="text-xs text-slate-500 mt-1">{statsNarrative}</p>
+        )}
         {filteredRows.length > 0 && !isMorador && (
           <div className="ml-auto flex items-center gap-4">
             <div className="flex items-center gap-2">

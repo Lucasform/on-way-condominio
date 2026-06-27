@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { listEncomendas, darBaixaEncomenda, devolverEncomenda } from '../lib/encomendas'
+import { downloadCsv } from '../lib/csv'
 import { listCondominios } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
 import type { Encomenda, StatusEncomenda, TipoEncomenda } from '../types/encomenda'
@@ -216,6 +217,29 @@ export default function Encomendas() {
           )
         }
       />
+
+      {!isMorador && rowsTab.length > 0 && (
+        <div className="mb-3 flex justify-end">
+          <button
+            onClick={() => downloadCsv(
+              `encomendas-${tab}-${new Date().toISOString().slice(0, 10)}.csv`,
+              ['Data', 'Tipo', 'Unidade', 'Remetente', 'Código', 'Status', 'Retirada por'],
+              rowsTab.map((e) => [
+                new Date(e.created_at).toLocaleDateString('pt-BR'),
+                TIPO_LABEL[e.tipo],
+                unidadeLabel(e.unidade_id),
+                e.transportadora ?? '',
+                e.codigo_rastreio ?? '',
+                STATUS_LABEL[e.status],
+                e.entregue_para ?? '',
+              ])
+            )}
+            className="text-xs px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors"
+          >
+            ↓ CSV
+          </button>
+        </div>
+      )}
 
       <div className="mb-5 flex flex-wrap gap-4 items-end">
         {isAdmin && condos.length > 0 && (

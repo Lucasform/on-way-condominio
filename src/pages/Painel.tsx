@@ -15,6 +15,7 @@ import { useToast } from '../components/ui/Toast'
 import { useConfirm } from '../components/ui/ConfirmProvider'
 import { usePrompt } from '../components/ui/PromptProvider'
 import PageHeader from '../components/ui/PageHeader'
+import ShortcutsBar from '../components/ui/ShortcutsBar'
 import Tabs from '../components/ui/Tabs'
 import { Select } from '../components/ui/Input'
 
@@ -350,6 +351,7 @@ export default function Painel() {
         title="Painel de trabalho"
         subtitle="Pipeline de ocorrências, multas e chamados. Use as colunas pra ver onde está o trabalho."
       />
+      <ShortcutsBar role={perfil?.role} userId={perfil?.id} />
 
       <div className="mb-5 flex gap-4 items-end">
         {isAdmin && condos.length > 0 && (
