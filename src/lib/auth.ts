@@ -19,6 +19,13 @@ export const GOOGLE_AUTH_ENABLED = false
 // Login com senha (clássico)
 // ============================================================
 
+/**
+ * Autentica o usuário com e-mail e senha.
+ * @param email E-mail do usuário (será trimado)
+ * @param password Senha
+ * @returns Dados da sessão do Supabase Auth
+ * @throws Erro de autenticação em credenciais inválidas ou conta inativa
+ */
 export async function signInWithPassword(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({
     email: email.trim(),
@@ -32,6 +39,11 @@ export async function signInWithPassword(email: string, password: string) {
 // Login com magic link (sem senha)
 // ============================================================
 
+/**
+ * Envia magic link para o e-mail informado. Funciona apenas para usuários já cadastrados.
+ * @param email E-mail do usuário (será trimado)
+ * @throws Erro do Supabase se o e-mail não existir ou falha no envio
+ */
 export async function signInWithMagicLink(email: string) {
   const { error } = await supabase.auth.signInWithOtp({
     email: email.trim(),
@@ -53,6 +65,12 @@ export interface SignupInput {
   nome?: string
 }
 
+/**
+ * Cria uma nova conta de usuário.
+ * @param input Dados de cadastro: e-mail obrigatório, senha obrigatória e nome opcional
+ * @returns Dados da sessão/usuário criado pelo Supabase Auth
+ * @throws Erro se e-mail já existir ou se a senha não atender os requisitos
+ */
 export async function signUp(input: SignupInput) {
   const { data, error } = await supabase.auth.signUp({
     email: input.email.trim(),
@@ -70,6 +88,11 @@ export async function signUp(input: SignupInput) {
 // Login com Google (OAuth)
 // ============================================================
 
+/**
+ * Inicia fluxo OAuth com Google. Redireciona o browser para o provider.
+ * Deve ser habilitado no dashboard Supabase antes de usar (`GOOGLE_AUTH_ENABLED`).
+ * @throws Erro do Supabase se o provider Google não estiver configurado
+ */
 export async function signInWithGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -82,6 +105,11 @@ export async function signInWithGoogle() {
 // Esqueci senha — solicitar reset
 // ============================================================
 
+/**
+ * Envia e-mail de redefinição de senha para o endereço informado.
+ * @param email E-mail do usuário (será trimado)
+ * @throws Erro do Supabase em caso de falha no envio
+ */
 export async function requestPasswordReset(email: string) {
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
     redirectTo: `${SITE_URL}/atualizar-senha`,
@@ -93,6 +121,11 @@ export async function requestPasswordReset(email: string) {
 // Atualizar senha (depois do clique no link de reset)
 // ============================================================
 
+/**
+ * Atualiza a senha do usuário autenticado. Deve ser chamado após o clique no link de reset.
+ * @param novaSenha Nova senha a definir
+ * @throws Erro do Supabase se a sessão for inválida ou a senha não atender os requisitos
+ */
 export async function updatePassword(novaSenha: string) {
   const { error } = await supabase.auth.updateUser({ password: novaSenha })
   if (error) throw error
@@ -106,10 +139,18 @@ export async function updatePassword(novaSenha: string) {
 // pula a janela de graça e desloga na hora.
 const LOGOUT_INTENT_KEY = 'onway:logout-intent'
 
+/**
+ * Sinaliza no sessionStorage que o logout foi intencional.
+ * Permite que o AuthProvider ignore a janela de graça e deslogue imediatamente.
+ */
 export function markLogoutIntent() {
   try { sessionStorage.setItem(LOGOUT_INTENT_KEY, '1') } catch { /* ignore */ }
 }
 
+/**
+ * Lê e remove a flag de intenção de logout do sessionStorage.
+ * @returns `true` se havia uma intenção de logout pendente, `false` caso contrário
+ */
 export function consumeLogoutIntent(): boolean {
   try {
     const v = sessionStorage.getItem(LOGOUT_INTENT_KEY)
@@ -118,6 +159,11 @@ export function consumeLogoutIntent(): boolean {
   } catch { return false }
 }
 
+/**
+ * Encerra a sessão do usuário autenticado.
+ * Marca a intenção de logout antes de chamar o Supabase para evitar re-login automático.
+ * @throws Erro do Supabase em caso de falha no signOut
+ */
 export async function signOut() {
   markLogoutIntent()
   const { error } = await supabase.auth.signOut()
@@ -128,6 +174,12 @@ export async function signOut() {
 // Perfil do user logado
 // ============================================================
 
+/**
+ * Busca o perfil ativo do usuário autenticado na tabela `perfis`.
+ * @param userId UUID do usuário (auth.users.id)
+ * @returns Perfil encontrado ou `null` se o usuário não tiver perfil ativo
+ * @throws Erro do Supabase em caso de falha na consulta
+ */
 export async function fetchCurrentPerfil(userId: string): Promise<Perfil | null> {
   const { data, error } = await supabase
     .from('perfis')

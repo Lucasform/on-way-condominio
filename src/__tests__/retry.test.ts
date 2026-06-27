@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { withRetry } from '../lib/retry'
+import { withRetry, isNetworkError, withCircuitBreaker } from '../lib/retry'
 
 describe('withRetry', () => {
   it('retorna o resultado na primeira tentativa quando bem-sucedido', async () => {
@@ -30,5 +30,47 @@ describe('withRetry', () => {
       withRetry(fn, { attempts: 3, baseDelayMs: 0, shouldRetry: () => false })
     ).rejects.toThrow('fatal')
     expect(fn).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('isNetworkError', () => {
+  it('identifica erro de fetch como erro de rede', () => {
+    expect(isNetworkError(new Error('Failed to fetch'))).toBe(true)
+  })
+
+  it('identifica erro de timeout como erro de rede', () => {
+    expect(isNetworkError(new Error('Request timeout'))).toBe(true)
+  })
+
+  it('não classifica erro de negócio como erro de rede', () => {
+    expect(isNetworkError(new Error('Usuário não encontrado'))).toBe(false)
+  })
+
+  it('retorna false para valores não-Error', () => {
+    expect(isNetworkError('string error')).toBe(false)
+    expect(isNetworkError(null)).toBe(false)
+  })
+})
+
+describe('withCircuitBreaker', () => {
+  it('executa normalmente quando não há falhas', async () => {
+    const fn = vi.fn().mockResolvedValue('resultado')
+    const result = await withCircuitBreaker('test-ok', fn)
+    expect(result).toBe('resultado')
+  })
+
+  it('abre o circuito após atingir o threshold de falhas', async () => {
+    const fn = vi.fn().mockRejectedValue(new Error('serviço fora'))
+    const key = 'test-circuit-' + Math.random()
+
+    for (let i = 0; i < 5; i++) {
+      await expect(
+        withCircuitBreaker(key, fn, { threshold: 5, cooldownMs: 60_000 })
+      ).rejects.toThrow()
+    }
+
+    await expect(
+      withCircuitBreaker(key, fn, { threshold: 5, cooldownMs: 60_000 })
+    ).rejects.toThrow('CircuitBreaker')
   })
 })

@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import { FeatureFlagsProvider } from './contexts/FeatureFlagsContext'
 import AppShell from './components/AppShell'
 import Logo from './components/Logo'
+import OfflineBanner from './components/OfflineBanner'
 
 // Eager: telas críticas de entrada
 import Home from './pages/Home'
@@ -119,6 +120,7 @@ export default function App() {
     <ToastProvider>
     <ConfirmProvider>
     <PromptProvider>
+      <OfflineBanner />
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
         <Routes>

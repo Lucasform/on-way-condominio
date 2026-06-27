@@ -90,7 +90,7 @@ export async function extractPdfWithAI(
     try {
       const data = await res.json() as Record<string, unknown>
       if (data?.error) errMsg = data.error as string
-    } catch {}
+    } catch { /* resposta não era JSON válido */ }
     throw new Error(errMsg)
   }
 

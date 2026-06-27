@@ -120,6 +120,7 @@ export async function loadTenantBrand(slug: string): Promise<TenantBrand | null>
   return brand
 }
 
+/** Remove o cache de brand do tenant armazenado no localStorage. */
 export function clearTenantCache(): void {
   try {
     localStorage.removeItem(CACHE_KEY)

@@ -152,9 +152,8 @@ const CARGO_LABEL: Record<string, string> = {
   outro: 'Participante',
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function renderizarAssinaturas(
-  doc: any,
+  doc: Record<string, unknown>,
   opts: {
     y: number
     W: number
