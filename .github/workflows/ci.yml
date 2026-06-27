@@ -8,7 +8,7 @@ on:
 
 jobs:
   typecheck:
-    name: TypeScript
+    name: TypeScript + Lint + Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,6 +19,8 @@ jobs:
       - run: npm ci
       - run: npx tsc -p tsconfig.app.json --noEmit
       - run: npx tsc -p tsconfig.node.json --noEmit
+      - run: npx eslint . --max-warnings 0
+      - run: npm test
 
   e2e:
     name: E2E (Playwright)
