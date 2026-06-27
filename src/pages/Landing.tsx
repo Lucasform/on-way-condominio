@@ -25,7 +25,7 @@ const PLANOS = [
   {
     id: 'starter',
     nome: 'Starter',
-    preco: 149,
+    preco: 250,
     limite: 'Até 30 unidades',
     features: ['Portaria digital', 'Acessos autorizados', 'Cadastro de moradores', 'Mural informativo', 'Ocorrências e chamados'],
     destaque: false,
@@ -33,7 +33,7 @@ const PLANOS = [
   {
     id: 'profissional',
     nome: 'Profissional',
-    preco: 269,
+    preco: 450,
     limite: 'Até 150 unidades',
     features: ['Tudo do Starter', 'Chat interno', 'Comunicados oficiais', 'Classificados', 'Multas', 'Calendário de eventos'],
     destaque: true,
@@ -41,7 +41,7 @@ const PLANOS = [
   {
     id: 'completo',
     nome: 'Completo',
-    preco: 509,
+    preco: 850,
     limite: 'Unidades ilimitadas',
     features: ['Tudo do Profissional', 'Assembleias digitais', 'Votações com ata em PDF', 'IA assistente', 'Relatórios', 'Auditoria'],
     destaque: false,
