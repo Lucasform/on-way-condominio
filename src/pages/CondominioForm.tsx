@@ -380,6 +380,35 @@ export default function CondominioForm() {
           </div>
         </fieldset>
 
+        {/* W2: Limiar de aprovação de chamados + J4: modo demo */}
+        <fieldset className="border border-slate-700 rounded-lg p-5 space-y-4">
+          <legend className="px-2 text-sm font-semibold text-slate-300">Operação</legend>
+          <Field
+            label="Limiar de aprovação de chamados (R$)"
+            hint="Chamados com custo estimado acima desse valor exigem aprovação do síndico."
+          >
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={(form as Record<string, unknown>).limiar_aprovacao_chamado != null
+                ? String((form as Record<string, unknown>).limiar_aprovacao_chamado)
+                : '500'}
+              onChange={(e) => update('limiar_aprovacao_chamado' as keyof typeof form, parseFloat(e.target.value) as never)}
+              className="w-full rounded-md border border-slate-700 bg-slate-800 text-slate-100 px-3 py-2 text-sm focus:outline-none focus:border-violet-500"
+            />
+          </Field>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              className="accent-violet-500 w-4 h-4"
+              checked={Boolean((form as Record<string, unknown>).is_demo)}
+              onChange={(e) => update('is_demo' as keyof typeof form, e.target.checked as never)}
+            />
+            <span className="text-sm text-slate-300">Modo demonstração (exibe banner informativo)</span>
+          </label>
+        </fieldset>
+
         {error && (
           <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">
             {error}

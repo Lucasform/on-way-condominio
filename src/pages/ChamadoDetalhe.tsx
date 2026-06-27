@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { assignChamado, deleteChamado, getChamado, updateChamadoStatus } from '../lib/chamados'
+import { approveChamado, assignChamado, deleteChamado, getChamado, updateChamadoStatus } from '../lib/chamados'
 import { listStaffCondominio } from '../lib/chat'
 import { getUnidade } from '../lib/unidades'
 import type { Chamado, StatusChamado } from '../types/chamado'
@@ -16,6 +16,7 @@ import { DetailSkeleton } from '../components/ui/Skeleton'
 import { Field, TextArea, Select } from '../components/ui/Input'
 
 const STATUS_LABEL: Record<StatusChamado, string> = {
+  pendente_aprovacao: 'Aguard. aprovação',
   aberto: 'Aberto',
   em_andamento: 'Em andamento',
   aguardando: 'Aguardando',
@@ -25,6 +26,7 @@ const STATUS_LABEL: Record<StatusChamado, string> = {
 }
 
 const STATUS_CLASS: Record<StatusChamado, string> = {
+  pendente_aprovacao: 'bg-violet-500/10 text-violet-300 border-violet-500/30',
   aberto: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
   em_andamento: 'bg-sky-500/10 text-sky-300 border-sky-500/30',
   aguardando: 'bg-orange-500/10 text-orange-300 border-orange-500/30',
@@ -34,6 +36,7 @@ const STATUS_CLASS: Record<StatusChamado, string> = {
 }
 
 const TRANSITIONS: Record<StatusChamado, StatusChamado[]> = {
+  pendente_aprovacao: [],
   aberto: ['em_andamento', 'aguardando', 'cancelado'],
   em_andamento: ['aguardando', 'resolvido', 'cancelado'],
   aguardando: ['em_andamento', 'resolvido', 'cancelado'],
@@ -242,7 +245,40 @@ export default function ChamadoDetalhe() {
         </div>
       </div>
 
-      {canManage && TRANSITIONS[chamado.status].length > 0 && !showResolForm && (
+      {/* W2: painel de aprovação por custo */}
+      {canManage && chamado.status === 'pendente_aprovacao' && (
+        <div className="mt-6 rounded-lg border border-violet-500/30 bg-violet-500/5 p-5">
+          <div className="text-sm font-medium text-violet-200 mb-1">Aprovação necessária</div>
+          <p className="text-xs text-slate-400 mb-1">
+            Este chamado tem custo estimado de{' '}
+            <strong>R$ {Number(chamado.custo_estimado ?? 0).toFixed(2).replace('.', ',')}</strong>,
+            acima do limiar do condomínio. O síndico precisa aprovar antes de executar.
+          </p>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <Button
+              onClick={async () => {
+                if (!perfil) return
+                setChanging(true)
+                try { await approveChamado(chamado.id, perfil.id); await load() }
+                catch (e) { toast.error('Erro', e instanceof Error ? e.message : '') }
+                finally { setChanging(false) }
+              }}
+              disabled={changing}
+            >
+              Aprovar chamado
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => handleChange('cancelado')}
+              disabled={changing}
+            >
+              Recusar
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {canManage && chamado.status !== 'pendente_aprovacao' && TRANSITIONS[chamado.status].length > 0 && !showResolForm && (
         <div className="mt-6 rounded-lg border border-slate-800 bg-slate-900/40 p-5">
           <div className="text-sm font-medium text-slate-300 mb-3">Mudar status para:</div>
           <div className="flex flex-wrap gap-2">

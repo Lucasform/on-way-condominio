@@ -1,4 +1,5 @@
 export type StatusMulta =
+  | 'pendente_aprovacao'
   | 'em_analise'
   | 'aplicada'
   | 'paga'
@@ -13,6 +14,7 @@ export interface Multa {
   pessoa_id: string | null
   ocorrencia_id: string | null
   aplicada_por: string
+  criado_por: string | null
   valor: number
   artigo_regimento: string | null
   descricao: string

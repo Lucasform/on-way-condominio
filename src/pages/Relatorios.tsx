@@ -12,12 +12,31 @@ import Button from '../components/ui/Button'
 import { Field, TextInput, Select } from '../components/ui/Input'
 
 type TipoRelatorio = 'ocorrencias' | 'multas' | 'encomendas' | 'chamados'
+type FormatoExport = 'pdf' | 'csv'
 
 const TIPO_LABEL: Record<TipoRelatorio, string> = {
   ocorrencias: 'Ocorrências',
   multas: 'Multas',
   encomendas: 'Encomendas',
   chamados: 'Chamados de manutenção',
+}
+
+// L3: Templates pré-definidos de relatório
+const TEMPLATES: { label: string; tipo: TipoRelatorio; meses: number }[] = [
+  { label: 'Multas do mês', tipo: 'multas', meses: 1 },
+  { label: 'Ocorrências do trimestre', tipo: 'ocorrencias', meses: 3 },
+  { label: 'Chamados dos últimos 30 dias', tipo: 'chamados', meses: 1 },
+]
+
+function exportCsv(filename: string, head: string[], rows: string[][]) {
+  const esc = (v: string) => `"${v.replace(/"/g, '""')}"`
+  const lines = [head.map(esc).join(';'), ...rows.map((r) => r.map(esc).join(';'))]
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(a.href)
 }
 
 export default function Relatorios() {
@@ -35,6 +54,7 @@ export default function Relatorios() {
   })()
   const [desde, setDesde] = useState(monthAgo)
   const [ate, setAte] = useState(today)
+  const [formato, setFormato] = useState<FormatoExport>('pdf')
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -52,6 +72,15 @@ export default function Relatorios() {
   function inRange(iso: string): boolean {
     const t = new Date(iso).getTime()
     return t >= new Date(desde).getTime() && t <= new Date(ate + 'T23:59:59').getTime()
+  }
+
+  function applyTemplate(t: typeof TEMPLATES[number]) {
+    const hoje = new Date()
+    const inicio = new Date()
+    inicio.setMonth(hoje.getMonth() - t.meses)
+    setTipo(t.tipo)
+    setAte(hoje.toISOString().slice(0, 10))
+    setDesde(inicio.toISOString().slice(0, 10))
   }
 
   async function handleGerar() {
@@ -93,12 +122,13 @@ export default function Relatorios() {
         41,
       )
 
-      let head: string[][] = []
+      let head: string[] = []
       let body: string[][] = []
 
+      let multaTotais = ''
       if (tipo === 'ocorrencias') {
         const data = (await listOcorrencias({ condominio_id: scopeId })).filter((o) => inRange(o.created_at))
-        head = [['Data', 'Unidade', 'Local', 'Descrição', 'Status']]
+        head = ['Data', 'Unidade', 'Local', 'Descrição', 'Status']
         body = data.map((o) => [
           new Date(o.created_at).toLocaleDateString('pt-BR'),
           unidLabel(o.unidade_id),
@@ -108,7 +138,7 @@ export default function Relatorios() {
         ])
       } else if (tipo === 'multas') {
         const data = (await listMultas({ condominio_id: scopeId })).filter((m) => inRange(m.created_at))
-        head = [['Data', 'Unidade', 'Valor (R$)', 'Status', 'Artigo', 'Descrição']]
+        head = ['Data', 'Unidade', 'Valor (R$)', 'Status', 'Artigo', 'Descrição']
         body = data.map((m) => [
           new Date(m.created_at).toLocaleDateString('pt-BR'),
           unidLabel(m.unidade_id),
@@ -117,16 +147,12 @@ export default function Relatorios() {
           m.artigo_regimento ?? '—',
           m.descricao.slice(0, 60),
         ])
-        // Totais
         const total = data.reduce((s, m) => s + Number(m.valor), 0)
         const pagas = data.filter((m) => m.status === 'paga').reduce((s, m) => s + Number(m.valor), 0)
-        doc.setFontSize(10)
-        doc.setTextColor(0)
-        doc.text(`Total no período: R$ ${total.toFixed(2).replace('.', ',')}`, 14, 50)
-        doc.text(`Arrecadado (pagas): R$ ${pagas.toFixed(2).replace('.', ',')}`, 14, 55)
+        multaTotais = `Total: R$ ${total.toFixed(2).replace('.', ',')} · Arrecadado: R$ ${pagas.toFixed(2).replace('.', ',')}`
       } else if (tipo === 'encomendas') {
         const data = (await listEncomendas({ condominio_id: scopeId })).filter((e) => inRange(e.created_at))
-        head = [['Data', 'Unidade', 'Tipo', 'Transportadora', 'Status']]
+        head = ['Data', 'Unidade', 'Tipo', 'Transportadora', 'Status']
         body = data.map((e) => [
           new Date(e.created_at).toLocaleDateString('pt-BR'),
           unidLabel(e.unidade_id),
@@ -136,7 +162,7 @@ export default function Relatorios() {
         ])
       } else if (tipo === 'chamados') {
         const data = (await listChamados({ condominio_id: scopeId })).filter((c) => inRange(c.created_at))
-        head = [['Data', 'Unidade', 'Categoria', 'Prioridade', 'Status', 'Título']]
+        head = ['Data', 'Unidade', 'Categoria', 'Prioridade', 'Status', 'Título']
         body = data.map((c) => [
           new Date(c.created_at).toLocaleDateString('pt-BR'),
           unidLabel(c.unidade_id),
@@ -147,10 +173,24 @@ export default function Relatorios() {
         ])
       }
 
+      // CSV export — sai direto, sem continuar para PDF
+      if (formato === 'csv') {
+        const fname = `${TIPO_LABEL[tipo].toLowerCase().replace(/\s/g, '-')}-${desde}-a-${ate}.csv`
+        exportCsv(fname, head, body)
+        return
+      }
+
+      // PDF export
+      if (tipo === 'multas' && multaTotais) {
+        doc.setFontSize(10)
+        doc.setTextColor(0)
+        doc.text(multaTotais, 14, 50)
+      }
+
       const startY = tipo === 'multas' ? 62 : 48
       autoTable(doc, {
         startY,
-        head,
+        head: [head],
         body,
         styles: { fontSize: 9, cellPadding: 2 },
         headStyles: { fillColor: [16, 185, 129] },
@@ -187,18 +227,43 @@ export default function Relatorios() {
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <PageHeader
         title="Relatórios"
-        subtitle="Gere relatórios em PDF do período escolhido."
+        subtitle="Gere relatórios em PDF ou CSV do período escolhido."
       />
 
+      {/* L3: Templates rápidos */}
+      <div className="mb-6">
+        <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Templates rápidos</div>
+        <div className="flex flex-wrap gap-2">
+          {TEMPLATES.map((t) => (
+            <button
+              key={t.label}
+              type="button"
+              onClick={() => applyTemplate(t)}
+              className="px-3 py-1.5 rounded-md border border-slate-700 bg-slate-800 text-xs text-slate-300 hover:border-violet-500/50 hover:text-violet-300 transition"
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-6 space-y-5">
-        <Field label="Tipo de relatório" required>
-          <Select value={tipo} onChange={(e) => setTipo(e.target.value as TipoRelatorio)}>
-            <option value="multas">Multas</option>
-            <option value="ocorrencias">Ocorrências</option>
-            <option value="encomendas">Encomendas</option>
-            <option value="chamados">Chamados de manutenção</option>
-          </Select>
-        </Field>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Tipo de relatório" required>
+            <Select value={tipo} onChange={(e) => setTipo(e.target.value as TipoRelatorio)}>
+              <option value="multas">Multas</option>
+              <option value="ocorrencias">Ocorrências</option>
+              <option value="encomendas">Encomendas</option>
+              <option value="chamados">Chamados de manutenção</option>
+            </Select>
+          </Field>
+          <Field label="Formato de exportação" required>
+            <Select value={formato} onChange={(e) => setFormato(e.target.value as FormatoExport)}>
+              <option value="pdf">PDF (relatório formatado)</option>
+              <option value="csv">CSV (planilha / Excel)</option>
+            </Select>
+          </Field>
+        </div>
 
         {isAdmin && condos.length > 0 && (
           <Field label="Condomínio" required>
@@ -240,12 +305,12 @@ export default function Relatorios() {
         )}
 
         <Button onClick={handleGerar} disabled={generating}>
-          {generating ? 'Gerando...' : '📄 Gerar PDF'}
+          {generating ? 'Gerando...' : formato === 'csv' ? '📊 Exportar CSV' : '📄 Gerar PDF'}
         </Button>
       </div>
 
       <p className="mt-4 text-xs text-slate-600">
-        Os PDFs são gerados localmente no seu navegador (não passam pelo servidor).
+        PDF e CSV são gerados localmente no seu navegador (não passam pelo servidor).
       </p>
     </div>
   )

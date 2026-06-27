@@ -19,6 +19,7 @@ import { useFeatureFlags } from '../contexts/FeatureFlagsContext'
 import FeatureGuard from './FeatureGuard'
 import TrialBanner from './TrialBanner'
 import MfaBanner from './MfaBanner'
+import DemoBanner from './DemoBanner'
 
 /**
  * Layout: sidebar no desktop (padrão web), top bar + launcher no mobile.
@@ -262,6 +263,7 @@ export default function AppShell() {
 
         <MfaBanner />
         <TrialBanner />
+        <DemoBanner />
 
         {emViewAs && (
           <div className="shrink-0 bg-amber-400 border-b border-amber-500 px-4 py-2 flex items-center justify-between gap-3 text-xs">

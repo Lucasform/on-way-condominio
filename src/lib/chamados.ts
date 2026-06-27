@@ -19,7 +19,16 @@ export async function getChamado(id: string): Promise<Chamado | null> {
   return data as Chamado | null
 }
 
-export async function createChamado(input: ChamadoInput, aberto_por: string): Promise<Chamado> {
+export async function createChamado(
+  input: ChamadoInput,
+  aberto_por: string,
+  limiar?: number | null,
+): Promise<Chamado> {
+  // W2: se custo_estimado >= limiar do condo, entra como pendente_aprovacao
+  const temCusto = (input.custo_estimado ?? 0) > 0
+  const acimaDeLimiar = temCusto && limiar != null && (input.custo_estimado ?? 0) >= limiar
+  const status = acimaDeLimiar ? 'pendente_aprovacao' : 'aberto'
+
   const { data, error } = await supabase
     .from('chamados')
     .insert({
@@ -29,20 +38,28 @@ export async function createChamado(input: ChamadoInput, aberto_por: string): Pr
       descricao: input.descricao.trim(),
       categoria: input.categoria,
       prioridade: input.prioridade,
+      custo_estimado: input.custo_estimado ?? null,
       aberto_por,
+      status,
     })
     .select('*')
     .single()
   if (error) throw error
   const chamado = data as Chamado
-  // Triagem IA em background: ajusta prioridade quando default 'media'.
-  // Fire-and-forget — falhas silenciosas (sem ANTHROPIC_API_KEY etc).
-  if (chamado.prioridade === 'media') {
+  if (chamado.prioridade === 'media' && status !== 'pendente_aprovacao') {
     supabase.functions
       .invoke('triage-chamado', { body: { chamado_id: chamado.id } })
       .catch((e) => console.warn('[chamado] triagem IA falhou:', e))
   }
   return chamado
+}
+
+export async function approveChamado(id: string, aprovado_por: string): Promise<void> {
+  const { error } = await supabase
+    .from('chamados')
+    .update({ status: 'aberto', aprovado_por, aprovado_em: new Date().toISOString() })
+    .eq('id', id)
+  if (error) throw error
 }
 
 export async function updateChamadoStatus(

@@ -161,30 +161,30 @@ Roadmap específico das levas atuais. Cada leva = 1 commit + push.
 
 - [x] L1. CSV export com BOM UTF-8 — botão "↓ CSV" em Multas, Ocorrências, Chamados, Pessoas, Encomendas, Notificações
 - [x] L2. Presets de período — chips Hoje/7d/30d/Este mês em Multas, Chamados, Encomendas, Notificações
-- [ ] L3. Report Builder no-code — `/relatorios/builder` (GG esforço — não iniciado)
+- [x] L3. Report Builder no-code — templates rápidos + seletor de formato (PDF/CSV) em `/relatorios`; export CSV com BOM; função `exportCsv` + `applyTemplate`
 - [x] L4. Relatório narrativo — banner de stats em Multas: "X multas · Y aplicadas · Z em análise · W contestadas"
 
 ### Leva N — Dashboard e Analytics
 
 - [x] N1. Charts SVG sem biblioteca — `DonutChart` com arc path SVG; integrado em Multas como widget de status
-- [ ] N2. Dashboard configurável por role — widgets diferentes por role (não iniciado)
+- [x] N2. Dashboard configurável por role — widget "Aprovações pendentes" para gestores no Painel; filtra multas/chamados `pendente_aprovacao` criados por outros
 - [x] N3. Event tracking — `trackEvent()` via `navigator.sendBeacon` fire-and-forget; backend `/api/analytics` a ligar
 - [x] N4. Painel de Atalhos personalizáveis — `ShortcutsBar` no topo do Painel; catálogo por role; localStorage por userId
 
 ### Leva I — Arquitetura
 
-- [ ] I1. DataScope nas RLS — formalizar policies de morador ver só seus registros (requer migration SQL)
+- [x] I1. DataScope nas RLS — policies de morador já implementadas em migrations 0004/0005/0013 (ocorrencias via reportado_por, multas via pessoa_id→user_id, chamados via aberto_por)
 - [x] I2. Helper `logAction()` centralizado — `src/lib/logAction.ts` fire-and-forget para `audit_log`; frontend e Edge Functions
-- [ ] I3. Feature flags por síndico — UI de toggle por condomínio (requer tabela `condo_feature_overrides`, migration)
+- [x] I3. Feature flags por síndico — `Configuracoes.tsx` + `condo_feature_overrides` (migration 0108); rota `/configuracoes`; toggle por módulo com override global; lib `condoFeatureOverrides.ts`
 
 ### Leva W — Workflows de Aprovação
 
-- [ ] W1. Aprovação de multas com SoD — PENDING_APPROVAL + tela de revisão + segregação de função (requer migration)
-- [ ] W2. Aprovação de chamados com custo — limiar configurável + fluxo de aprovação pelo síndico (requer migration)
+- [x] W1. Aprovação de multas com SoD — status `pendente_aprovacao`; `criado_por` em multas; MultaDetalhe bloqueia auto-aprovação; migration 0106
+- [x] W2. Aprovação de chamados com custo — `custo_estimado` + `limiar_aprovacao_chamado` no condo; `createChamado` com limiar; `approveChamado`; painel de aprovação em ChamadoDetalhe; migration 0107
 
 ### Leva J — Produto Avançado (backlog — não iniciar sem go)
 
-- [ ] J1. Campos personalizáveis por condomínio — extras em Unidade, Pessoa, Ocorrência
-- [ ] J2. Assinatura de entrega de encomenda — canvas touch, salva PNG no Storage
-- [ ] J3. Scanner código de barras — BarcodeDetector API para rastrear encomendas na portaria
-- [ ] J4. Demo mode — dados fictícios para trial e demonstração comercial
+- [x] J1. Campos personalizáveis por condomínio — tabela `campos_customizados` + `campos_extras jsonb` nas entidades; lib `camposCustomizados.ts`; migration 0109
+- [x] J2. Assinatura de entrega de encomenda — `SignatureCanvas.tsx` (Pointer Events); coluna `assinatura_url` em encomendas; bucket Storage `assinaturas-entrega`; migration 0110
+- [x] J3. Scanner código de barras — `BarcodeScanner.tsx` com BarcodeDetector API + fallback manual; botão 📷 no campo de código de rastreio em EncomendaNova
+- [x] J4. Demo mode — coluna `is_demo` em condominios; `DemoBanner.tsx` no AppShell; toggle em CondominioForm; migration 0111

@@ -11,6 +11,7 @@ export type CategoriaChamado =
 export type PrioridadeChamado = 'baixa' | 'media' | 'alta' | 'urgente'
 
 export type StatusChamado =
+  | 'pendente_aprovacao'
   | 'aberto'
   | 'em_andamento'
   | 'aguardando'
@@ -28,6 +29,9 @@ export interface Chamado {
   categoria: CategoriaChamado
   prioridade: PrioridadeChamado
   status: StatusChamado
+  custo_estimado: number | null
+  aprovado_por: string | null
+  aprovado_em: string | null
   foto_url: string | null
   atribuido_para: string | null
   resolvido_em: string | null
@@ -44,4 +48,5 @@ export interface ChamadoInput {
   descricao: string
   categoria: CategoriaChamado
   prioridade: PrioridadeChamado
+  custo_estimado?: number | null
 }

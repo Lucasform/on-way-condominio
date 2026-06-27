@@ -30,6 +30,7 @@ import { gerarPdfRecibo } from '../lib/multaReciboPdf'
 import { ensureWaConversa, sendWaMessage } from '../lib/whatsappInbox'
 
 const STATUS_CLASS: Record<StatusMulta, string> = {
+  pendente_aprovacao: 'bg-violet-500/10 text-violet-300 border-violet-500/30',
   em_analise: 'bg-amber-500/10 text-amber-300 border-amber-500/30',
   aplicada: 'bg-red-500/10 text-red-300 border-red-500/30',
   paga: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30',
@@ -377,6 +378,33 @@ export default function MultaDetalhe() {
           </div>
         )}
       </div>
+
+      {/* W1 SoD: aprovação por outro gestor */}
+      {canChange && multa.status === 'pendente_aprovacao' && (
+        multa.criado_por === user?.id ? (
+          <div className="mt-6 rounded-lg border border-violet-500/30 bg-violet-500/5 p-5">
+            <div className="text-sm font-medium text-violet-200 mb-1">Aguardando aprovação</div>
+            <p className="text-xs text-slate-400">
+              Você registrou esta multa. Por segregação de função, outro gestor precisa aprová-la antes de ela seguir o fluxo.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-6 rounded-lg border border-violet-500/30 bg-violet-500/5 p-5">
+            <div className="text-sm font-medium text-violet-200 mb-1">Aprovar multa</div>
+            <p className="text-xs text-slate-400 mb-3">
+              Esta multa foi registrada por outro gestor e aguarda sua revisão.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={() => handleChange('em_analise')} disabled={changing}>
+                Aprovar — seguir para análise
+              </Button>
+              <Button variant="secondary" onClick={() => handleChange('cancelada')} disabled={changing}>
+                Recusar e cancelar
+              </Button>
+            </div>
+          </div>
+        )
+      )}
 
       {canChange && multa.status === 'contestada' && (
         <div className="mt-6 rounded-lg border border-amber-500/30 bg-amber-500/5 p-5">

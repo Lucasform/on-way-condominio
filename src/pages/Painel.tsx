@@ -345,6 +345,36 @@ export default function Painel() {
   const [draggingCard, setDraggingCard] = useState<Card | null>(null)
   const [hoverCol, setHoverCol] = useState<ColumnKey | null>(null)
 
+  const isGestor = perfil && ['administradora', 'sindico', 'subsindico', 'admin_onway'].includes(perfil.role)
+  const multasPendAprov = isGestor
+    ? multas.filter((m) => m.status === 'pendente_aprovacao' && m.criado_por !== perfil?.id)
+    : []
+  const chamadosPendAprov = isGestor
+    ? chamados.filter((c) => c.status === 'pendente_aprovacao')
+    : []
+  const pendentesAprovacao =
+    isGestor && (multasPendAprov.length > 0 || chamadosPendAprov.length > 0) ? (
+      <div className="mb-5 rounded-lg border border-violet-500/30 bg-violet-500/5 p-4">
+        <div className="text-xs font-semibold text-violet-300 mb-2">
+          🔔 Aguardando sua aprovação ({multasPendAprov.length + chamadosPendAprov.length})
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {multasPendAprov.map((m) => (
+            <Link key={m.id} to={`/multas/${m.id}`}
+              className="text-xs px-2 py-1 rounded-md border border-violet-500/30 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20 transition">
+              💰 Multa — {m.descricao.slice(0, 40)}
+            </Link>
+          ))}
+          {chamadosPendAprov.map((c) => (
+            <Link key={c.id} to={`/chamados/${c.id}`}
+              className="text-xs px-2 py-1 rounded-md border border-violet-500/30 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20 transition">
+              🛠 Chamado — {c.titulo.slice(0, 40)}
+            </Link>
+          ))}
+        </div>
+      </div>
+    ) : null
+
   return (
     <div className="px-4 py-6 sm:px-6 sm:py-8 max-w-[1400px] mx-auto">
       <PageHeader
@@ -352,6 +382,9 @@ export default function Painel() {
         subtitle="Pipeline de ocorrências, multas e chamados. Use as colunas pra ver onde está o trabalho."
       />
       <ShortcutsBar role={perfil?.role} userId={perfil?.id} />
+
+      {/* N2: Widget de aprovações pendentes para gestores */}
+      {pendentesAprovacao}
 
       <div className="mb-5 flex gap-4 items-end">
         {isAdmin && condos.length > 0 && (

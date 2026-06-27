@@ -12,50 +12,79 @@ export default function ShortcutsBar({ role, userId }: Props) {
 
   return (
     <div className="mb-6">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Atalhos</span>
+      {/* Header row */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+          Atalhos
+        </span>
         <button
           onClick={() => setEditing((v) => !v)}
-          className="text-xs text-slate-600 hover:text-slate-400 transition-colors"
-          title={editing ? 'Fechar edição' : 'Personalizar atalhos'}
+          className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-200 transition-colors"
         >
-          {editing ? '✕ fechar' : '✏️ editar'}
+          {editing ? (
+            'Concluir'
+          ) : (
+            <>
+              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+              Configurar
+            </>
+          )}
         </button>
       </div>
 
       {editing ? (
-        <div className="flex flex-wrap gap-2">
-          {catalog.map((s) => {
-            const on = selectedIds.includes(s.id)
-            return (
-              <button
-                key={s.id}
-                onClick={() => toggle(s.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-colors ${
-                  on
-                    ? 'bg-violet-500/20 border-violet-500/40 text-violet-200'
-                    : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:border-slate-600'
-                }`}
-              >
-                <span>{s.icon}</span>
-                <span>{s.label}</span>
-                {on ? <span className="text-violet-400">✓</span> : <span className="text-slate-600">+</span>}
-              </button>
-            )
-          })}
+        /* Edit mode: expanded panel with checkbox grid */
+        <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
+          <p className="text-xs text-slate-400 mb-3">
+            Escolha os atalhos que você mais usa — eles abrem a ação em 1 clique.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+            {catalog.map((s) => {
+              const checked = selectedIds.includes(s.id)
+              return (
+                <label
+                  key={s.id}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-md border cursor-pointer select-none transition-colors ${
+                    checked
+                      ? 'border-violet-500/40 bg-violet-500/10'
+                      : 'border-slate-700 bg-slate-800/40 hover:border-slate-600 hover:bg-slate-800/70'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggle(s.id)}
+                    className="accent-violet-500 w-4 h-4 shrink-0 cursor-pointer"
+                  />
+                  <span className="text-base leading-none">{s.icon}</span>
+                  <span className={`text-sm ${checked ? 'text-slate-200' : 'text-slate-400'}`}>
+                    {s.label}
+                  </span>
+                </label>
+              )
+            })}
+          </div>
         </div>
       ) : (
+        /* View mode: compact pill buttons */
         <div className="flex flex-wrap gap-2">
           {active.map((s) => (
             <Link
               key={s.id}
               to={s.to}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-slate-800/80 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-slate-300 hover:text-slate-100 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 rounded-md border border-slate-700 bg-slate-900/40 hover:bg-slate-800 hover:border-slate-600 text-sm text-slate-300 hover:text-slate-100 transition-colors"
             >
-              <span>{s.icon}</span>
+              <span className="text-base leading-none">{s.icon}</span>
               <span>{s.label}</span>
             </Link>
           ))}
+          {active.length === 0 && (
+            <span className="text-xs text-slate-600 py-2">
+              Nenhum atalho selecionado — clique em Configurar.
+            </span>
+          )}
         </div>
       )}
     </div>

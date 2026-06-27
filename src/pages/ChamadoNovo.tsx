@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { createChamado } from '../lib/chamados'
-import { listCondominios } from '../lib/condominios'
+import { listCondominios, getCondominio } from '../lib/condominios'
 import { listUnidades } from '../lib/unidades'
 import type { ChamadoInput, CategoriaChamado, PrioridadeChamado } from '../types/chamado'
 import type { Condominio } from '../types/condominio'
@@ -28,6 +28,7 @@ export default function ChamadoNovo() {
   const [form, setForm] = useState<ChamadoInput>(EMPTY)
   const [condos, setCondos] = useState<Condominio[]>([])
   const [unidades, setUnidades] = useState<Unidade[]>([])
+  const [limiar, setLimiar] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -40,8 +41,11 @@ export default function ChamadoNovo() {
   }, [isAdmin, perfil])
 
   useEffect(() => {
-    if (!form.condominio_id) return setUnidades([])
+    if (!form.condominio_id) { setUnidades([]); setLimiar(null); return }
     listUnidades({ condominio_id: form.condominio_id, ativo: true }).then(setUnidades).catch(() => {})
+    getCondominio(form.condominio_id)
+      .then((c) => setLimiar((c as (typeof c & { limiar_aprovacao_chamado?: number | null }))?.limiar_aprovacao_chamado ?? 500))
+      .catch(() => {})
   }, [form.condominio_id])
 
   function update<K extends keyof ChamadoInput>(key: K, value: ChamadoInput[K]) {
@@ -57,7 +61,7 @@ export default function ChamadoNovo() {
     setSubmitting(true)
     setError(null)
     try {
-      await createChamado(form, user.id)
+      await createChamado(form, user.id, limiar ?? undefined)
       navigate('/chamados')
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erro ao abrir chamado.')
@@ -158,6 +162,20 @@ export default function ChamadoNovo() {
             </Select>
           </Field>
         </div>
+
+        <Field
+          label="Custo estimado (R$)"
+          hint="Opcional. Se acima do limiar do condomínio, exigirá aprovação do síndico."
+        >
+          <TextInput
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0,00"
+            value={form.custo_estimado != null ? String(form.custo_estimado) : ''}
+            onChange={(e) => update('custo_estimado', e.target.value ? parseFloat(e.target.value) : null)}
+          />
+        </Field>
 
         {error && (
           <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-md px-3 py-2">

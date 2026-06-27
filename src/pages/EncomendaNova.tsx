@@ -12,6 +12,7 @@ import type { EncomendaInput, TipoEncomenda } from '../types/encomenda'
 import PageHeader from '../components/ui/PageHeader'
 import Button from '../components/ui/Button'
 import { Field, TextInput, TextArea, Select } from '../components/ui/Input'
+import BarcodeScanner from '../components/ui/BarcodeScanner'
 
 const EMPTY: EncomendaInput = {
   condominio_id: '',
@@ -67,6 +68,7 @@ export default function EncomendaNova() {
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [scannerOpen, setScannerOpen] = useState(false)
 
   useEffect(() => {
     if (isAdmin) {
@@ -241,11 +243,30 @@ export default function EncomendaNova() {
                 />
               </Field>
               <Field label="Código de rastreio">
-                <TextInput
-                  value={form.codigo_rastreio ?? ''}
-                  onChange={(e) => update('codigo_rastreio', e.target.value)}
-                  className="font-mono"
-                />
+                <div className="flex gap-2">
+                  <TextInput
+                    value={form.codigo_rastreio ?? ''}
+                    onChange={(e) => update('codigo_rastreio', e.target.value)}
+                    className="font-mono flex-1"
+                    placeholder="AA123456789BR"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setScannerOpen((v) => !v)}
+                    className="shrink-0 px-2.5 rounded-md border border-slate-700 bg-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-600 transition text-sm"
+                    title="Escanear código de barras"
+                  >
+                    📷
+                  </button>
+                </div>
+                {scannerOpen && (
+                  <div className="mt-2">
+                    <BarcodeScanner
+                      onDetected={(code) => { update('codigo_rastreio', code); setScannerOpen(false) }}
+                      onClose={() => setScannerOpen(false)}
+                    />
+                  </div>
+                )}
               </Field>
             </div>
 

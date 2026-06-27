@@ -53,8 +53,10 @@ export async function createMulta(input: MultaInput, aplicada_por: string): Prom
       descricao: input.descricao.trim(),
       observacoes: input.observacoes?.trim() || null,
       vencimento_em: input.vencimento_em ?? null,
-      status: 'em_analise',
+      // W1 SoD: entra como pendente_aprovacao; outro gestor aprova para em_analise
+      status: 'pendente_aprovacao',
       aplicada_por,
+      criado_por: aplicada_por,
     })
     .select('*')
     .single()
@@ -175,15 +177,17 @@ async function notifyMoradorByEmail(multa: Multa): Promise<void> {
 // que os updates preencham as datas corretas — fazemos isso aqui.
 
 export const MULTA_STATUS_TRANSITIONS: Record<StatusMulta, StatusMulta[]> = {
+  pendente_aprovacao: ['em_analise', 'cancelada'],
   em_analise: ['aplicada', 'cancelada', 'arquivada'],
   aplicada: ['paga', 'contestada', 'cancelada'],
   contestada: ['aplicada', 'cancelada'],
-  paga: [], // terminal
-  cancelada: [], // terminal
+  paga: [],
+  cancelada: [],
   arquivada: ['em_analise'],
 }
 
 export const MULTA_STATUS_LABEL: Record<StatusMulta, string> = {
+  pendente_aprovacao: 'Aguard. aprovação',
   em_analise: 'Em análise',
   aplicada: 'Aplicada',
   paga: 'Paga',
