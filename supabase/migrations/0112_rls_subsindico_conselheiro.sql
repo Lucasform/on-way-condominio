@@ -52,5 +52,5 @@ create policy chamados_select on public.chamados
       and public.user_role_in(condominio_id)
           in ('administradora','sindico','subsindico','conselheiro','portaria','ronda')
     )
-    or criado_por = auth.uid()
+    or aberto_por = auth.uid()
   );
