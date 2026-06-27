@@ -40,7 +40,7 @@ export const PLANO_CATALOG: PlanoCatalog[] = [
     id: 'basico',
     nome: 'Starter',
     descricao: 'Essencial para condomínios pequenos que querem portaria digital.',
-    preco_mensal: 149,
+    preco_mensal: 250,
     features: ['portaria', 'acessos', 'moradores', 'mural', 'ocorrencias'],
     limite_unidades: 30,
     limite_staff: 2,
@@ -50,7 +50,7 @@ export const PLANO_CATALOG: PlanoCatalog[] = [
     id: 'profissional',
     nome: 'Profissional',
     descricao: 'Comunicação completa + gestão operacional. Substitui grupos de WhatsApp e planilhas.',
-    preco_mensal: 269,
+    preco_mensal: 450,
     features: [
       'portaria', 'acessos', 'moradores', 'mural', 'ocorrencias',
       'chat', 'comunicados', 'classificados', 'multas', 'chamados', 'calendario',
@@ -64,7 +64,7 @@ export const PLANO_CATALOG: PlanoCatalog[] = [
     id: 'enterprise',
     nome: 'Completo',
     descricao: 'Tudo incluído: assembleias digitais, relatórios e integrações. Para administradoras.',
-    preco_mensal: 509,
+    preco_mensal: 850,
     features: [
       'portaria', 'acessos', 'moradores', 'mural', 'ocorrencias',
       'chat', 'comunicados', 'classificados', 'multas', 'chamados', 'calendario',
