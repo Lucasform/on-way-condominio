@@ -2,6 +2,26 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../components/AuthProvider'
 import { roleLabel } from '../lib/nav'
+
+const CATALOGO_CONDO = [
+  { id: 'dashboard',   label: '📊 Dashboard',         to: '/dashboard' },
+  { id: 'painel',      label: '🗂 Painel Kanban',      to: '/painel' },
+  { id: 'ocorrencias', label: '🚨 Ocorrências',        to: '/ocorrencias' },
+  { id: 'multas',      label: '💰 Multas',             to: '/multas' },
+  { id: 'chamados',    label: '🛠 Chamados',           to: '/chamados' },
+  { id: 'encomendas',  label: '📦 Encomendas',         to: '/encomendas' },
+  { id: 'chat',        label: '💬 Chat',               to: '/chat' },
+  { id: 'comunicados', label: '📢 Comunicados',        to: '/comunicados' },
+  { id: 'assembleias', label: '🗳 Assembleias',        to: '/assembleias' },
+  { id: 'pessoas',     label: '👥 Pessoas',            to: '/pessoas' },
+  { id: 'unidades',    label: '🏢 Unidades',           to: '/unidades' },
+  { id: 'calendario',  label: '📅 Calendário',         to: '/calendario' },
+  { id: 'relatorios',  label: '📋 Relatórios',         to: '/relatorios' },
+  { id: 'notificacoes',label: '🔔 Notificações',       to: '/notificacoes' },
+  { id: 'plantao',     label: '🏠 Plantão',            to: '/plantao' },
+] as const
+
+const ATALHOS_CONDO_PADRAO = ['dashboard', 'painel']
 import { listMultas } from '../lib/multas'
 import { listEncomendas } from '../lib/encomendas'
 import { listEventos } from '../lib/eventos'
@@ -20,6 +40,26 @@ import { isStaff } from '../lib/permissions'
 
 export default function Home() {
   const { user, perfil } = useAuth()
+  const [editandoAtalhos, setEditandoAtalhos] = useState(false)
+  const [atalhos, setAtalhos] = useState<string[]>(ATALHOS_CONDO_PADRAO)
+
+  const storageKey = `condoHome_atalhos_${user?.id ?? 'anon'}`
+
+  useEffect(() => {
+    if (!user) return
+    try {
+      const saved = localStorage.getItem(storageKey)
+      if (saved) setAtalhos(JSON.parse(saved) as string[])
+    } catch { /* usa padrão */ }
+  }, [user, storageKey])
+
+  function toggleAtalho(id: string) {
+    setAtalhos(prev => {
+      const next = prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
+      localStorage.setItem(storageKey, JSON.stringify(next))
+      return next
+    })
+  }
 
   if (perfil?.role === 'morador') {
     return <MoradorHome />
@@ -30,7 +70,7 @@ export default function Home() {
     return <AdminHome />
   }
 
-  // Demais perfis: home simples (eles têm Dashboard/Painel próprios)
+  // Demais perfis: home com atalhos personalizáveis
   return (
     <div className="px-4 py-6 sm:px-8 sm:py-10 max-w-[1400px] mx-auto">
       <OnboardingChecklist />
@@ -57,25 +97,63 @@ export default function Home() {
 
       {perfil && isStaff(perfil.role) && <AdminKPIs />}
 
-      {perfil && ['admin_onway', 'administradora', 'sindico', 'subsindico'].includes(perfil.role) && (
-        <>
-          <div className="mt-6 flex gap-3 flex-wrap">
+      {/* Atalhos personalizáveis */}
+      <div className="mt-6">
+        <div className="flex flex-wrap gap-3 items-center">
+          {CATALOGO_CONDO.filter(a => atalhos.includes(a.id)).map(a => (
             <Link
-              to="/dashboard"
-              className="px-4 py-2 rounded-md bg-brand-700 hover:bg-brand-800 text-white text-sm font-medium transition-colors shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              key={a.id}
+              to={a.to}
+              className="px-4 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium hover:bg-slate-700 hover:border-slate-600 transition-colors"
             >
-              📊 Ir pro Dashboard
+              {a.label}
             </Link>
-            <Link
-              to="/painel"
-              className="px-4 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-200 text-sm font-medium hover:bg-slate-700 hover:border-slate-600 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-            >
-              🗂 Abrir Painel Kanban
-            </Link>
-          </div>
+          ))}
+          <button
+            onClick={() => setEditandoAtalhos(v => !v)}
+            title="Personalizar atalhos"
+            className={`px-3 py-2 rounded-md border text-sm font-medium transition ${
+              editandoAtalhos
+                ? 'bg-brand-700 border-brand-600 text-white'
+                : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-500'
+            }`}
+          >
+            ✏️
+          </button>
+        </div>
 
-        </>
-      )}
+        {editandoAtalhos && (
+          <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/60 p-4 max-w-2xl">
+            <p className="text-xs text-slate-400 mb-3">Escolha quais atalhos aparecem na sua tela inicial</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {CATALOGO_CONDO.map(a => {
+                const ativo = atalhos.includes(a.id)
+                return (
+                  <button
+                    key={a.id}
+                    onClick={() => toggleAtalho(a.id)}
+                    className={`px-3 py-2 rounded text-xs font-medium text-left transition border ${
+                      ativo
+                        ? 'bg-brand-700/30 border-brand-600 text-brand-300'
+                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-500'
+                    }`}
+                  >
+                    {ativo ? '✓ ' : ''}{a.label}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="mt-3">
+              <button
+                onClick={() => setEditandoAtalhos(false)}
+                className="text-xs text-slate-400 hover:text-slate-200"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
