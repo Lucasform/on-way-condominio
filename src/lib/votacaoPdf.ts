@@ -1,4 +1,5 @@
 // Gera PDF da ata de votacao com totais e resultado.
+import type { jsPDF } from 'jspdf'
 import type { Votacao, VotacaoOpcao, Voto } from '../types/votacao'
 import type { Condominio } from '../types/condominio'
 import type { MesaMembro } from '../types/assembleia'
@@ -153,7 +154,7 @@ const CARGO_LABEL: Record<string, string> = {
 }
 
 async function renderizarAssinaturas(
-  doc: Record<string, unknown>,
+  doc: jsPDF,
   opts: {
     y: number
     W: number
@@ -218,8 +219,7 @@ async function renderizarAssinaturas(
           const ratio = ass.width / ass.height
           let iw = maxW, ih = maxW / ratio
           if (ih > maxH) { ih = maxH; iw = maxH * ratio }
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          ;(doc as any).addImage(ass.dataUrl, ass.format, cx - iw / 2, by - ih, iw, ih)
+          doc.addImage(ass.dataUrl, ass.format, cx - iw / 2, by - ih, iw, ih)
           by += 2
         } catch { /* sem imagem — linha em branco */ }
       } else {
