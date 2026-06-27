@@ -40,6 +40,8 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
       children: [
         { to: '/unidades', label: 'Unidades' },
         { to: '/pessoas', label: 'Pessoas' },
+        { to: '/pets', label: 'Pets' },
+        { to: '/veiculos', label: 'Veículos' },
         { to: '/gestores', label: 'Gestores e equipe' },
         { to: '/regimento', label: 'Regimento' },
       ],
@@ -100,6 +102,8 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/condominios', label: 'Condomínios' },
         { to: '/unidades', label: 'Unidades' },
         { to: '/pessoas', label: 'Pessoas' },
+        { to: '/pets', label: 'Pets' },
+        { to: '/veiculos', label: 'Veículos' },
         { to: '/gestores', label: 'Gestores e equipe' },
         { to: '/regimento', label: 'Regimento' },
       ],
@@ -166,6 +170,8 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/condominios', label: 'Condomínios' },
         { to: '/unidades', label: 'Unidades' },
         { to: '/pessoas', label: 'Pessoas' },
+        { to: '/pets', label: 'Pets' },
+        { to: '/veiculos', label: 'Veículos' },
         { to: '/gestores', label: 'Gestores e equipe' },
         { to: '/regimento', label: 'Regimento' },
       ],
@@ -225,6 +231,8 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
       children: [
         { to: '/unidades', label: 'Unidades' },
         { to: '/pessoas', label: 'Pessoas' },
+        { to: '/pets', label: 'Pets' },
+        { to: '/veiculos', label: 'Veículos' },
         { to: '/gestores', label: 'Gestores e equipe' },
         { to: '/regimento', label: 'Regimento' },
       ],
@@ -284,6 +292,8 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
       children: [
         { to: '/unidades', label: 'Unidades' },
         { to: '/pessoas', label: 'Pessoas' },
+        { to: '/pets', label: 'Pets' },
+        { to: '/veiculos', label: 'Veículos' },
         { to: '/gestores', label: 'Gestores e equipe' },
         { to: '/regimento', label: 'Regimento' },
       ],
@@ -344,6 +354,8 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
       children: [
         { to: '/unidades', label: 'Unidades' },
         { to: '/pessoas', label: 'Pessoas' },
+        { to: '/pets', label: 'Pets' },
+        { to: '/veiculos', label: 'Veículos' },
         { to: '/gestores', label: 'Gestores e equipe' },
         { to: '/regimento', label: 'Regimento' },
       ],

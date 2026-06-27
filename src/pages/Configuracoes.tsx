@@ -10,22 +10,24 @@ import type { FeatureKey } from '../types/featureFlag'
 // I3: Página de configurações de funcionalidades para síndico/administradora.
 // Permite ativar/desativar módulos específicos do próprio condomínio.
 
-const MODULOS: { key: FeatureKey; label: string; descricao: string }[] = [
-  { key: 'portaria',    label: 'Portaria',           descricao: 'Encomendas e acessos autorizados.' },
-  { key: 'acessos',    label: 'Acessos autorizados', descricao: 'Controle de visitantes e prestadores.' },
-  { key: 'moradores',  label: 'Cadastro de moradores', descricao: 'Perfis de moradores e unidades.' },
-  { key: 'ocorrencias',label: 'Ocorrências',          descricao: 'Registro e acompanhamento de ocorrências.' },
-  { key: 'multas',     label: 'Multas',               descricao: 'Emissão e gestão de multas.' },
-  { key: 'chamados',   label: 'Chamados',             descricao: 'Solicitações de manutenção.' },
-  { key: 'mural',      label: 'Mural informativo',    descricao: 'Publicações e comunicados no mural.' },
-  { key: 'comunicados',label: 'Comunicados',          descricao: 'Comunicados oficiais com IA.' },
-  { key: 'chat',       label: 'Chat',                 descricao: 'Mensagens entre morador e gestão.' },
-  { key: 'classificados', label: 'Classificados',     descricao: 'Serviços e fornecedores do condomínio.' },
-  { key: 'calendario', label: 'Calendário',           descricao: 'Eventos e agendamentos.' },
-  { key: 'whatsapp',   label: 'WhatsApp',             descricao: 'Integração com WhatsApp via Evolution.' },
-  { key: 'assembleias',label: 'Assembleias',          descricao: 'Convocações e votações oficiais.' },
-  { key: 'regimento',  label: 'Regimento',            descricao: 'Regimento interno e base da IA.' },
-  { key: 'relatorios', label: 'Relatórios',           descricao: 'Exportações e relatórios gerenciais.' },
+const MODULOS: { key: FeatureKey; label: string; descricao: string; emoji: string }[] = [
+  { key: 'portaria',     emoji: '🏠', label: 'Portaria',              descricao: 'Encomendas, plantão e controle de acesso.' },
+  { key: 'acessos',     emoji: '🔑', label: 'Acessos autorizados',   descricao: 'Liberação de visitantes e prestadores.' },
+  { key: 'moradores',   emoji: '👥', label: 'Moradores e unidades',  descricao: 'Perfis de moradores e cadastro de unidades.' },
+  { key: 'pets',        emoji: '🐾', label: 'Pets',                  descricao: 'Cadastro de animais de estimação por unidade.' },
+  { key: 'veiculos',    emoji: '🚗', label: 'Veículos',              descricao: 'Controle de veículos dos condôminos.' },
+  { key: 'ocorrencias', emoji: '⚠️', label: 'Ocorrências',          descricao: 'Registro e acompanhamento de ocorrências.' },
+  { key: 'multas',      emoji: '💰', label: 'Multas',                descricao: 'Emissão e gestão de multas.' },
+  { key: 'chamados',    emoji: '🛠',  label: 'Chamados',             descricao: 'Solicitações de manutenção.' },
+  { key: 'mural',       emoji: '📌', label: 'Mural informativo',     descricao: 'Publicações e avisos no mural.' },
+  { key: 'comunicados', emoji: '📢', label: 'Comunicados',           descricao: 'Comunicados oficiais com IA.' },
+  { key: 'chat',        emoji: '💬', label: 'Chat',                  descricao: 'Mensagens entre morador e gestão.' },
+  { key: 'classificados',emoji: '🛒', label: 'Classificados',        descricao: 'Anúncios e serviços entre moradores.' },
+  { key: 'calendario',  emoji: '📅', label: 'Calendário',            descricao: 'Eventos e agendamentos do condomínio.' },
+  { key: 'assembleias', emoji: '🗳️', label: 'Assembleias',          descricao: 'Convocações e votações oficiais.' },
+  { key: 'regimento',   emoji: '📋', label: 'Regimento',             descricao: 'Regimento interno e base da IA.' },
+  { key: 'relatorios',  emoji: '📊', label: 'Relatórios',            descricao: 'Exportações e relatórios gerenciais.' },
+  { key: 'whatsapp',    emoji: '💚', label: 'WhatsApp',              descricao: 'Integração com WhatsApp via Evolution.' },
 ]
 
 export default function Configuracoes() {
@@ -91,22 +93,23 @@ export default function Configuracoes() {
         <div className="text-sm text-slate-500">Selecione um condomínio para configurar.</div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-          {MODULOS.map(({ key, label, descricao }) => {
+          {MODULOS.map(({ key, label, descricao, emoji }) => {
             const ativo = condoAtivo(key)
             const globalOff = !globalAtivo(key)
             const isBusy = busy === key
             return (
               <div
                 key={key}
-                className={`flex items-start gap-4 rounded-lg border p-4 transition ${
+                className={`flex items-start gap-3 rounded-lg border p-4 transition ${
                   ativo
                     ? 'border-slate-700 bg-slate-900/40'
-                    : 'border-slate-800 bg-slate-900/20 opacity-60'
+                    : 'border-slate-800 bg-slate-900/20 opacity-50'
                 }`}
               >
+                <span className="text-xl shrink-0 mt-0.5">{emoji}</span>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-slate-200">{label}</div>
-                  <div className="text-xs text-slate-500 mt-0.5">{descricao}</div>
+                  <div className="text-xs text-slate-500 mt-0.5 leading-relaxed">{descricao}</div>
                   {globalOff && (
                     <div className="text-[10px] text-amber-400 mt-1">Desabilitado globalmente pela OnWay.</div>
                   )}
@@ -118,7 +121,8 @@ export default function Configuracoes() {
                   className={`shrink-0 relative w-10 h-6 rounded-full transition-colors ${
                     ativo ? 'bg-violet-600' : 'bg-slate-700'
                   } disabled:opacity-40`}
-                  title={ativo ? 'Desativar' : 'Ativar'}
+                  title={ativo ? 'Desativar módulo' : 'Ativar módulo'}
+                  aria-label={`${ativo ? 'Desativar' : 'Ativar'} ${label}`}
                 >
                   <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${ativo ? 'translate-x-5' : 'translate-x-1'}`} />
                 </button>
