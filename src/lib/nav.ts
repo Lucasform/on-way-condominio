@@ -1,4 +1,4 @@
-import type { Role } from '../types/database'
+﻿import type { Role } from '../types/database'
 
 export interface MenuLeaf {
   to: string
@@ -40,6 +40,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
       children: [
         { to: '/unidades', label: 'Unidades' },
         { to: '/pessoas', label: 'Pessoas' },
+        { to: '/gestores', label: 'Gestores e equipe' },
         { to: '/regimento', label: 'Regimento' },
       ],
     },
@@ -99,6 +100,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/condominios', label: 'Condomínios' },
         { to: '/unidades', label: 'Unidades' },
         { to: '/pessoas', label: 'Pessoas' },
+        { to: '/gestores', label: 'Gestores e equipe' },
         { to: '/regimento', label: 'Regimento' },
       ],
     },
@@ -164,6 +166,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/condominios', label: 'Condomínios' },
         { to: '/unidades', label: 'Unidades' },
         { to: '/pessoas', label: 'Pessoas' },
+        { to: '/gestores', label: 'Gestores e equipe' },
         { to: '/regimento', label: 'Regimento' },
       ],
     },
@@ -222,6 +225,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
       children: [
         { to: '/unidades', label: 'Unidades' },
         { to: '/pessoas', label: 'Pessoas' },
+        { to: '/gestores', label: 'Gestores e equipe' },
         { to: '/regimento', label: 'Regimento' },
       ],
     },
@@ -280,6 +284,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
       children: [
         { to: '/unidades', label: 'Unidades' },
         { to: '/pessoas', label: 'Pessoas' },
+        { to: '/gestores', label: 'Gestores e equipe' },
         { to: '/regimento', label: 'Regimento' },
       ],
     },
@@ -315,6 +320,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
         { to: '/votacoes', label: 'Votações' },
         { to: '/relatorios', label: 'Relatórios' },
         { to: '/templates', label: 'Templates' },
+        { to: '/planos', label: 'Plano e billing' },
         { to: '/auditoria', label: 'Auditoria' },
         { to: '/ajuda', label: 'Ajuda' },
       ],
@@ -338,6 +344,7 @@ const MENU_BY_ROLE: Record<Role, MenuItem[]> = {
       children: [
         { to: '/unidades', label: 'Unidades' },
         { to: '/pessoas', label: 'Pessoas' },
+        { to: '/gestores', label: 'Gestores e equipe' },
         { to: '/regimento', label: 'Regimento' },
       ],
     },
@@ -519,6 +526,7 @@ export const NAV_ICON: Record<string, string> = {
   '/condominios': '🏢',
   '/unidades': '🚪',
   '/pessoas': '👥',
+  '/gestores': '🧑‍💼',
   '/veiculos': '🚗',
   '/pets': '🐾',
   '/regimento': '📜',
@@ -642,3 +650,4 @@ export function roleLabel(role: Role): string {
     morador: 'Morador',
   }[role]
 }
+
