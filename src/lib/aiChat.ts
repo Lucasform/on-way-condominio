@@ -1,4 +1,6 @@
 import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase'
+import { withRetry } from './retry'
+import { logError } from './logger'
 
 export interface ChatMessage {
   role: 'user' | 'assistant'
@@ -17,14 +19,17 @@ export async function sendChatMessage(
   const { data: { session } } = await supabase.auth.getSession()
   const token = session?.access_token ?? SUPABASE_ANON_KEY
 
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/condominio-ai-chat`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-    },
-    body: JSON.stringify({ messages, system }),
-  })
+  const res = await withRetry(
+    () => fetch(`${SUPABASE_URL}/functions/v1/condominio-ai-chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ messages, system }),
+    }),
+    { attempts: 3, baseDelayMs: 600, shouldRetry: (e) => { logError('aiChat', e); return true } }
+  )
 
   let data: Record<string, unknown>
   try {

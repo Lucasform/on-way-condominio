@@ -188,3 +188,37 @@ Roadmap específico das levas atuais. Cada leva = 1 commit + push.
 - [x] J2. Assinatura de entrega de encomenda — `SignatureCanvas.tsx` (Pointer Events); coluna `assinatura_url` em encomendas; bucket Storage `assinaturas-entrega`; migration 0110
 - [x] J3. Scanner código de barras — `BarcodeScanner.tsx` com BarcodeDetector API + fallback manual; botão 📷 no campo de código de rastreio em EncomendaNova
 - [x] J4. Demo mode — coluna `is_demo` em condominios; `DemoBanner.tsx` no AppShell; toggle em CondominioForm; migration 0111
+
+---
+
+## PÓS-MVP — Próximas fases (backlog estratégico)
+
+> Nenhum item abaixo deve ser iniciado sem autorização explícita. São ideias estratégicas para o crescimento do produto após o lançamento.
+
+### WhatsApp Integration
+- [ ] Z1. Instância Evolution API no Railway (multi-instância, QR self-service)
+- [ ] Z2. Inbox de mensagens por condomínio com leitura/resposta no app
+- [ ] Z3. Automações: boas-vindas ao novo morador, aviso de encomenda, lembrete de assembleia
+- [ ] Z4. Broadcast de comunicados via WhatsApp (com opt-out por morador)
+- [ ] Z5. Feature flag `whatsapp` já existente — habilitar por condo ao ativar
+
+### App Mobile Nativo (Capacitor)
+- [ ] Y1. Setup Capacitor sobre o Vite build atual (iOS + Android)
+- [ ] Y2. Push notifications nativas (substituindo service worker)
+- [ ] Y3. Câmera nativa para escaneamento e upload de fotos de ocorrência
+- [ ] Y4. Biometria (FaceID / TouchID) como segundo fator
+- [ ] Y5. Publicar nas lojas (App Store + Google Play)
+
+### Módulo Financeiro (escopo separado)
+- [ ] F1. Registro de receitas e despesas por condomínio (sem integração bancária)
+- [ ] F2. Categorias de despesas (manutenção, energia, pessoal, etc.)
+- [ ] F3. Relatório financeiro mensal exportável (PDF + CSV)
+- [ ] F4. Previsão de fundo de reserva
+- [ ] F5. Integração com boleto (via parceiro — Asaas ou Pagar.me)
+
+### Melhorias de Plataforma
+- [ ] P1. Retry com circuit breaker nas Edge Functions (não só no cliente)
+- [ ] P2. Observabilidade: Sentry + métricas de uso por condomínio
+- [ ] P3. Cache Redis (Upstash) para queries frequentes de dashboard
+- [ ] P4. Multi-idioma (pt-BR + es-LA para LATAM)
+- [ ] P5. LGPD: exportação e deleção de dados do morador sob demanda

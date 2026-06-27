@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { withRetry } from '../lib/retry'
 import { PLANO_CATALOG } from '../types/billing'
 import { useFeatureFlags } from '../contexts/FeatureFlagsContext'
 import type { FeatureKey } from '../types/featureFlag'
@@ -51,13 +52,16 @@ export default function Planos() {
     setCheckoutError(null)
     try {
       const origin = window.location.origin
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: {
-          plano_id: planoId,
-          success_url: `${origin}/checkout/sucesso`,
-          cancel_url: `${origin}/planos`,
-        },
-      })
+      const { data, error } = await withRetry(
+        () => supabase.functions.invoke('create-checkout-session', {
+          body: {
+            plano_id: planoId,
+            success_url: `${origin}/checkout/sucesso`,
+            cancel_url: `${origin}/planos`,
+          },
+        }),
+        { attempts: 2, baseDelayMs: 800 }
+      )
       if (error) throw new Error(error.message)
       if (data?.error) throw new Error(data.error)
       if (data?.url) {

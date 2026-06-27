@@ -133,6 +133,7 @@ export default function Painel() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [tipoFiltro, setTipoFiltro] = useState<'tudo' | 'ocorrencias' | 'multas' | 'chamados'>('tudo')
+  const [mobileCol, setMobileCol] = useState<ColumnKey>('chegou')
 
   useEffect(() => {
     if (isAdmin) {
@@ -422,6 +423,31 @@ export default function Painel() {
         </div>
       )}
 
+      {/* Seletor de coluna — visível apenas em mobile */}
+      <div className="flex md:hidden overflow-x-auto gap-1 mb-4 pb-1 no-scrollbar">
+        {COLUMNS.map((col) => {
+          const count = cards[col.key]?.length ?? 0
+          return (
+            <button
+              key={col.key}
+              onClick={() => setMobileCol(col.key)}
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition ${
+                mobileCol === col.key
+                  ? 'bg-brand-700 text-white'
+                  : 'bg-slate-800 text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {col.label}
+              {count > 0 && (
+                <span className={`text-[10px] font-mono rounded px-1 ${mobileCol === col.key ? 'bg-white/20' : 'bg-slate-700'}`}>
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
       {loading ? (
         <div className="text-slate-400 text-sm">Carregando painel...</div>
       ) : (
@@ -450,8 +476,8 @@ export default function Painel() {
                   setHoverCol(null)
                 }}
                 className={`rounded-lg border ${col.accent} p-3 flex flex-col min-h-[400px] transition-all ${
-                  isHover && isValidTarget ? 'ring-2 ring-emerald-500 scale-[1.01]' : ''
-                } ${isInvalidHover ? 'ring-2 ring-red-500/50 opacity-70' : ''}`}
+                  col.key !== mobileCol ? 'hidden md:flex' : ''
+                } ${isHover && isValidTarget ? 'ring-2 ring-emerald-500 scale-[1.01]' : ''} ${isInvalidHover ? 'ring-2 ring-red-500/50 opacity-70' : ''}`}
               >
                 <header className="mb-3 px-1">
                   <div className="flex items-baseline justify-between">
