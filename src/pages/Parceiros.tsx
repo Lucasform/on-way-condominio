@@ -6,7 +6,7 @@ import { useConfirm } from '../components/ui/ConfirmProvider'
 import PageHeader from '../components/ui/PageHeader'
 import {
   listConvitesPlataforma,
-  createConvitePlataforma,
+  sendInvitePorEmail,
   revogarConvitePlataforma,
   deleteConvitePlataforma,
   listParceiros,
@@ -44,6 +44,7 @@ export default function Parceiros() {
   // — Convites
   const [convites, setConvites] = useState<ConvitePlataforma[]>([])
   const [loadingConvites, setLoadingConvites] = useState(true)
+  const [email, setEmail] = useState('')
   const [nome, setNome] = useState('')
   const [criando, setCriando] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
@@ -93,14 +94,24 @@ export default function Parceiros() {
   }
 
   async function handleCriar() {
+    const emailTrim = email.trim()
+    if (!emailTrim || !emailTrim.includes('@')) {
+      toast.error('E-mail inválido', 'Informe um e-mail válido para enviar o convite.')
+      return
+    }
     setCriando(true)
     try {
-      const c = await createConvitePlataforma({ nome_destinatario: nome.trim() || undefined })
+      const c = await sendInvitePorEmail({ email: emailTrim, nome: nome.trim() || undefined })
       setConvites([c, ...convites])
+      setEmail('')
       setNome('')
-      toast.success('Convite gerado', `Código: ${c.codigo}`)
+      if (c.email_enviado) {
+        toast.success('Convite enviado!', `E-mail enviado para ${emailTrim}`)
+      } else {
+        toast.success('Convite gerado', `Código: ${c.codigo} (falha no envio do e-mail)`)
+      }
     } catch (e: unknown) {
-      toast.error('Erro', (e as Error).message)
+      toast.error('Erro ao enviar convite', (e as Error).message)
     } finally {
       setCriando(false)
     }
@@ -203,25 +214,42 @@ export default function Parceiros() {
       {tab === 'convites' && (
         <div>
           {/* Gerador */}
-          <div className="bg-slate-800 rounded-xl border border-slate-700 p-4 mb-6">
-            <p className="text-sm text-slate-400 mb-3">
-              Gere um código único. Envie o link para o parceiro criar a conta. O código expira em 30 dias e só pode ser usado 1 vez.
-            </p>
-            <div className="flex gap-2">
+          <div className="bg-slate-800 rounded-xl border border-slate-700 p-5 mb-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="text-2xl">✉️</div>
+              <div>
+                <p className="text-sm font-semibold text-slate-200">Convidar por e-mail</p>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Um e-mail bonito será enviado automaticamente. O parceiro clica no link, cria a senha e entra direto. Você adiciona os condomínios depois.
+                </p>
+              </div>
+            </div>
+            <div className="space-y-2">
               <input
-                type="text"
-                placeholder="Nome do destinatário (opcional)"
-                value={nome}
-                onChange={e => setNome(e.target.value)}
-                className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-400"
+                type="email"
+                placeholder="E-mail do parceiro (obrigatório)"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleCriar()}
+                className="w-full bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-400"
               />
-              <button
-                onClick={handleCriar}
-                disabled={criando}
-                className="px-4 py-2 bg-brand-500 hover:bg-brand-400 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
-              >
-                {criando ? 'Gerando...' : '+ Gerar convite'}
-              </button>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Nome do parceiro (opcional)"
+                  value={nome}
+                  onChange={e => setNome(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleCriar()}
+                  className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-brand-400"
+                />
+                <button
+                  onClick={handleCriar}
+                  disabled={criando || !email.trim()}
+                  className="px-5 py-2 bg-brand-500 hover:bg-brand-400 text-white rounded-lg text-sm font-medium disabled:opacity-40 transition-colors whitespace-nowrap"
+                >
+                  {criando ? 'Enviando...' : '📨 Enviar convite'}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -241,8 +269,10 @@ export default function Parceiros() {
                         <span className="font-mono text-brand-400 font-bold tracking-widest">{c.codigo}</span>
                         <span className={`text-xs px-2 py-0.5 rounded-full border ${st.css}`}>{st.label}</span>
                       </div>
-                      {c.nome_destinatario && (
-                        <p className="text-xs text-slate-400 mt-0.5">Para: {c.nome_destinatario}</p>
+                      {(c.email_destinatario || c.nome_destinatario) && (
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          Para: {c.nome_destinatario ? `${c.nome_destinatario} ` : ''}{c.email_destinatario ? `<${c.email_destinatario}>` : ''}
+                        </p>
                       )}
                       <p className="text-xs text-slate-500 mt-0.5">
                         Expira {new Date(c.expira_em).toLocaleDateString('pt-BR')} · {c.usos}/{c.usos_max} usos

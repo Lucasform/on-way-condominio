@@ -5,6 +5,7 @@ export interface ConvitePlataforma {
   codigo: string
   role: string
   nome_destinatario: string | null
+  email_destinatario: string | null
   criado_por: string | null
   usos: number
   usos_max: number
@@ -66,6 +67,26 @@ export async function revogarConvitePlataforma(id: string): Promise<void> {
 export async function deleteConvitePlataforma(id: string): Promise<void> {
   const { error } = await supabase.from('convites_plataforma').delete().eq('id', id)
   if (error) throw error
+}
+
+export interface SendInviteResult extends ConvitePlataforma {
+  email_enviado: boolean
+}
+
+export async function sendInvitePorEmail(input: {
+  email: string
+  nome?: string
+}): Promise<SendInviteResult> {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) throw new Error('Sem sessão.')
+
+  const res = await supabase.functions.invoke<SendInviteResult>('send-plataforma-invite', {
+    body: { email: input.email, nome: input.nome ?? null },
+    headers: { Authorization: `Bearer ${session.access_token}` },
+  })
+  if (res.error) throw res.error
+  if (!res.data) throw new Error('Resposta vazia da função.')
+  return res.data
 }
 
 export async function listParceiros(): Promise<{ id: string; nome: string | null; email: string | null; ativo: boolean; created_at: string }[]> {
