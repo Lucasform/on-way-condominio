@@ -16,6 +16,7 @@ export function useNavBadges(): Record<string, number> {
   const isStaffWa = !!perfil && ['administradora', 'sindico', 'subsindico'].includes(perfil.role)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!user) { setBadges({}); return }
     let alive = true
     const load = async () => {
